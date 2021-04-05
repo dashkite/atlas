@@ -1,30 +1,22 @@
-import {
-  specifier
-  resolve
-  manifest
-} from "./manifest"
+import { Resource } from "./resource"
 import { merge } from "./helpers"
 
-context = (name, qualifier) ->
-  {name, qualifier, version: await resolve name, qualifier}
+mine = (resource) ->
+  [resource.specifier]:
+    Promise.all (for name, qualifier of manifest.dependencies
+      Resource.create name, qualifier)
 
-mine = (manifest) ->
-  [specifier manifest.name, manifest.version]:
-    for name, qualifier of manifest.dependencies
-      await context name, qualifier
-
-theirs = (manifest) ->
-  Promise.all (for name, qualifier of manifest.dependencies
+theirs = (resource) ->
+  Promise.all (for name, qualifier of resource.dependencies
     dependencies name, qualifier)
 
 dependencies = (name, qualifier) ->
-  _manifest = await manifest name, qualifier
+  resource = await Resource.create name, qualifier
   merge [
     await mine _manifest
     (await theirs _manifest)...
   ]
 
 export {
-  context
   dependencies
 }

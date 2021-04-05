@@ -13,11 +13,16 @@
   "devDependencies": {
     "@babel/core": "^7.13.14",
     "@babel/preset-env": "^7.13.12",
-    "coffeescript": "^2.5.1"
+    "@dashkite/genie": "^0.1.0",
+    "@dashkite/masonry": "^0.6.0",
+    "amen": "^3.0.0",
+    "coffeescript": "^2.5.1",
+    "panda-quill": "^5.0.0"
   },
   "dependencies": {
     "@dashkite/joy": "file:../joy",
     "@dashkite/mercury": "^0.1.3",
+    "js-yaml": "^4.0.0",
     "node-fetch": "^2.6.1",
     "panda-river": "^6.0.3",
     "semver": "^6.3.0"

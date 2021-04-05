@@ -1,7 +1,11 @@
-import { scopes } from "./scopes"
+import { map } from "./map"
 
 
 do ->
-  console.log await scopes
-    "@dashkite/quark": "latest"
-    "@dashkite/carbon": "latest"
+  try
+    console.log JSON.stringify await map
+      # "@dashkite/quark": "latest"
+      # "@dashkite/carbon": "latest"
+      "@dashkite/joy": "file:../joy"
+  catch error
+    console.error error

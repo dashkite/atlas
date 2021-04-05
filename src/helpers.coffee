@@ -1,4 +1,5 @@
-import * as _ from "../../joy"
+import fetch from "node-fetch"
+import * as _ from "@dashkite/joy"
 
 # merge for dictionaries of lists, where we want to combine lists
 # corresponding to the same key
@@ -12,6 +13,9 @@ merge = (ax) ->
         v
   rx
 
+fetchJSON = _.flow [ fetch, (response) -> response.json() ]
+
 export {
   merge
+  fetchJSON
 }

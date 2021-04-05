@@ -1,5 +1,5 @@
 import semver from "semver"
-import * as _ from "../../joy"
+import * as _ from "@dashkite/joy"
 import {
   context
   dependencies
