@@ -5,7 +5,8 @@ class Resource
   _.mixin @::, [
     _.getters
       version: -> @manifest.version
-      specifier: -> "#{name}@#{version}"
+      specifier: -> "#{@name}@#{@version}"
+      dependencies: -> @manifest.dependencies
   ]
 
 export { Resource }

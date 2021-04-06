@@ -16,7 +16,7 @@ resolve = (name, range = "latest") ->
     # the order of the manifests appears to be sorted by version already
     (Object.keys p.versions)
       .reverse()
-      .find (v) -> semver.satisfies v, qualifier
+      .find (v) => semver.satisfies v, range
 
 class ModuleResource extends Resource
   @create: (name, range) -> _.assign (new @), {name, range}

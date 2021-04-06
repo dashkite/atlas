@@ -3,7 +3,7 @@ import { merge } from "./helpers"
 
 mine = (resource) ->
   [resource.specifier]:
-    Promise.all (for name, qualifier of manifest.dependencies
+    await Promise.all (for name, qualifier of resource.dependencies
       Resource.create name, qualifier)
 
 theirs = (resource) ->
@@ -13,8 +13,8 @@ theirs = (resource) ->
 dependencies = (name, qualifier) ->
   resource = await Resource.create name, qualifier
   merge [
-    await mine _manifest
-    (await theirs _manifest)...
+    await mine resource
+    (await theirs resource)...
   ]
 
 export {
