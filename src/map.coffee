@@ -44,7 +44,6 @@ map = (dx) ->
     if s == "root"
       rx.imports = _map dx
     else
-      console.log s
       (rx.scopes ?= {})[scopeToURL s] = _map dx
   rx
 

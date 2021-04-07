@@ -1,0 +1,3 @@
+class Scope
+
+export { Scope }

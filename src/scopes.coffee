@@ -1,14 +1,11 @@
 import semver from "semver"
 import * as _ from "@dashkite/joy"
-import {
-  context
-  dependencies
-} from "./dependencies"
+import { Reference, References } from "./reference"
 import { merge } from "./helpers"
 
 # We start with defining different equivalence classes.
 
-# 1. Resource equality: same version of the same module
+# 1. Reference equality: same version of the same module
 eq = (a, b) -> a.name == b.name && a.version == b.version
 
 # 2. Compatible versions...
@@ -94,19 +91,22 @@ optimize = (sx) ->
   compact rx
 
 # now we're ready for the big event....
-scopes = (dx) ->
+scopes = (name, description) ->
+
+  reference = await Reference.create name, description
 
   # initialize the root scope with the direct dependencies
-  rx =
-    root:
-      await Promise.all (
-        context name, qualifier for name, qualifier of dx)
+  # TODO this feels like it could be a method on reference
+  # perhaps dependencies should already be expanded, vs.
+  # manifest.depedencies, which would be the hash?
+  rx = root: await References.create reference.dependencies
 
   # merge the (unoptimized) scopes for each dependency and optimize the result
   optimize merge [
     rx
-    (await Promise.all (
-      dependencies name, qualifier for name, qualifier of dx))...
+    # TODO this seems like it should be a method on Reference
+    # ex: reference.traverse() or something...
+    (await reference.fullDependencies)...
   ]
 
 export { scopes }
