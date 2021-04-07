@@ -3,7 +3,7 @@ import { Scope } from "./scope"
 
 class ModuleScope extends Scope
   @create: (resource) ->
-    dependencies = await resource.dependencies
+    {dependencies} = resource
     _.assign new @, {resource, dependencies}
 
 export { ModuleScope }

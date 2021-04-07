@@ -10,12 +10,15 @@ fileURLToPath = (s) ->
   else _fileURLToPath s
 
 class FileReference extends Reference
-  @create: (name, url) ->_.assign (new @), {name, url}
+
+  @create: (name, url) -> _.assign (new @), {name, url}
+
+  load: -> @manifest = JSON.parse await F.readFile @path, "utf8"
+
   _.mixin @::, [
     _.getters
       description: -> @url
       path: ->  P.join (fileURLToPath @url), "package.json"
-      manifest: -> @_manifest ?= JSON.parse await F.readFile @path, "utf8"
   ]
 
 export { FileReference }

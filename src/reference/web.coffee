@@ -5,10 +5,10 @@ import { Reference } from "./reference"
 
 class WebReference extends Reference
   @create: (name, url) -> _.assign (new @), {name, url}
+  load: -> @manifest = fetchJSON @url
   _.mixin @::, [
     _.getters
       description: -> @url
-      manifest: -> @_manifest ?= fetchJSON @url
   ]
 
 export { WebReference }

@@ -8,10 +8,8 @@ class Resource
 
   @create: do (cache = {}) ->
     (reference) ->
-      {name} = reference
-      manifest = await reference.manifest
+      {name, manifest, dependencies} = reference
       version = manifest.version
-      dependencies = await reference.dependencies
       cache[ (Resource.specifier name, version) ] ?=
         _.assign new Resource, {name, manifest, dependencies}
 
@@ -23,11 +21,10 @@ class Resource
       scopes: ->
         @_scopes ?= do =>
           r = new Set
-          r.add await @scope
-          await Promise.all (
-            for d from @dependencies
-              do -> r.add await d.scope
-          )
+          r.add @scope
+          for d from @dependencies
+            for s from d.scopes
+              r.add s
           r
 
   ]

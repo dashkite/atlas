@@ -13,34 +13,40 @@ do ->
 
       test
         description: "module reference"
-        wait: 2000
+        wait: 5000
         ->
           reference = await Reference.create "@dashkite/quark", "latest"
           assert.equal true, _.isKind Reference, reference
           assert.equal "@dashkite/quark", reference.name
-          assert.equal true, (manifest = await reference.manifest)?
+          assert.equal true, (manifest = reference.manifest)?
           assert.equal manifest.name, reference.name
           assert.equal true, manifest.version?
+          assert.equal true, reference.dependencies?
+          assert.equal (_.size reference.dependencies),
+            (_.size reference.manifest.dependencies)
 
 
       test
         description: "file reference"
-        wait: 1000
+        wait: 5000
         ->
           reference = await Reference.create "@dashkite/quark", "file:../quark"
           assert.equal true, _.isKind Reference, reference
           assert.equal "@dashkite/quark", reference.name
-          assert.equal true, (manifest = await reference.manifest)?
+          assert.equal true, (manifest = reference.manifest)?
           assert.equal manifest.name, reference.name
           assert.equal true, manifest.version?
+          assert.equal true, reference.dependencies?
+          assert.equal (_.size reference.dependencies),
+            (_.size reference.manifest.dependencies)
 
       test
         description: "web reference"
-        wait: 1000
+        wait: 5000
 
       test
         description: "same description yields same object"
-        wait: 2000
+        wait: 5000
         ->
           a = await Reference.create "@dashkite/quark", "file:../quark"
           b = await Reference.create "@dashkite/quark", "file:../quark"
@@ -52,26 +58,26 @@ do ->
 
       test
         description: "module resource"
-        wait: 2000
+        wait: 5000
         ->
           reference = await Reference.create "@dashkite/quark", "latest"
-          resource = await Resource.create reference
+          resource = reference.resource
+          assert.equal true, _.isKind Resource, resource
 
       test
         description: "same reference yields same resource"
-        wait: 2000
+        wait: 5000
         ->
           a = await Reference.create "@dashkite/quark", "file:../quark"
           b = await Reference.create "@dashkite/quark", "file:../quark"
-          assert.equal (await a.resource), (await b.resource)
+          assert.equal a.resource, b.resource
 
       test
         description: "dependencies is a set of references"
-        wait: 2000
+        wait: 5000
         ->
           reference = await Reference.create "@dashkite/quark", "latest"
-          resource = await reference.resource
-          dependencies = resource.dependencies
+          dependencies = reference.resource.dependencies
           assert.equal true, (_.isKind Set, dependencies)
           for d from dependencies
             assert.equal true, (_.isKind Reference, d)
@@ -82,11 +88,10 @@ do ->
 
       test
         description: "is a resource, set<reference> pair"
-        wait: 2000
+        wait: 5000
         ->
         reference = await Reference.create "@dashkite/quark", "latest"
-        resource = await reference.resource
-        scope = await resource.scope
+        scope = reference.resource.scope
         assert.equal true, (_.isKind Set, scope.dependencies)
         for d from scope.dependencies
           assert.equal true, (_.isKind Reference, d)
@@ -94,56 +99,21 @@ do ->
 
       test
         description: "same resource yields same scope"
-        wait: 2000
+        wait: 5000
         ->
           a = await Reference.create "@dashkite/quark", "file:../quark"
           b = await Reference.create "@dashkite/quark", "file:../quark"
-          assert.equal (await a.scope), (await b.scope)
+          assert.equal a.scope, b.scope
 
       test
         description: "scopes for resource"
-        wait: 2000
+        wait: 5000
         ->
           reference = await Reference.create "@dashkite/quark", "latest"
-          scopes = await reference.scopes
+          scopes = reference.scopes
           console.log scopes
 
     ]
-
-    # test "dependency generation", [
-    #
-    #   test
-    #     description: "dependencies"
-    #     wait: 6000
-    #     ->
-    #       reference = await Reference.create "@dashkite/quark", "latest"
-    #       dx = await reference.dependencies
-    #       assert.equal true, _.isArray dx
-    #       assert.equal true, _.isKind Reference, dx[0]
-    #
-    #   test
-    #     description: "fullDependencies"
-    #     wait: 6000
-    #     ->
-    #       reference = await Reference.create "@dashkite/quark", "latest"
-    #       dx = await reference.scopes
-    #       console.log dx
-    #       assert.equal true, _.isArray dx
-    #       assert.equal true, _.isKind Reference, dx[0]
-    #
-    # ]
-
-    # test "scope generation", [
-    #
-    #   test
-    #     description: "should work :)"
-    #     wait: 6000
-    #     ->
-    #       result = await scopes "@dashkite/quark", "latest"
-    #       console.log result
-    #
-    # ]
-
 
   ]
 

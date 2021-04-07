@@ -6,14 +6,10 @@ import { merge } from "./helpers"
 # We start with defining different equivalence classes.
 
 # 1. Reference equality: same version of the same module
-eq = (a, b) -> a.name == b.name && a.version == b.version
+eq = Reference.equal
 
 # 2. Compatible versions...
-compatible = (a, b) ->
-  (a.name == b.name) &&
-    (semver.validRange a.qualifier)? && (semver.validRange b.qualifier)? &&
-      (semver.satisfies a.version, b.qualifier) &&
-        (semver.satisfies b.version, a.qualifier)
+compatible = (a, b) -> (a.compatible b) || (b.compatible a)
 
 # ... relative equality
 req = (a, b) -> (eq a, b) || (compatible a, b)
@@ -92,21 +88,10 @@ optimize = (sx) ->
 
 # now we're ready for the big event....
 scopes = (name, description) ->
-
+  # the root scope is the the reference scope
+  # that is, the scope == reference.scope
   reference = await Reference.create name, description
+  optimize await reference.scopes
 
-  # initialize the root scope with the direct dependencies
-  # TODO this feels like it could be a method on reference
-  # perhaps dependencies should already be expanded, vs.
-  # manifest.depedencies, which would be the hash?
-  rx = root: await References.create reference.dependencies
-
-  # merge the (unoptimized) scopes for each dependency and optimize the result
-  optimize merge [
-    rx
-    # TODO this seems like it should be a method on Reference
-    # ex: reference.traverse() or something...
-    (await reference.fullDependencies)...
-  ]
 
 export { scopes }

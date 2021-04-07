@@ -25,11 +25,19 @@ load = (name, range) ->
 
 
 class ModuleReference extends Reference
+
   @create: (name, range = "latest") -> _.assign (new @), {name, range}
+
+  load: -> @manifest = await load @name, @range
+
   _.mixin @::, [
     _.getters
       description: -> @range
-      manifest: -> @_manifest ?= load @name, @range
   ]
+
+  compatible: (target) ->
+    (@name == target.name) &&
+      (_.isType ModuleReference, target)
+      (semver.satisfies target.version, @range)
 
 export { ModuleReference }

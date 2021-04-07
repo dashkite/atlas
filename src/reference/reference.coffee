@@ -3,20 +3,17 @@ import { Resource } from "../resource"
 import { error } from "../errors"
 
 class Reference
+
+  @equal: (a, b) ->
+    (_.isKind Reference a) && (_.isKind Reference b) &&
+      (a.resource == b.resource)
+
   _.mixin @::, [
     _.getters
+      version: -> @manifest.version
       resource: -> @_resource ?= Resource.create @
-      scope: -> (await @resource).scope
-      scopes: -> (await @resource).scopes
-      dependencies: ->
-        @_dependencies ?= do =>
-          r = new Set
-          manifest = await @manifest
-          await Promise.all (
-            for name, description of manifest.dependencies
-              do -> r.add await Reference.create name, description
-          )
-          r
+      scope: -> @resource.scope
+      scopes: -> @resource.scopes
   ]
 
 export { Reference }

@@ -25,8 +25,21 @@ createFromURL = (name, description, url) ->
 
 parseURL = (s) -> try (new URL s)
 
+loadDependencies = (reference) ->
+  {manifest} = reference
+  reference.dependencies ?= await do ->
+    r = new Set
+    await Promise.all (
+      for name, description of manifest.dependencies
+        do -> r.add await Reference.create name, description
+    )
+    r
+
 Reference.create = _.memoize (name, description) ->
-  if (url = parseURL description)?
+  reference = if (url = parseURL description)?
     createFromURL name, description, url
   else
     ModuleReference.create name, description
+  await reference.load()
+  await loadDependencies reference
+  reference
