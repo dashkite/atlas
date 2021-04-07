@@ -7,3 +7,6 @@ no exports: >-
 
 exports conditions: >-
   package %s uses exports conditions, which are not yet supported
+
+reference conflict: >-
+  attempt to choose between conflicting references, '%s' and '%s'

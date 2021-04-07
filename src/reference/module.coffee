@@ -37,7 +37,31 @@ class ModuleReference extends Reference
 
   compatible: (target) ->
     (@name == target.name) &&
-      (_.isType ModuleReference, target)
+      # in theory, we could match against non-module references
+      # but, in practice, if you're specifying a URL, you probably
+      # don't want to substitute it
+      (_.isType ModuleReference, target) &&
       (semver.satisfies target.version, @range)
+
+
+_.generic Reference.conflict,
+  (_.isType ModuleReference), (_.isType ModuleReference),
+  (a, b) -> !(Reference.similar a, b)
+
+_.generic Reference.similar,
+  (_.isType ModuleReference), (_.isType ModuleReference),
+  (a, b) ->
+    (a.name == b.name) &&
+      ((semver.satisfies a.version, b.range) ||
+        (semver.satisfies b.version, a.range))
+
+_.generic Reference.choose,
+  (_.isType ModuleReference), (_.isType ModuleReference),
+  (a, b) ->
+    if (semver.gt a.version, b.version) && (semver.satisfies a.version, b.range)
+      a
+    else if (semver.satisfies b.version, a.range)
+      b
+    else throw error "reference conflict", a, b
 
 export { ModuleReference }

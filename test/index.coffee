@@ -3,6 +3,7 @@ import {print, test, success} from "amen"
 import { Reference } from "../src/reference"
 import { Resource } from "../src/resource"
 import { Scope } from "../src/scope"
+import { optimize } from "../src/optimize"
 import * as _ from "@dashkite/joy"
 
 do ->
@@ -111,7 +112,7 @@ do ->
         ->
           reference = await Reference.create "@dashkite/quark", "latest"
           scopes = reference.scopes
-          console.log scopes
+          console.log optimize scopes
 
     ]
 
