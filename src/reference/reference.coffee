@@ -3,6 +3,8 @@ import * as _ from "@dashkite/joy"
 import { Resource } from "../resource"
 import { ImportMap } from "../import-map"
 import { error } from "../errors"
+import { paths } from "./paths"
+
 
 class Reference
 
@@ -28,6 +30,8 @@ class Reference
   _.mixin @::, [
     _.getters
       version: -> @manifest.version
+      paths: -> paths @
+
       resource: -> @_resource ?= Resource.create @
       scope: -> @resource.scope
       scopes: -> @resource.scopes

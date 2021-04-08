@@ -3,6 +3,7 @@ import {print, test, success} from "amen"
 import { Reference } from "../src/reference"
 import { Resource } from "../src/resource"
 import { Scope } from "../src/scope"
+import { jsdelivr } from "../src/templates"
 import * as _ from "@dashkite/joy"
 
 do ->
@@ -110,7 +111,7 @@ do ->
         wait: 5000
         ->
           reference = await Reference.create "@dashkite/quark", "latest"
-          console.log reference.map.toJSON()
+          console.log reference.map.toJSON jsdelivr
 
     ]
 
