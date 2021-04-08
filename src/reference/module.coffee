@@ -35,18 +35,9 @@ class ModuleReference extends Reference
       description: -> @range
   ]
 
-  compatible: (target) ->
-    (@name == target.name) &&
-      # in theory, we could match against non-module references
-      # but, in practice, if you're specifying a URL, you probably
-      # don't want to substitute it
-      (_.isType ModuleReference, target) &&
-      (semver.satisfies target.version, @range)
-
-
 _.generic Reference.conflict,
   (_.isType ModuleReference), (_.isType ModuleReference),
-  (a, b) -> !(Reference.similar a, b)
+  (a, b) -> (a.name == b.name) && !(Reference.similar a, b)
 
 _.generic Reference.similar,
   (_.isType ModuleReference), (_.isType ModuleReference),

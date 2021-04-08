@@ -30,4 +30,27 @@ optimize = (scopes) ->
   results.add root unless _.isEmpty root
   results
 
-export { optimize }
+dictionary = (scope) ->
+  result = {}
+  for d from scope.dependencies
+    # temporary, until we incorporate URLs
+    result[ d.name ] = d.resource.specifier
+  result
+
+class ImportMap
+
+  @create: (scopes) ->
+    _.assign new @,
+      scopes: optimize scopes
+
+  toJSON: ->
+    result = {}
+    for scope from @scopes
+      if scope.name == "root"
+        result.imports = dictionary scope
+      else
+        (result.scopes ?= {})[ scope.name ] = dictionary scope
+    JSON.stringify result
+
+
+export { ImportMap }

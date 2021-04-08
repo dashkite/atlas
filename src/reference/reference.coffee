@@ -1,6 +1,7 @@
 import semver from "semver"
 import * as _ from "@dashkite/joy"
 import { Resource } from "../resource"
+import { ImportMap } from "../import-map"
 import { error } from "../errors"
 
 class Reference
@@ -30,6 +31,7 @@ class Reference
       resource: -> @_resource ?= Resource.create @
       scope: -> @resource.scope
       scopes: -> @resource.scopes
+      map: -> ImportMap.create @resource.scopes
   ]
 
   toString: -> @resource.specifier
