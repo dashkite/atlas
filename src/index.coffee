@@ -1,11 +1,5 @@
-import { map } from "./map"
-
-
-do ->
-  try
-    console.log JSON.stringify await map
-      # "@dashkite/quark": "latest"
-      # "@dashkite/carbon": "latest"
-      "@dashkite/joy": "file:../joy"
-  catch error
-    console.error error
+export * from "./reference"
+export * from "./resource"
+export * from "./scope"
+export * from "./import-map"
+export * from "./templates"

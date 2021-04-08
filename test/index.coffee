@@ -1,9 +1,6 @@
 import assert from "assert"
 import {print, test, success} from "amen"
-import { Reference } from "../src/reference"
-import { Resource } from "../src/resource"
-import { Scope } from "../src/scope"
-import { jsdelivr } from "../src/templates"
+import { Reference, Resource, Scope, jsdelivr } from "../src"
 import * as _ from "@dashkite/joy"
 
 do ->
@@ -111,7 +108,23 @@ do ->
         wait: 5000
         ->
           reference = await Reference.create "@dashkite/quark", "latest"
-          console.log reference.map.toJSON jsdelivr
+          assert.equal true, _.isType Set, reference.scopes
+
+    ]
+
+    test "import map", [
+
+      test
+        description: "produces a JSON file"
+        wait: 5000
+        ->
+          reference = await Reference.create "@dashkite/quark", "latest"
+          json = reference.map.toJSON jsdelivr
+          assert.equal true, _.isString json
+          assert.equal true, _.isObject (map = JSON.parse json)
+          assert.equal true, map.imports?
+          assert.equal true, map.imports["@dashkite/katana"]?
+
 
     ]
 
