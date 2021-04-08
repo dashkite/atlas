@@ -125,6 +125,14 @@ do ->
           assert.equal true, map.imports?
           assert.equal true, map.imports["@dashkite/katana"]?
 
+      test
+        description: "handle multiple exports"
+        wait: 5000
+        ->
+          # TODO handle subpaths
+          # TODO refine template interface
+          reference = await Reference.create "import-maps", "file:."
+          console.log reference.map.toJSON jsdelivr
 
     ]
 

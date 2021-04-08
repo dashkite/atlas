@@ -30,6 +30,8 @@ class ModuleReference extends Reference
 
   load: -> @manifest = await load @name, @range
 
+  exports: (generator) -> generator.fileURL @
+
   _.mixin @::, [
     _.getters
       description: -> @range

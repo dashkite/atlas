@@ -15,6 +15,8 @@ class FileReference extends Reference
 
   load: -> @manifest = JSON.parse await F.readFile @path, "utf8"
 
+  exports: (generator) -> generator.filePath @
+
   _.mixin @::, [
     _.getters
       description: -> @url

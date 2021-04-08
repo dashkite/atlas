@@ -30,10 +30,10 @@ optimize = (scopes) ->
   results.add root unless _.isEmpty root
   results
 
-dictionary = (template, scope) ->
+dictionary = (generator, scope) ->
   result = {}
   for d from scope.dependencies
-    result[ d.name ] = template.file d
+    result[ d.name ] = d.exports generator
   result
 
 class ImportMap
@@ -42,14 +42,14 @@ class ImportMap
     _.assign new @,
       scopes: optimize scopes
 
-  toJSON: (template) ->
+  toJSON: (generator) ->
     result = {}
     for scope from @scopes
       if scope.name == "root"
-        result.imports = dictionary template, scope
+        result.imports = dictionary generator, scope
       else
-        (result.scopes ?= {})[ template.scope scope ] =
-          dictionary template, scope
+        (result.scopes ?= {})[ generator.scopeURL scope ] =
+          dictionary generator, scope
     JSON.stringify result, null, 2
 
 
