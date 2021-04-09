@@ -42,7 +42,7 @@ loadManifest = (name, range) ->
 loadFiles = (name, version) ->
   (await fetchJSON templates.files name, version)
   .files
-  .map ({name}) -> name
+  .map ({name}) -> name[1..]
 
 class ModuleReference extends Reference
 

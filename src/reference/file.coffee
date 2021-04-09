@@ -17,7 +17,8 @@ class FileReference extends Reference
   load: ->
     @manifest = JSON.parse await F.readFile @path, "utf8"
     # TODO read .gitignore to get list of exclusions?
-    @files = await fglob [ "**", "!package-lock.json", "!node_modules/**" ]
+    @files = await fglob [ "**", "!package-lock.json", "!node_modules/**" ],
+      cwd: P.dirname @path
 
   exports: (generator) -> generator.filePath @
 

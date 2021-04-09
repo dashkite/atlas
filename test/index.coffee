@@ -24,7 +24,7 @@ do ->
             (_.size reference.manifest.dependencies)
           assert.equal true, _.isArray reference.files
           assert.equal true,
-            _.includes "/build/src/index.js", reference.files
+            _.includes "build/src/index.js", reference.files
 
 
       test
@@ -41,8 +41,8 @@ do ->
           assert.equal (_.size reference.dependencies),
             (_.size reference.manifest.dependencies)
           assert.equal true, _.isArray reference.files
-          # assert.equal true,
-          #   _.includes "./src/index.coffee", reference.files
+          assert.equal true,
+            _.includes "build/src/index.js", reference.files
 
       test
         description: "web reference"
