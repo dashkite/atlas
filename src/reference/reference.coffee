@@ -1,5 +1,6 @@
 import semver from "semver"
 import * as _ from "@dashkite/joy"
+import micromatch from "micromatch"
 import { Resource } from "../resource"
 import { ImportMap } from "../import-map"
 import { error } from "../errors"
@@ -37,6 +38,8 @@ class Reference
       scopes: -> @resource.scopes
       map: -> ImportMap.create @
   ]
+
+  glob: (pattern) -> micromatch @files, pattern
 
   toString: -> @resource.specifier
 

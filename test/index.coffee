@@ -25,6 +25,8 @@ do ->
           assert.equal true, _.isArray reference.files
           assert.equal true,
             _.includes "build/src/index.js", reference.files
+          assert.equal true, _.includes "build/src/index.js",
+            reference.glob "build/src/*.js"
 
 
       test
@@ -43,6 +45,8 @@ do ->
           assert.equal true, _.isArray reference.files
           assert.equal true,
             _.includes "build/src/index.js", reference.files
+          assert.equal true, _.includes "build/src/index.js",
+            reference.glob "build/src/*.js"
 
       test
         description: "web reference"
