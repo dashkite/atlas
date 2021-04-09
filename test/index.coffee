@@ -22,6 +22,7 @@ do ->
           assert.equal true, reference.dependencies?
           assert.equal (_.size reference.dependencies),
             (_.size reference.manifest.dependencies)
+          console.log reference.files
 
 
       test

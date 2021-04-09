@@ -12,6 +12,9 @@ templates =
   manifest: (name, version) ->
     "https://cdn.jsdelivr.net/npm/#{name}@#{version}/package.json"
 
+  files: (name, version) ->
+    "https://data.jsdelivr.com/v1/package/npm/#{name}@#{version}/flat"
+
 manifests = do (cache = {}) ->
   (name) -> cache[name] ?= await fetchJSON templates.metadata name
 
@@ -35,12 +38,18 @@ load = (name, range) ->
   version = await resolve name, range
   await fetchJSON templates.manifest name, version
 
+loadFiles = (name, version) ->
+  (await fetchJSON templates.files name, version)
+  .files
+  .map ({name}) -> name
 
 class ModuleReference extends Reference
 
   @create: (name, range = "latest") -> _.assign (new @), {name, range}
 
-  load: -> @manifest = await load @name, @range
+  load: ->
+    @manifest = await load @name, @range
+    @files = await loadFiles @name, @version
 
   exports: (generator) -> generator.fileURL @
 
