@@ -35,7 +35,7 @@ class Reference
       resource: -> @_resource ?= Resource.create @
       scope: -> @resource.scope
       scopes: -> @resource.scopes
-      map: -> ImportMap.create @resource.scopes
+      map: -> ImportMap.create @
   ]
 
   toString: -> @resource.specifier

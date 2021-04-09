@@ -10,3 +10,12 @@ exports conditions: >-
 
 reference conflict: >-
   attempt to choose between conflicting references, '%s' and '%s'
+
+unexpected response: >-
+  unexpected HTTP response from '%s', status %s
+
+no version: >-
+  no version for package '%s' satisfies the given range '%s'
+
+invalid range: >-
+  the given range '%s' for package '%s' is invalid

@@ -38,15 +38,15 @@ dictionary = (generator, scope) ->
 
 class ImportMap
 
-  @create: (scopes) ->
+  @create: (reference) ->
     _.assign new @,
-      scopes: optimize scopes
+      reference: reference
 
   toJSON: (generator) ->
-    result = {}
-    for scope from @scopes
+    result = imports: ".": @reference.exports generator
+    for scope from optimize @reference.scopes
       if scope.name == "root"
-        result.imports = dictionary generator, scope
+        _.assign result.imports, dictionary generator, scope
       else
         (result.scopes ?= {})[ generator.scopeURL scope ] =
           dictionary generator, scope

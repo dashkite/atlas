@@ -112,6 +112,21 @@ do ->
 
     ]
 
+    test "subpaths", [
+
+      test
+        description: "handle multiple exports"
+        wait: 5000
+        ->
+          # TODO handle subpaths
+          # TODO refine template interface
+          # reference = await Reference.create "import-maps", "file:."
+          reference = await Reference.create "@dashkite/quark", "latest"
+          # reference = await Reference.create "@dashkite/joy", "file:../joy"
+          # console.log reference.map.toJSON jsdelivr
+
+    ]
+
     test "import map", [
 
       test
@@ -124,16 +139,6 @@ do ->
           assert.equal true, _.isObject (map = JSON.parse json)
           assert.equal true, map.imports?
           assert.equal true, map.imports["@dashkite/katana"]?
-
-      test
-        description: "handle multiple exports"
-        wait: 5000
-        ->
-          # TODO handle subpaths
-          # TODO refine template interface
-          reference = await Reference.create "import-maps", "file:."
-          console.log reference.map.toJSON jsdelivr
-
     ]
 
   ]
