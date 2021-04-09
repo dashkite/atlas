@@ -4,6 +4,7 @@ import { fetchJSON } from "../helpers"
 import { error } from "../errors"
 import { Reference } from "./reference"
 
+# TODO set User-Agent for queries for the JSDelivr API
 templates =
 
   metadata: (name) ->
@@ -34,7 +35,7 @@ resolve = (name, range) ->
     else
       throw error "invalid range", name, range
 
-load = (name, range) ->
+loadManifest = (name, range) ->
   version = await resolve name, range
   await fetchJSON templates.manifest name, version
 
@@ -48,7 +49,7 @@ class ModuleReference extends Reference
   @create: (name, range = "latest") -> _.assign (new @), {name, range}
 
   load: ->
-    @manifest = await load @name, @range
+    @manifest = await loadManifest @name, @range
     @files = await loadFiles @name, @version
 
   exports: (generator) -> generator.fileURL @

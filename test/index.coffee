@@ -22,7 +22,9 @@ do ->
           assert.equal true, reference.dependencies?
           assert.equal (_.size reference.dependencies),
             (_.size reference.manifest.dependencies)
-          console.log reference.files
+          assert.equal true, _.isArray reference.files
+          assert.equal true,
+            _.includes "/build/src/index.js", reference.files
 
 
       test
@@ -38,6 +40,9 @@ do ->
           assert.equal true, reference.dependencies?
           assert.equal (_.size reference.dependencies),
             (_.size reference.manifest.dependencies)
+          assert.equal true, _.isArray reference.files
+          # assert.equal true,
+          #   _.includes "./src/index.coffee", reference.files
 
       test
         description: "web reference"

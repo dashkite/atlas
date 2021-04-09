@@ -2,6 +2,7 @@ import F from "fs/promises"
 import P from "path"
 import { fileURLToPath as _fileURLToPath } from "url"
 import * as _ from "@dashkite/joy"
+import fglob from "fast-glob"
 import { Reference } from "./reference"
 
 # you've got to be kidding me...
@@ -13,7 +14,10 @@ class FileReference extends Reference
 
   @create: (name, url) -> _.assign (new @), {name, url}
 
-  load: -> @manifest = JSON.parse await F.readFile @path, "utf8"
+  load: ->
+    @manifest = JSON.parse await F.readFile @path, "utf8"
+    # TODO read .gitignore to get list of exclusions?
+    @files = await fglob [ "**", "!package-lock.json", "!node_modules/**" ]
 
   exports: (generator) -> generator.filePath @
 
