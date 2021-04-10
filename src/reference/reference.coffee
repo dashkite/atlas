@@ -10,7 +10,7 @@ entry = (path) ->
     path
   else
     "./#{path}"
-    
+
 subpaths = (reference, current) ->
   current ?= reference.manifest.exports
   rx = {}
@@ -18,8 +18,8 @@ subpaths = (reference, current) ->
     if key.startsWith "."
       if key.endsWith "*"
         if _.isObject value
-          if value.export?
-            target = value.export
+          if value.import?
+            target = value.import
           else
             throw error "no export condition", reference.name, reference.version
         else
@@ -29,8 +29,8 @@ subpaths = (reference, current) ->
           rx[ (key.replace "*", path) ] = target.replace "*", path
       else
         if _.isObject value
-          if value.export?
-            rx[key] = value.export
+          if value.import?
+            rx[key] = value.import
           else
             throw error "no export condition", reference.name, reference.version
         else
