@@ -1,5 +1,5 @@
 import * as _ from "@dashkite/joy"
-import { FileReference } from "./reference"
+import { FileReference } from "./reference/file"
 import { NameScope } from "./scope"
 import { error } from "./errors"
 

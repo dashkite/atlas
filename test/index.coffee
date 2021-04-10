@@ -136,7 +136,8 @@ do ->
           # TODO refine template interface
           # reference = await Reference.create "import-maps", "file:."
           # reference = await Reference.create "@dashkite/quark", "latest"
-          # reference = await Reference.create "@dashkite/joy", "file:../joy"
+          reference = await Reference.create "@dashkite/joy", "file:../joy"
+          console.log reference.map.toJSON jsdelivr
 
     ]
 
@@ -148,7 +149,6 @@ do ->
         ->
           reference = await Reference.create "@dashkite/quark", "latest"
           json = reference.map.toJSON jsdelivr
-          console.log json
           assert.equal true, _.isString json
           assert.equal true, _.isObject (map = JSON.parse json)
           assert.equal true, map.imports?

@@ -5,8 +5,8 @@ unsupported protocol: unsupported protocol '%s'
 no exports: >-
   package %s@%s does not provide an exports field in its package.json
 
-no export condition: >-
-  package %s@%s uses exports conditions, but does not define a path for 'export'
+no import condition: >-
+  package %s@%s uses exports conditions, but does provide an 'import' condition
 
 reference conflict: >-
   attempt to choose between conflicting references, '%s' and '%s'
