@@ -5,41 +5,6 @@ import { ModuleScope } from "../scope"
 import { ImportMap } from "../import-map"
 import { error } from "../errors"
 
-entry = (path) ->
-  if path.startsWith "."
-    path
-  else
-    "./#{path}"
-
-subpaths = (reference, current) ->
-  current ?= reference.manifest.exports
-  rx = {}
-  for key, value of current
-    if key.startsWith "."
-      if key.endsWith "*"
-        if _.isObject value
-          if value.import?
-            target = value.import
-          else
-            throw error "no export condition", reference.name, reference.version
-        else
-          target = value
-        pattern = target.replace "*", "**"
-        for path in reference.capture pattern
-          rx[ (key.replace "*", path) ] = target.replace "*", path
-      else
-        if _.isObject value
-          if value.import?
-            rx[key] = value.import
-          else
-            throw error "no export condition", reference.name, reference.version
-        else
-          rx[key] = value
-    else if key.startsWith "#"
-      # TODO process internal paths?
-      continue
-  rx
-
 class Reference
 
   @equal: (a, b) ->
@@ -93,5 +58,49 @@ class Reference
     r[0] for file in @files when (r = micromatch.capture pattern, file)?
 
   toString: -> @resource.specifier
+
+
+entry = (path) ->
+  if path.startsWith "."
+    path
+  else
+    "./#{path}"
+
+isWildCard = (path) ->
+  (_.isString path) && (path.startsWith ".") && (path.endsWith "*")
+
+isReference = _.isKind Reference
+
+subpath = _.generic
+  name: "subpath"
+  description: "Return a mapping from a import/export pair"
+
+_.generic subpath,
+  isReference, _.isString, _.isString,
+  (reference, from, to) ->
+    [from]: to
+
+_.generic subpath,
+  isReference, _.isString, _.isObject,
+  (reference, from, to) ->
+    if to.import?
+      subpath reference, from, to.import
+    else
+      throw error "no export condition",
+        reference.name, reference.version
+
+_.generic subpath,
+  isReference, isWildCard, _.isString,
+  (reference, from, to) ->
+    rx = {}
+    for path in reference.capture to.replace "*", "**"
+      rx[ (from.replace "*", path) ] = to.replace "*", path
+    rx
+
+subpaths = (reference) ->
+  _.merge (
+    for key, value of reference.manifest.exports
+      subpath reference, key, value
+  )...
 
 export { Reference }

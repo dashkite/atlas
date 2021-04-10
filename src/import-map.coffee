@@ -33,7 +33,6 @@ optimize = (scopes) ->
 _dictionary = (generator, reference) ->
   result = {}
   url = generator reference
-  console.log reference, url
   for key, value of reference.exports
     result[ (key.replace ".", reference.name) ] = value.replace ".", url
   result

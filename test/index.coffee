@@ -106,6 +106,7 @@ do ->
           # reference = await Reference.create "import-maps", "file:."
           # reference = await Reference.create "@dashkite/quark", "latest"
           reference = await Reference.create "@dashkite/joy", "file:../joy"
+          # reference.map.toJSON jsdelivr
           console.log reference.map.toJSON jsdelivr
 
     ]
