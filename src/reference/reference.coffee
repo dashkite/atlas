@@ -29,15 +29,7 @@ class Reference
   _.mixin @::, [
     _.getters
       version: -> @manifest.version
-      exports: ->
-        if @manifest.exports?
-          if _.isString @manifest.exports
-            ".": entry @manifest.exports
-          else
-            subpaths @
-        else
-          ".": entry @manifest.module ? @manifest.browser ?
-            @manifest.main ? "index.js"
+      exports: -> exports @
 
       scope: -> @_scope ?= ModuleScope.create @
       scopes: ->
@@ -97,10 +89,24 @@ _.generic subpath,
       rx[ (from.replace "*", path) ] = to.replace "*", path
     rx
 
-subpaths = (reference) ->
+hasExportsObject = (reference) -> _.isObject reference.manifest.exports
+
+hasExportsString = (reference) -> _.isString reference.manifest.exports
+
+exports = _.generic
+  name: "exports"
+  description: "Return relative exports for a module"
+  default: ({manifest}) ->
+    ".": entry manifest.module ? manifest.browser ?
+      manifest.main ? "index.js"
+
+_.generic exports, hasExportsObject, (reference) ->
   _.merge (
     for key, value of reference.manifest.exports
       subpath reference, key, value
   )...
+
+_.generic exports, hasExportsString, (reference) ->
+  ".": entry reference.manifest.exports
 
 export { Reference }
