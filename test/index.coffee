@@ -1,6 +1,6 @@
 import assert from "assert"
 import {print, test, success} from "amen"
-import { Reference, Resource, Scope, jsdelivr } from "../src"
+import { Reference, Scope, jsdelivr } from "../src"
 import * as _ from "@dashkite/joy"
 
 # TODO maybe split out the module stuff into a separate module?
@@ -66,36 +66,6 @@ do ->
 
     ]
 
-    test "resource", [
-
-      test
-        description: "module resource"
-        wait: 5000
-        ->
-          reference = await Reference.create "@dashkite/quark", "latest"
-          resource = reference.resource
-          assert.equal true, _.isKind Resource, resource
-
-      test
-        description: "same reference yields same resource"
-        wait: 5000
-        ->
-          a = await Reference.create "@dashkite/quark", "file:../quark"
-          b = await Reference.create "@dashkite/quark", "file:../quark"
-          assert.equal a.resource, b.resource
-
-      test
-        description: "dependencies is a set of references"
-        wait: 5000
-        ->
-          reference = await Reference.create "@dashkite/quark", "latest"
-          dependencies = reference.resource.dependencies
-          assert.equal true, (_.isKind Set, dependencies)
-          for d from dependencies
-            assert.equal true, (_.isKind Reference, d)
-
-    ]
-
     test "scope", [
 
       test
@@ -103,11 +73,10 @@ do ->
         wait: 5000
         ->
         reference = await Reference.create "@dashkite/quark", "latest"
-        scope = reference.resource.scope
+        scope = reference.scope
         assert.equal true, (_.isKind Set, scope.dependencies)
         for d from scope.dependencies
           assert.equal true, (_.isKind Reference, d)
-        assert.equal true, (_.isKind Resource, scope.resource)
 
       test
         description: "same resource yields same scope"

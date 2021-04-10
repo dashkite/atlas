@@ -1,7 +1,7 @@
 import semver from "semver"
 import * as _ from "@dashkite/joy"
 import micromatch from "micromatch"
-import { Resource } from "../resource"
+import { ModuleScope } from "../scope"
 import { ImportMap } from "../import-map"
 import { error } from "../errors"
 
@@ -74,9 +74,16 @@ class Reference
           ".": entry @manifest.module ? @manifest.browser ?
             @manifest.main ? "index.js"
 
-      resource: -> @_resource ?= Resource.create @
-      scope: -> @resource.scope
-      scopes: -> @resource.scopes
+      scope: -> @_scope ?= ModuleScope.create @
+      scopes: ->
+        @_scopes ?= do =>
+          r = new Set
+          r.add @scope
+          for d from @dependencies
+            for s from d.scopes
+              r.add s
+          r
+
       map: -> ImportMap.create @
   ]
 

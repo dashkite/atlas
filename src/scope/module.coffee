@@ -3,14 +3,13 @@ import { Scope } from "./scope"
 import { NameScope } from "./name"
 
 class ModuleScope extends Scope
-  @create: (resource) ->
-    {dependencies} = resource
-    _.assign new @, {resource, dependencies}
+  @create: (reference) ->
+    _.assign new @, {reference}
 
   _.mixin @::, [
     _.getters
-      name: -> @resource.name
-      version: -> @resource.version
-      specifier: -> @resource.specifier
+      name: -> @reference.name
+      version: -> @reference.version
+      dependencies: -> @reference.dependencies
   ]
 export { ModuleScope }
