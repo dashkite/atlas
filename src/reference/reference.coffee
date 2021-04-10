@@ -4,8 +4,41 @@ import micromatch from "micromatch"
 import { Resource } from "../resource"
 import { ImportMap } from "../import-map"
 import { error } from "../errors"
-import { paths } from "./paths"
 
+entry = (path) ->
+  if path.startsWith "."
+    path
+  else
+    "./#{path}"
+    
+subpaths = (reference, current) ->
+  current ?= reference.manifest.exports
+  rx = {}
+  for key, value of current
+    if key.startsWith "."
+      if key.endsWith "*"
+        if _.isObject value
+          if value.export?
+            target = value.export
+          else
+            throw error "no export condition", reference.name, reference.version
+        else
+          target = value
+        pattern = target.replace "*", "**"
+        for path in reference.capture pattern
+          rx[ (key.replace "*", path) ] = target.replace "*", path
+      else
+        if _.isObject value
+          if value.export?
+            rx[key] = value.export
+          else
+            throw error "no export condition", reference.name, reference.version
+        else
+          rx[key] = value
+    else if key.startsWith "#"
+      # TODO process internal paths?
+      continue
+  rx
 
 class Reference
 
@@ -31,7 +64,15 @@ class Reference
   _.mixin @::, [
     _.getters
       version: -> @manifest.version
-      paths: -> paths @
+      exports: ->
+        if @manifest.exports?
+          if _.isString @manifest.exports
+            ".": entry @manifest.exports
+          else
+            subpaths @
+        else
+          ".": entry @manifest.module ? @manifest.browser ?
+            @manifest.main ? "index.js"
 
       resource: -> @_resource ?= Resource.create @
       scope: -> @resource.scope
@@ -40,6 +81,9 @@ class Reference
   ]
 
   glob: (pattern) -> micromatch @files, pattern
+
+  capture: (pattern) ->
+    r[0] for file in @files when (r = micromatch.capture pattern, file)?
 
   toString: -> @resource.specifier
 

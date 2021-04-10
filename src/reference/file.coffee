@@ -20,7 +20,7 @@ class FileReference extends Reference
     @files = await fglob [ "**", "!package-lock.json", "!node_modules/**" ],
       cwd: P.dirname @path
 
-  exports: (generator) -> generator.filePath @
+  export: (generator, path) -> generator.filePath {@name, @version, path}
 
   _.mixin @::, [
     _.getters

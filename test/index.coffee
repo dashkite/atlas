@@ -3,6 +3,8 @@ import {print, test, success} from "amen"
 import { Reference, Resource, Scope, jsdelivr } from "../src"
 import * as _ from "@dashkite/joy"
 
+# TODO maybe split out the module stuff into a separate module?
+
 do ->
 
   print await test "import maps", [
@@ -47,6 +49,8 @@ do ->
             _.includes "build/src/index.js", reference.files
           assert.equal true, _.includes "build/src/index.js",
             reference.glob "build/src/*.js"
+          assert.equal true,
+            _.includes "index", reference.capture "build/src/**.js"
 
       test
         description: "web reference"
@@ -131,9 +135,8 @@ do ->
           # TODO handle subpaths
           # TODO refine template interface
           # reference = await Reference.create "import-maps", "file:."
-          reference = await Reference.create "@dashkite/quark", "latest"
+          # reference = await Reference.create "@dashkite/quark", "latest"
           # reference = await Reference.create "@dashkite/joy", "file:../joy"
-          # console.log reference.map.toJSON jsdelivr
 
     ]
 
@@ -145,6 +148,7 @@ do ->
         ->
           reference = await Reference.create "@dashkite/quark", "latest"
           json = reference.map.toJSON jsdelivr
+          console.log json
           assert.equal true, _.isString json
           assert.equal true, _.isObject (map = JSON.parse json)
           assert.equal true, map.imports?

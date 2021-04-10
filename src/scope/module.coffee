@@ -10,6 +10,7 @@ class ModuleScope extends Scope
   _.mixin @::, [
     _.getters
       name: -> @resource.name
+      version: -> @resource.version
       specifier: -> @resource.specifier
   ]
 export { ModuleScope }

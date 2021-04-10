@@ -1,23 +1,18 @@
 import * as _ from "@dashkite/joy"
+import { FileReference } from "./reference"
+import { NameScope } from "./scope"
 import { error } from "./errors"
 
-jsdelivr =
+jsdelivr = _.generic
+  name: "generator"
+  description: "jsdelivr URL generator"
+  default: ({name, version}) ->
+    "https://cdn.jsdelivr.net/npm/#{name}@#{version}"
 
-  fileURL: (reference) ->
-    {name, version, paths} = reference
-    if _.isString paths["."]
-      "https://cdn.jsdelivr.net/npm/#{name}@#{version}/#{paths['.']}"
-    else
-      throw error "exports conditions", name, version
+_.generic jsdelivr, (_.isKind FileReference), ({name, version}) ->
+  "/node_modules/#{name}@#{version}/"
 
-  filePath: (reference) ->
-    {name, version, paths} = reference
-    if _.isString paths["."]
-      "/node_modules/#{name}@#{version}/#{paths['.']}"
-    else
-      throw error "exports conditions", name, version
-
-  scopeURL: ({name}) ->
-    "https://cdn.jsdelivr.net/npm/#{name}"
+_.generic jsdelivr, (_.isKind NameScope), ({name}) ->
+  "https://cdn.jsdelivr.net/npm/#{name}"
 
 export {jsdelivr}

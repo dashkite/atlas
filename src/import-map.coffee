@@ -33,8 +33,11 @@ optimize = (scopes) ->
 dictionary = (generator, scope) ->
   result = {}
   for d from scope.dependencies
-    result[ d.name ] = d.exports generator
+    url = generator d
+    for key, value of d.exports
+      result[ (key.replace ".", d.name) ] = value.replace ".", url
   result
+
 
 class ImportMap
 
@@ -43,12 +46,13 @@ class ImportMap
       reference: reference
 
   toJSON: (generator) ->
-    result = imports: ".": @reference.exports generator
+    # TODO do we need the root module mapped?
+    result = imports: {}
     for scope from optimize @reference.scopes
       if scope.name == "root"
         _.assign result.imports, dictionary generator, scope
       else
-        (result.scopes ?= {})[ generator.scopeURL scope ] =
+        (result.scopes ?= {})[ generator scope ] =
           dictionary generator, scope
     JSON.stringify result, null, 2
 

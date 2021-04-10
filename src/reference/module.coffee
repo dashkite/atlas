@@ -52,7 +52,7 @@ class ModuleReference extends Reference
     @manifest = await loadManifest @name, @range
     @files = await loadFiles @name, @version
 
-  exports: (generator) -> generator.fileURL @
+  export: (generator, path) -> generator.fileURL {@name, @version, path}
 
   _.mixin @::, [
     _.getters
