@@ -1,9 +1,9 @@
-import assert from "assert"
+import assert from "./assert"
 import {print, test, success} from "amen"
-import { Reference, Scope, jsdelivr } from "../src"
 import * as _ from "@dashkite/joy"
 
-# TODO maybe split out the module stuff into a separate module?
+# system under test
+import * as x from "../src"
 
 do ->
 
@@ -11,118 +11,247 @@ do ->
 
     test "reference", [
 
-      test
-        description: "module reference"
-        wait: 5000
-        ->
-          reference = await Reference.create "@dashkite/quark", "latest"
-          assert.equal true, _.isKind Reference, reference
-          assert.equal "@dashkite/quark", reference.name
-          assert.equal true, (manifest = reference.manifest)?
-          assert.equal manifest.name, reference.name
-          assert.equal true, manifest.version?
-          assert.equal true, reference.dependencies?
-          assert.equal (_.size reference.dependencies),
-            (_.size reference.manifest.dependencies)
-          assert.equal true, _.isArray reference.files
-          assert.equal true,
-            _.includes "build/src/index.js", reference.files
-          assert.equal true, _.includes "build/src/index.js",
-            reference.glob "build/src/*.js"
+      test "module reference", await do (a = undefined, b = undefined) ->
 
+        a = await x.Reference.create "@dashkite/quark", "latest"
+        b = await x.Reference.create "@dashkite/quark", "latest"
 
-      test
-        description: "file reference"
-        wait: 5000
-        ->
-          reference = await Reference.create "@dashkite/quark", "file:../quark"
-          assert.equal true, _.isKind Reference, reference
-          assert.equal "@dashkite/quark", reference.name
-          assert.equal true, (manifest = reference.manifest)?
-          assert.equal manifest.name, reference.name
-          assert.equal true, manifest.version?
-          assert.equal true, reference.dependencies?
-          assert.equal (_.size reference.dependencies),
-            (_.size reference.manifest.dependencies)
-          assert.equal true, _.isArray reference.files
-          assert.equal true,
-            _.includes "build/src/index.js", reference.files
-          assert.equal true, _.includes "build/src/index.js",
-            reference.glob "build/src/*.js"
-          assert.equal true,
-            _.includes "index", reference.capture "build/src/**.js"
+        [
 
-      test
-        description: "web reference"
-        wait: 5000
+          test "is a reference", ->
+            assert.kind x.Reference, a
 
-      test
-        description: "same description yields same object"
-        wait: 5000
-        ->
-          a = await Reference.create "@dashkite/quark", "file:../quark"
-          b = await Reference.create "@dashkite/quark", "file:../quark"
-          assert.equal a, b
+          test "has the expected name", ->
+            assert.equal a.name, "@dashkite/quark"
+
+          test "has the expected manifest", ->
+            assert a.manifest?
+            assert.equal a.manifest.name, "@dashkite/quark"
+
+          test "has a version", ->
+            assert a.version?
+
+          test "has dependencies", ->
+            assert a.dependencies?
+            # TODO specialization for isType should rely on
+            #      generic not currying
+            assert.type Set, a.dependencies
+
+          test "has files", ->
+            assert a.files?
+            assert _.isArray a.files
+
+          test "same reference is strictly equal", ->
+            assert a == b
+
+        ]
+
+      test "file reference", await do (a = undefined, b = undefined) ->
+
+        a = await x.Reference.create "@dashkite/quark", "file:../quark"
+        b = await x.Reference.create "@dashkite/quark", "file:../quark"
+
+        [
+
+          test "is a reference", ->
+            assert.kind x.Reference, a
+
+          test "has the expected name", ->
+            assert.equal a.name, "@dashkite/quark"
+
+          test "has the expected manifest", ->
+            assert a.manifest?
+            assert.equal a.manifest.name, "@dashkite/quark"
+
+          test "has a version", ->
+            assert a.version?
+
+          test "has dependencies", ->
+            assert a.dependencies?
+            # TODO specialization for isType should rely on
+            #      generic not currying
+            assert.type Set, a.dependencies
+
+          test "has files", ->
+            assert a.files?
+            assert _.isArray a.files
+
+          test "same reference is strictly equal", ->
+            assert a == b
+
+        ]
+    ]
+
+    test "scope", await (a = undefined, b = undefined) ->
+
+      a = await x.Reference.create "@dashkite/quark", "latest"
+      b = await x.Reference.create "@dashkite/quark", "latest"
+
+      [
+
+        test "a reference has a scope", ->
+          assert a.scope?
+
+        test "that is a ModuleScope", ->
+          assert.kind x.ModuleScope, a.scope
+
+        test "that has dependencies", ->
+          assert a.scope.dependencies?
+
+        test "which are a set", ->
+          assert.type Set, a.scope.dependencies
+
+        test "consisting of references", ->
+          assert.kind x.Reference, d for d from a.scope.dependencies
+
+        test "same scope is strictly equal", ->
+          assert a.scope == b.scope
 
     ]
 
-    test "scope", [
+    test "exports", [
 
-      test
-        description: "is a resource, set<reference> pair"
-        wait: 5000
-        ->
-        reference = await Reference.create "@dashkite/quark", "latest"
-        scope = reference.scope
-        assert.equal true, (_.isKind Set, scope.dependencies)
-        for d from scope.dependencies
-          assert.equal true, (_.isKind Reference, d)
+      test "exports path",  (a = undefined) ->
 
-      test
-        description: "same resource yields same scope"
-        wait: 5000
-        ->
-          a = await Reference.create "@dashkite/quark", "file:../quark"
-          b = await Reference.create "@dashkite/quark", "file:../quark"
-          assert.equal a.scope, b.scope
+        a = _.assign (new x.ModuleReference),
+          manifest:
+            name: "foo"
+            version: "1.0.0"
+            exports: "./build/import/src/a.js"
 
-      test
-        description: "scopes for resource"
-        wait: 5000
-        ->
-          reference = await Reference.create "@dashkite/quark", "latest"
-          assert.equal true, _.isType Set, reference.scopes
+
+        assert.equal 1, _.size a.exports
+        assert a.exports["."]?
+        assert.equal "./build/import/src/a.js", a.exports["."]
+
+      test "exports object", [
+
+        test "...with .",  (a = undefined) ->
+
+          a = _.assign (new x.ModuleReference),
+            manifest:
+              name: "foo"
+              version: "1.0.0"
+              exports:
+                ".": "./build/import/src/a.js"
+
+          assert.equal 1, _.size a.exports
+          assert a.exports["."]?
+          assert.equal "./build/import/src/a.js", a.exports["."]
+
+        test "...with . in import condition",  (a = undefined) ->
+
+          a = _.assign (new x.ModuleReference),
+            manifest:
+              name: "foo"
+              version: "1.0.0"
+              exports:
+                ".": import: "./build/import/src/a.js"
+
+          assert.equal 1, _.size a.exports
+          assert a.exports["."]?
+          assert.equal "./build/import/src/a.js", a.exports["."]
+
+        test "...with subpath pattern",  (a = undefined) ->
+
+          a = _.assign (new x.ModuleReference),
+            manifest:
+              name: "foo"
+              version: "1.0.0"
+              exports:
+                ".": "./build/import/src/a.js"
+                "./*": "./build/import/src/*.js"
+            files: [
+              "./build/import/src/a.js"
+              "./build/import/src/b.js"
+              "./build/import/src/c.js"
+              "./build/import/src/d/e.js"
+            ]
+
+          assert.equal 5, _.size a.exports
+          assert a.exports["."]?
+          assert.equal "./build/import/src/a.js", a.exports["."]
+          assert.equal "./build/import/src/b.js", a.exports["./b"]
+          assert.equal "./build/import/src/c.js", a.exports["./c"]
+          assert.equal "./build/import/src/d/e.js", a.exports["./d/e"]
+
+        test "...with subpath pattern within import condition",
+          (a = undefined) ->
+
+            a = _.assign (new x.ModuleReference),
+              manifest:
+                name: "foo"
+                version: "1.0.0"
+                exports:
+                  ".": "./build/import/src/a.js"
+                  "./*": import: "./build/import/src/*.js"
+              files: [
+                "./build/import/src/a.js"
+                "./build/import/src/b.js"
+                "./build/import/src/c.js"
+                "./build/import/src/d/e.js"
+              ]
+
+            assert.equal 5, _.size a.exports
+            assert a.exports["."]?
+            assert.equal "./build/import/src/a.js", a.exports["."]
+            assert.equal "./build/import/src/b.js", a.exports["./b"]
+            assert.equal "./build/import/src/c.js", a.exports["./c"]
+            assert.equal "./build/import/src/d/e.js", a.exports["./d/e"]
+
+        test "...throws if there's no import condition", (a = undefined) ->
+          a = _.assign (new x.ModuleReference),
+            name: "foo"
+            manifest:
+              name: "foo"
+              version: "1.0.0"
+              exports:
+                ".": "./build/import/src/a.js"
+                "./*": require: "./build/import/src/*.js"
+            files: [
+              "./build/import/src/a.js"
+              "./build/import/src/b.js"
+              "./build/import/src/c.js"
+              "./build/import/src/d/e.js"
+            ]
+
+          assert.throws (-> a.exports),
+            message:
+              "package foo@1.0.0 uses exports conditions,
+                but does not provide an 'import' condition"
+
+      ]
+
 
     ]
 
-    test "subpaths", [
+    test "import map", do (a = undefined) ->
 
-      test
-        description: "handle multiple exports"
-        wait: 5000
-        ->
-          # TODO handle subpaths
-          # TODO refine template interface
-          # reference = await Reference.create "import-maps", "file:."
-          # reference = await Reference.create "@dashkite/quark", "latest"
-          reference = await Reference.create "@dashkite/joy", "file:../joy"
-          # reference.map.toJSON jsdelivr
-          console.log reference.map.toJSON jsdelivr
+      a = _.assign (new x.ModuleReference),
+        name: "foo"
+        manifest:
+          name: "foo"
+          version: "1.0.0"
+          exports:
+            ".": "./build/import/src/a.js"
+            "./*": "./build/import/src/*.js"
+        dependencies: new Set
+        files: [
+          "./build/import/src/a.js"
+          "./build/import/src/b.js"
+          "./build/import/src/c.js"
+          "./build/import/src/d/e.js"
+        ]
 
-    ]
+      [
 
-    test "import map", [
-
-      test
-        description: "produces a JSON file"
-        wait: 5000
-        ->
-          reference = await Reference.create "@dashkite/quark", "latest"
-          json = reference.map.toJSON jsdelivr
+        test "produces a JSON file", ->
+          json = a.map.toJSON x.jsdelivr
           assert.equal true, _.isString json
           assert.equal true, _.isObject (map = JSON.parse json)
-          assert.equal true, map.imports?
-          assert.equal true, map.imports["@dashkite/katana"]?
+          # assert.equal true, map.imports?
+          # assert.equal true, map.imports["@dashkite/katana"]?
+
     ]
 
   ]

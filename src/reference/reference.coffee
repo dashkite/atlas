@@ -1,3 +1,4 @@
+import P from "path"
 import semver from "semver"
 import * as _ from "@dashkite/joy"
 import micromatch from "micromatch"
@@ -47,7 +48,7 @@ class Reference
   glob: (pattern) -> micromatch @files, pattern
 
   capture: (pattern) ->
-    r[0] for file in @files when (r = micromatch.capture pattern, file)?
+    r for file in @files when (r = capture pattern, file)
 
   toString: -> @resource.specifier
 
@@ -78,16 +79,26 @@ _.generic subpath,
     if to.import?
       subpath reference, from, to.import
     else
-      throw error "no export condition",
+      throw error "no import condition",
         reference.name, reference.version
 
 _.generic subpath,
   isReference, isWildCard, _.isString,
   (reference, from, to) ->
     rx = {}
-    for path in reference.capture to.replace "*", "**"
+    for path in reference.capture to
       rx[ (from.replace "*", path) ] = to.replace "*", path
     rx
+
+capture = (pattern, file) ->
+  matches = micromatch.capture (pattern.replace "*", "**/*"),
+    file.replace /^\.\//, ""
+  if matches?
+    [directory, basename] = matches
+    if directory == ""
+      basename
+    else
+      P.join directory, basename
 
 hasExportsObject = (reference) -> _.isObject reference.manifest.exports
 
@@ -97,8 +108,8 @@ exports = _.generic
   name: "exports"
   description: "Return relative exports for a module"
   default: ({manifest}) ->
-    ".": entry manifest.module ? manifest.browser ?
-      manifest.main ? "index.js"
+    ".": entry (manifest.module ? manifest.browser ?
+      manifest.main ? "index.js")
 
 _.generic exports, hasExportsObject, (reference) ->
   _.merge (

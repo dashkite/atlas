@@ -6,7 +6,8 @@ no exports: >-
   package %s@%s does not provide an exports field in its package.json
 
 no import condition: >-
-  package %s@%s uses exports conditions, but does provide an 'import' condition
+  package %s@%s uses exports conditions,
+  but does not provide an 'import' condition
 
 reference conflict: >-
   attempt to choose between conflicting references, '%s' and '%s'
