@@ -14,6 +14,7 @@ do ->
 
       a = await $.Reference.create "@dashkite/quark", "latest"
       b = await $.Reference.create "@dashkite/quark", "latest"
+      c = await $.Reference.create "@dashkite/quark", "^1.1"
 
       [
 
@@ -40,8 +41,11 @@ do ->
           assert a.files?
           assert _.isArray a.files
 
-        test "same reference is strictly equal", ->
+        test "resolving to the same version is strictly equal", ->
           assert a == b
+
+        test "resolving to the different versions is strictly unequal", ->
+          assert a != c
 
       ]
 
@@ -228,7 +232,6 @@ do ->
       test "generation", do (json = undefined, map = undefined) ->
 
         json = Fixtures.a.map.toJSON $.jsdelivr
-        console.log json
         map = JSON.parse json
 
         [
@@ -263,8 +266,6 @@ do ->
             assert map.scopes["https://cdn.jsdelivr.net/npm/c"]["d"]?
             assert map.scopes["https://cdn.jsdelivr.net/npm/c"]["d/x"]?
             assert map.scopes["https://cdn.jsdelivr.net/npm/c"]["d/y/z"]?
-
-
 
       ]
     ]
