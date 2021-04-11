@@ -31,7 +31,6 @@ class Reference
     _.getters
       version: -> @manifest.version
       exports: -> exports @
-
       scope: -> @_scope ?= ModuleScope.create @
       scopes: ->
         @_scopes ?= do =>

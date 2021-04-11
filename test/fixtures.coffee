@@ -1,7 +1,7 @@
 import * as _ from "@dashkite/joy"
 import * as $ from "../src"
 
-e1 = _.assign (new $.ModuleReference),
+e1 = _.assign (new $.RegistryReference),
   name: "e"
   range: "^1.0.0"
   manifest:
@@ -16,7 +16,7 @@ e1 = _.assign (new $.ModuleReference),
   ]
   dependencies: new Set
 
-e2 = _.assign (new $.ModuleReference),
+e2 = _.assign (new $.RegistryReference),
   name: "e"
   range: "^1.0.0"
   manifest:
@@ -31,7 +31,7 @@ e2 = _.assign (new $.ModuleReference),
   ]
   dependencies: new Set
 
-d1 = _.assign (new $.ModuleReference),
+d1 = _.assign (new $.RegistryReference),
   name: "d"
   range: "^1.0.0"
   manifest:
@@ -46,7 +46,7 @@ d1 = _.assign (new $.ModuleReference),
   ]
   dependencies: new Set [ e1 ]
 
-d2 = _.assign (new $.ModuleReference),
+d2 = _.assign (new $.RegistryReference),
   name: "d"
   range: "^2.0.0"
   manifest:
@@ -61,7 +61,7 @@ d2 = _.assign (new $.ModuleReference),
   ]
   dependencies: new Set [ e2 ]
 
-c = _.assign (new $.ModuleReference),
+c = _.assign (new $.RegistryReference),
   name: "c"
   manifest:
     name: "c"
@@ -75,7 +75,7 @@ c = _.assign (new $.ModuleReference),
   ]
   dependencies: new Set [ d2 ]
 
-b = _.assign (new $.ModuleReference),
+b = _.assign (new $.RegistryReference),
   name: "b"
   manifest:
     name: "b"
@@ -90,7 +90,7 @@ b = _.assign (new $.ModuleReference),
   ]
   dependencies: new Set [ c, d1 ]
 
-a = _.assign (new $.ModuleReference),
+a = _.assign (new $.RegistryReference),
   name: "a"
   manifest:
     name: "a"

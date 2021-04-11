@@ -4,7 +4,7 @@ import { Reference } from "./reference"
 
 import { FileReference } from "./file"
 import { WebReference } from "./web"
-import { ModuleReference } from "./module"
+import { RegistryReference } from "./registry"
 
 # Reference.create is defined separately from the Reference type
 # because we need to import the subtypes for dynamic create.
@@ -39,7 +39,7 @@ Reference.create = _.memoize (name, description) ->
   reference = if (url = parseURL description)?
     createFromURL name, description, url
   else
-    ModuleReference.create name, description
+    RegistryReference.create name, description
   await reference.load()
   await loadDependencies reference
   reference

@@ -44,7 +44,7 @@ loadFiles = (name, version) ->
   .files
   .map ({name}) -> name[1..]
 
-class ModuleReference extends Reference
+class RegistryReference extends Reference
 
   @create: (name, range = "latest") -> _.assign (new @), {name, range}
 
@@ -60,18 +60,18 @@ class ModuleReference extends Reference
   ]
 
 _.generic Reference.conflict,
-  (_.isType ModuleReference), (_.isType ModuleReference),
+  (_.isType RegistryReference), (_.isType RegistryReference),
   (a, b) -> (a.name == b.name) && !(Reference.similar a, b)
 
 _.generic Reference.similar,
-  (_.isType ModuleReference), (_.isType ModuleReference),
+  (_.isType RegistryReference), (_.isType RegistryReference),
   (a, b) ->
     (a.name == b.name) &&
       ((semver.satisfies a.version, b.range) ||
         (semver.satisfies b.version, a.range))
 
 _.generic Reference.choose,
-  (_.isType ModuleReference), (_.isType ModuleReference),
+  (_.isType RegistryReference), (_.isType RegistryReference),
   (a, b) ->
     if (semver.gt a.version, b.version) && (semver.satisfies a.version, b.range)
       a
@@ -79,4 +79,4 @@ _.generic Reference.choose,
       b
     else throw error "reference conflict", a, b
 
-export { ModuleReference }
+export { RegistryReference }

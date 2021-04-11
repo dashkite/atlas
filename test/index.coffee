@@ -88,7 +88,7 @@ do ->
 
       test "exports path",  (a = undefined) ->
 
-        a = _.assign (new $.ModuleReference),
+        a = _.assign (new $.RegistryReference),
           manifest:
             name: "foo"
             version: "1.0.0"
@@ -103,7 +103,7 @@ do ->
 
         test "...with .",  (a = undefined) ->
 
-          a = _.assign (new $.ModuleReference),
+          a = _.assign (new $.RegistryReference),
             manifest:
               name: "foo"
               version: "1.0.0"
@@ -116,7 +116,7 @@ do ->
 
         test "...with . in import condition",  (a = undefined) ->
 
-          a = _.assign (new $.ModuleReference),
+          a = _.assign (new $.RegistryReference),
             manifest:
               name: "foo"
               version: "1.0.0"
@@ -129,7 +129,7 @@ do ->
 
         test "...with subpath pattern",  (a = undefined) ->
 
-          a = _.assign (new $.ModuleReference),
+          a = _.assign (new $.RegistryReference),
             manifest:
               name: "foo"
               version: "1.0.0"
@@ -153,7 +153,7 @@ do ->
         test "...with subpath pattern within import condition",
           (a = undefined) ->
 
-            a = _.assign (new $.ModuleReference),
+            a = _.assign (new $.RegistryReference),
               manifest:
                 name: "foo"
                 version: "1.0.0"
@@ -175,7 +175,7 @@ do ->
             assert.equal "./build/import/src/d/e.js", a.exports["./d/e"]
 
         test "...throws if there's no import condition", (a = undefined) ->
-          a = _.assign (new $.ModuleReference),
+          a = _.assign (new $.RegistryReference),
             name: "foo"
             manifest:
               name: "foo"
