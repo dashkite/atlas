@@ -9,6 +9,8 @@ optimize = (scopes) ->
 
   for scope from scopes
 
+    # TODO this hardcodes the name@version convention
+    #      before we've generated the URL
     self = NameScope.create scope.specifier
     parent = NameScope.create scope.name
 
@@ -30,20 +32,22 @@ optimize = (scopes) ->
   results.add root unless _.isEmpty root
   results
 
-_dictionary = (generator, reference) ->
+
+project = (fkey, url, _exports) ->
   result = {}
-  url = generator reference
-  for key, value of reference.exports
-    result[ (key.replace ".", reference.name) ] = value.replace ".", url
+  for key, value of _exports
+    result[ (fkey key) ] = value.replace ".", url
   result
 
-dictionary = (generator, scope) ->
-  result = {}
-  for d from scope.dependencies
-    url = generator d
-    for key, value of d.exports
-      result[ (key.replace ".", d.name) ] = value.replace ".", url
-  result
+resolve = (name) -> (key) -> key.replace ".", name
+
+scopeExports = (scope, generator) ->
+  _.merge (
+    for dependency from scope.dependencies
+      project (resolve dependency.name),
+        (generator dependency),
+        dependency.exports
+    )...
 
 class ImportMap
 
@@ -52,13 +56,28 @@ class ImportMap
       reference: reference
 
   toJSON: (generator) ->
-    result = imports: _dictionary generator, @reference
+
+    # TODO I think we need to add the local exports here too
+    result = imports:
+      project (resolve @reference.name),
+        (generator @reference),
+        @reference.exports
+
     for scope from optimize @reference.scopes
       if scope.name == "root"
-        _.assign result.imports, dictionary generator, scope
+        _.assign result.imports, scopeExports scope, generator
       else
         (result.scopes ?= {})[ generator scope ] =
-          dictionary generator, scope
+          scopeExports scope, generator
+
+    for scope from @reference.scopes
+      if !_.isEmpty scope.reference.locals
+        (result.scopes ?= {})[ generator scope ] =
+          project _.identity,
+            (generator scope.reference),
+            scope.reference.locals
+    result
+
     JSON.stringify result, null, 2
 
 

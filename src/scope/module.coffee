@@ -10,6 +10,7 @@ class ModuleScope extends Scope
     _.getters
       name: -> @reference.name
       version: -> @reference.version
+      specifier: -> "#{@reference.name}@#{@reference.version}"
       dependencies: -> @reference.dependencies
   ]
 export { ModuleScope }

@@ -83,10 +83,14 @@ b = _.assign (new $.RegistryReference),
     exports:
       ".": "./build/import/src/z.js"
       "./*": "./build/import/src/*.js"
+      "#z": "./build/import/local/z.js"
+      "#local/*": "./build/import/local/*.js"
 
   files: [
     "./build/import/src/x.js"
     "./build/import/src/y/z.js"
+    "./build/import/local/x.js"
+    "./build/import/local/y/z.js"
   ]
   dependencies: new Set [ c, d1 ]
 

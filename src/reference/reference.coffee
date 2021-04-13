@@ -6,6 +6,8 @@ import { ModuleScope } from "../scope"
 import { ImportMap } from "../import-map"
 import { error } from "../errors"
 
+# TODO handle # paths for local aliases
+
 class Reference
 
   @equal: (a, b) ->
@@ -30,7 +32,8 @@ class Reference
   _.mixin @::, [
     _.getters
       version: -> @manifest.version
-      exports: -> exports @
+      exports: -> @_exports = exports @
+      locals: -> @_locals = locals @
       scope: -> @_scope ?= ModuleScope.create @
       scopes: ->
         @_scopes ?= do =>
@@ -61,6 +64,12 @@ entry = (path) ->
 isWildCard = (path) ->
   (_.isString path) && (path.startsWith ".") && (path.endsWith "*")
 
+isLocalExport = (path) ->
+  (_.isString path) && path.startsWith "#"
+
+isLocalWildCard = (path) ->
+  (isLocalExport path) && (path.endsWith "*")
+
 isReference = _.isKind Reference
 
 subpath = _.generic
@@ -88,6 +97,10 @@ _.generic subpath,
     for path in reference.capture to
       rx[ (from.replace "*", path) ] = to.replace "*", path
     rx
+
+_.generic subpath,
+  isReference, isLocalExport, _.isString,
+  (reference, from, to) -> {}
 
 capture = (pattern, file) ->
   matches = micromatch.capture (pattern.replace "*", "**/*"),
@@ -118,5 +131,40 @@ _.generic exports, hasExportsObject, (reference) ->
 
 _.generic exports, hasExportsString, (reference) ->
   ".": entry reference.manifest.exports
+
+
+
+locals = _.generic
+  name: "locals"
+  description: "Return the local exports for a module"
+  default: -> {}
+
+_.generic locals, hasExportsObject, (reference) ->
+  _.merge (
+    for key, value of reference.manifest.exports
+      locals reference, key, value
+  )...
+
+_.generic locals,
+  isReference, isLocalExport, _.isObject,
+  (reference, from, to) ->
+    if to.import?
+      locals reference, from, to.import
+    else
+      throw error "no import condition",
+        reference.name, reference.version
+
+_.generic locals,
+  isReference, isLocalExport, _.isString,
+  (reference, from, to) ->
+    [from]: to
+
+_.generic locals,
+  isReference, isLocalWildCard, _.isString,
+  (reference, from, to) ->
+    rx = {}
+    for path in reference.capture to
+      rx[ (from.replace "*", path) ] = to.replace "*", path
+    rx
 
 export { Reference }

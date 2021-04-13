@@ -8,9 +8,9 @@ import * as $ from "../src"
 
 do ->
 
-  print await test "package manager", [
+  print await test "atlas", [
 
-    test "registy package", await do (a = undefined, b = undefined) ->
+    test "registy reference", await do (a = undefined, b = undefined) ->
 
       a = await $.Reference.create "@dashkite/quark", "latest"
       b = await $.Reference.create "@dashkite/quark", "latest"
@@ -49,7 +49,7 @@ do ->
 
       ]
 
-    test "file package", await do (a = undefined, b = undefined) ->
+    test "file reference", await do (a = undefined, b = undefined) ->
 
       a = await $.Reference.create "@dashkite/quark", "file:../quark"
       b = await $.Reference.create "@dashkite/quark", "file:../quark"
@@ -195,8 +195,33 @@ do ->
               "package foo@1.0.0 uses exports conditions,
                 but does not provide an 'import' condition"
 
-      ]
+        test "...with local exports", (a = undefined) ->
+          a = _.assign (new $.RegistryReference),
+            name: "foo"
+            manifest:
+              name: "foo"
+              version: "1.0.0"
+              exports:
+                ".": "./build/import/src/z.js"
+                "./*": "./build/import/src/*.js"
+                "#local": "./build/import/local/z.js"
+                "#local/*": "./build/import/local/*.js"
 
+            files: [
+              "./build/import/src/x.js"
+              "./build/import/src/y/z.js"
+              "./build/import/local/x.js"
+              "./build/import/local/y/z.js"
+            ]
+
+          assert.equal 3, _.size a.locals
+          assert.equal "./build/import/local/z.js", a.locals["#local"]
+          assert.equal "./build/import/local/x.js", a.locals["#local/x"]
+          assert.equal "./build/import/local/y/z.js", a.locals["#local/y/z"]
+          assert !(a.exports["#local"]?)
+          assert !(a.exports["./local/x"]?)
+
+      ]
 
     ]
 
@@ -260,13 +285,20 @@ do ->
             assert.equal map.imports["e"],
               "https://cdn.jsdelivr.net/npm/e@1.1.0/build/import/src/z.js"
 
-          test "and the right scopes", ->
+          test "and the right scopes", (scope = undefined) ->
             assert map.scopes?
-            assert map.scopes["https://cdn.jsdelivr.net/npm/c"]?
-            assert map.scopes["https://cdn.jsdelivr.net/npm/c"]["d"]?
-            assert map.scopes["https://cdn.jsdelivr.net/npm/c"]["d/x"]?
-            assert map.scopes["https://cdn.jsdelivr.net/npm/c"]["d/y/z"]?
 
+            assert (scope = map.scopes["https://cdn.jsdelivr.net/npm/c"])?
+            assert scope["d"]?
+            assert scope["d/x"]?
+            assert scope["d/y/z"]?
+
+          test "and the right local scopes", (scope = undefined) ->
+            assert (scope =
+              map.scopes["https://cdn.jsdelivr.net/npm/b@1.0.0"])?
+            assert scope["#z"]?
+            assert scope["#local/x"]?
+            assert scope["#local/y/z"]?
       ]
     ]
   ]
