@@ -1,18 +1,18 @@
 import * as _ from "@dashkite/joy"
-import { NameScope } from "./scope"
+import { Scope } from "./scope"
 
 optimize = (scopes) ->
 
   results = new Set
 
-  root = NameScope.create "root"
+  root = Scope.create "root"
 
   for scope from scopes
 
     # TODO this hardcodes the name@version convention
     #      before we've generated the URL
-    self = NameScope.create scope.specifier
-    parent = NameScope.create scope.name
+    self = Scope.create "#{scope.name}@#{scope.version}"
+    parent = Scope.create scope.name
 
     for dependency from scope.dependencies
 
@@ -71,11 +71,11 @@ class ImportMap
           scopeExports scope, generator
 
     for scope from @reference.scopes
-      if !_.isEmpty scope.reference.locals
+      if !_.isEmpty scope.locals
         (result.scopes ?= {})[ generator scope ] =
           project _.identity,
-            (generator scope.reference),
-            scope.reference.locals
+            (generator scope),
+            scope.locals
     result
 
     JSON.stringify result, null, 2

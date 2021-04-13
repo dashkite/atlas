@@ -34,11 +34,11 @@ class Reference
       version: -> @manifest.version
       exports: -> @_exports = exports @
       locals: -> @_locals = locals @
-      scope: -> @_scope ?= ModuleScope.create @
+      # scope: -> @ # @_scope ?= ModuleScope.create @
       scopes: ->
         @_scopes ?= do =>
           r = new Set
-          r.add @scope
+          r.add @
           for d from @dependencies
             for s from d.scopes
               r.add s

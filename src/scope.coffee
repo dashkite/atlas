@@ -1,8 +1,7 @@
 import * as _ from "@dashkite/joy"
-import { Scope } from "./scope"
-import { Reference } from "../reference"
+import { Reference } from "./reference"
 
-class NameScope extends Scope
+class Scope
 
   @create: (name) -> _.assign new @, {name, dependencies: new Set}
 
@@ -35,4 +34,4 @@ class NameScope extends Scope
         return @dependencies
     @dependencies.add d
 
-export { NameScope }
+export { Scope }

@@ -229,34 +229,27 @@ do ->
 
       test "scope", await do (a = undefined, b = undefined) ->
 
-        a = await $.Reference.create "@dashkite/quark", "latest"
-        b = await $.Reference.create "@dashkite/quark", "latest"
+        foo = await $.Scope.create "foo"
+        foo.add Fixtures.d1
+        foo.add Fixtures.e1
 
         [
 
-          test "a reference has a scope", ->
-            assert a.scope?
+          test "canPlace", ->
+            assert foo.canPlace Fixtures.e2
+            assert !(foo.canPlace Fixtures.d2)
 
-          test "that is a ModuleScope", ->
-            assert.kind $.ModuleScope, a.scope
-
-          test "that has dependencies", ->
-            assert a.scope.dependencies?
-
-          test "which are a set", ->
-            assert.type Set, a.scope.dependencies
-
-          test "consisting of references", ->
-            assert.kind $.Reference, d for d from a.scope.dependencies
-
-          test "same scope is strictly equal", ->
-            assert a.scope == b.scope
+          test "place", ->
+            foo.place Fixtures.e2
+            assert foo.has Fixtures.e2
+            assert !(foo.has Fixtures.e1)
 
         ]
 
       test "generation", do (json = undefined, map = undefined) ->
 
         json = Fixtures.a.map.toJSON $.jsdelivr
+        console.log json
         map = JSON.parse json
 
         [

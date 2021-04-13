@@ -23,12 +23,4 @@ The `Reference` interface allows for the inspection of a module and for comparis
 
 ## Scope
 
-There are two main types of `Scope`:
-
-- `ModuleScope`, which encapsulates the dependencies of a given module.
-- `NameScope`, which allows for [dynamic scope][scope examples], not tied to a given module.
-
-To build an import map, we iterate over instances of `ModuleScope` to produce `NameScope` instances. 
-
-[scope examples]: https://github.com/WICG/import-maps/blob/main/README.md#scoping-examples
-
+The `Scope` type encapsulates the logic for detecting conflicts and placement of modules within a scope.

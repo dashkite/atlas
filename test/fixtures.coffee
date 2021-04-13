@@ -108,6 +108,6 @@ a = _.assign (new $.RegistryReference),
   ]
   dependencies: new Set [ b ]
 
-Fixtures = { a, b, c, d1, d2 }
+Fixtures = { a, b, c, d1, d2, e1, e2 }
 
 export default Fixtures
