@@ -2,11 +2,8 @@ git URL: git URLs are not supported yet
 
 unsupported protocol: unsupported protocol '%s'
 
-no exports: >-
-  package %s@%s does not provide an exports field in its package.json
-
 no import condition: >-
-  package %s@%s uses exports conditions,
+  package %s uses exports conditions,
   but does not provide an 'import' condition
 
 reference conflict: >-

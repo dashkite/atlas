@@ -193,7 +193,7 @@ do ->
 
           assert.throws (-> foo.exports),
             message:
-              "package foo@1.0.0 uses exports conditions,
+              "package [foo@1.0.0] uses exports conditions,
                 but does not provide an 'import' condition"
 
       ]
@@ -297,7 +297,7 @@ do ->
 
           assert.throws (-> foo.aliases),
             message:
-              "package foo@1.0.0 uses exports conditions,
+              "package [foo@1.0.0] uses exports conditions,
                 but does not provide an 'import' condition"
 
     ]

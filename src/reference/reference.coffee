@@ -8,10 +8,6 @@ import { error } from "../errors"
 
 class Reference
 
-  @equal: (a, b) ->
-    (_.isKind Reference a) && (_.isKind Reference b) &&
-      (a.resource == b.resource)
-
   @similar: _.generic
     name: "Reference.similar",
     description: "Returns true if two references are similar."
@@ -30,9 +26,8 @@ class Reference
   _.mixin @::, [
     _.getters
       version: -> @manifest.version
-      exports: -> @_exports = exports @
-      aliases: -> @_locals = aliases @
-      # scope: -> @ # @_scope ?= ModuleScope.create @
+      exports: -> @_exports ?= exports @
+      aliases: -> @_locals ?= aliases @
       scopes: ->
         @_scopes ?= do =>
           r = new Set
@@ -41,8 +36,7 @@ class Reference
             for s from d.scopes
               r.add s
           r
-
-      map: -> ImportMap.create @
+      map: -> @_map ?= ImportMap.create @
   ]
 
   glob: (pattern) -> micromatch @files, pattern
@@ -50,35 +44,7 @@ class Reference
   capture: (pattern) ->
     r for file in @files when (r = capture pattern, file)
 
-  toString: -> @resource.specifier
-
-capture = (pattern, file) ->
-  matches = micromatch.capture (pattern.replace "*", "**/*"),
-    file.replace /^\.\//, ""
-  if matches?
-    [directory, basename] = matches
-    if directory == ""
-      basename
-    else
-      P.join directory, basename
-
-entry = (path) ->
-  if path.startsWith "."
-    path
-  else
-    "./#{path}"
-
-isRelativePath = (path) ->
-  (_.isString path) && path.startsWith "."
-
-isWildCardPath = (path) ->
-  (isRelativePath path) && (path.endsWith "*")
-
-isAliasPath = (path) ->
-  (_.isString path) && path.startsWith "#"
-
-isAliasWildCardPath = (path) ->
-  (isAliasPath path) && (path.endsWith "*")
+  toString: -> "[#{@name}@#{@version}]"
 
 isReference = _.isKind Reference
 
@@ -94,6 +60,24 @@ hasImportsObject = (reference) ->
 hasImportsString = (reference) ->
   (isReference reference) && _.isString reference.manifest.imports
 
+isRelativePath = (path) ->
+  (_.isString path) && path.startsWith "."
+
+isWildCardPath = (path) ->
+  (isRelativePath path) && (path.endsWith "*")
+
+isAliasPath = (path) ->
+  (_.isString path) && path.startsWith "#"
+
+isAliasWildCardPath = (path) ->
+  (isAliasPath path) && (path.endsWith "*")
+
+entry = (path) ->
+  if path.startsWith "."
+    path
+  else
+    "./#{path}"
+
 exports = _.generic
   name: "exports"
   description: "Return relative exports for a module"
@@ -101,7 +85,7 @@ exports = _.generic
   default: -> {}
 
 _.generic exports,
-  isReference, isRelativePath, _.isString,
+  isReference, isRelativePath, isRelativePath,
   (reference, from, to) ->
     [from]: to
 
@@ -111,11 +95,10 @@ _.generic exports,
     if to.import?
       exports reference, from, to.import
     else
-      throw error "no import condition",
-        reference.name, reference.version
+      throw error "no import condition", reference
 
 _.generic exports,
-  isReference, isWildCardPath, _.isString,
+  isReference, isWildCardPath, isRelativePath,
   (reference, from, to) ->
     rx = {}
     for path in reference.capture to
@@ -153,14 +136,15 @@ _.generic aliases,
     if to.import?
       aliases reference, from, to.import
     else
-      throw error "no import condition",
-        reference.name, reference.version
+      throw error "no import condition", reference
 
 _.generic aliases,
   isReference, isAliasPath, _.isString,
   (reference, from, to) ->
     [from]: to
 
+# TODO how to handle aliases for package specifiers?
+#      (since these need to be mapped later into URLs)
 _.generic aliases,
   isReference, isAliasWildCardPath, _.isString,
   (reference, from, to) ->
@@ -168,5 +152,15 @@ _.generic aliases,
     for path in reference.capture to
       rx[ (from.replace "*", path) ] = to.replace "*", path
     rx
+
+capture = (pattern, file) ->
+  matches = micromatch.capture (pattern.replace "*", "**/*"),
+    file.replace /^\.\//, ""
+  if matches?
+    [directory, basename] = matches
+    if directory == ""
+      basename
+    else
+      P.join directory, basename
 
 export { Reference }
