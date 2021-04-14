@@ -71,62 +71,65 @@ entry = (path) ->
 isRelativePath = (path) ->
   (_.isString path) && path.startsWith "."
 
-isWildCard = (path) ->
+isWildCardPath = (path) ->
   (isRelativePath path) && (path.endsWith "*")
 
 isAliasPath = (path) ->
   (_.isString path) && path.startsWith "#"
 
-isAliasWildCard = (path) ->
+isAliasWildCardPath = (path) ->
   (isAliasPath path) && (path.endsWith "*")
 
 isReference = _.isKind Reference
 
-hasExportsObject = (reference) -> _.isObject reference.manifest.exports
+hasExportsObject = (reference) ->
+  (isReference reference) && _.isObject reference.manifest.exports
 
-hasExportsString = (reference) -> _.isString reference.manifest.exports
+hasExportsString = (reference) ->
+  (isReference reference) && _.isString reference.manifest.exports
 
-hasImportsObject = (reference) -> _.isObject reference.manifest.imports
+hasImportsObject = (reference) ->
+  (isReference reference) && _.isObject reference.manifest.imports
 
-hasImportsString = (reference) -> _.isString reference.manifest.imports
+hasImportsString = (reference) ->
+  (isReference reference) && _.isString reference.manifest.imports
 
-subpath = _.generic
-  name: "subpath"
-  description: "Return a mapping from a import/export pair"
+exports = _.generic
+  name: "exports"
+  description: "Return relative exports for a module"
+  # TODO should we warn of a possible error here?
+  default: -> {}
 
-_.generic subpath,
-  isReference, _.isString, _.isString,
+_.generic exports,
+  isReference, isRelativePath, _.isString,
   (reference, from, to) ->
     [from]: to
 
-_.generic subpath,
-  isReference, _.isString, _.isObject,
+_.generic exports,
+  isReference, isRelativePath, _.isObject,
   (reference, from, to) ->
     if to.import?
-      subpath reference, from, to.import
+      exports reference, from, to.import
     else
       throw error "no import condition",
         reference.name, reference.version
 
-_.generic subpath,
-  isReference, isWildCard, _.isString,
+_.generic exports,
+  isReference, isWildCardPath, _.isString,
   (reference, from, to) ->
     rx = {}
     for path in reference.capture to
       rx[ (from.replace "*", path) ] = to.replace "*", path
     rx
 
-exports = _.generic
-  name: "exports"
-  description: "Return relative exports for a module"
-  default: ({manifest}) ->
-    ".": entry (manifest.module ? manifest.browser ?
-      manifest.main ? "index.js")
+_.generic exports, isReference, ({manifest}) ->
+  ".": entry (manifest.module ? manifest.browser ?
+    manifest.main ? "index.js")
 
 _.generic exports, hasExportsObject, (reference) ->
   _.merge (
     for key, value of reference.manifest.exports
-      subpath reference, key, value
+      exports reference, key, value
   )...
 
 _.generic exports, hasExportsString, (reference) ->
@@ -135,6 +138,7 @@ _.generic exports, hasExportsString, (reference) ->
 aliases = _.generic
   name: "aliases"
   description: "Return the aliases (internal imports) for a module"
+  # TODO should we warn of a possible error here?
   default: -> {}
 
 _.generic aliases, hasImportsObject, (reference) ->
@@ -158,7 +162,7 @@ _.generic aliases,
     [from]: to
 
 _.generic aliases,
-  isReference, isAliasWildCard, _.isString,
+  isReference, isAliasWildCardPath, _.isString,
   (reference, from, to) ->
     rx = {}
     for path in reference.capture to

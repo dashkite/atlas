@@ -86,50 +86,49 @@ do ->
 
     test "exports", [
 
-      test "exports path",  (a = undefined) ->
+      test "exports path",  (foo = undefined) ->
 
-        a = _.assign (new $.RegistryReference),
+        foo = _.assign (new $.RegistryReference),
           manifest:
             name: "foo"
             version: "1.0.0"
             exports: "./build/import/src/a.js"
 
-
-        assert.equal 1, _.size a.exports
-        assert a.exports["."]?
-        assert.equal "./build/import/src/a.js", a.exports["."]
+        assert.equal 1, _.size foo.exports
+        assert foo.exports["."]?
+        assert.equal "./build/import/src/a.js", foo.exports["."]
 
       test "exports object", [
 
-        test "...with .",  (a = undefined) ->
+        test "...with .",  (foo = undefined) ->
 
-          a = _.assign (new $.RegistryReference),
+          foo = _.assign (new $.RegistryReference),
             manifest:
               name: "foo"
               version: "1.0.0"
               exports:
                 ".": "./build/import/src/a.js"
 
-          assert.equal 1, _.size a.exports
-          assert a.exports["."]?
-          assert.equal "./build/import/src/a.js", a.exports["."]
+          assert.equal 1, _.size foo.exports
+          assert foo.exports["."]?
+          assert.equal "./build/import/src/a.js", foo.exports["."]
 
-        test "...with . in import condition",  (a = undefined) ->
+        test "...with . in import condition",  (foo = undefined) ->
 
-          a = _.assign (new $.RegistryReference),
+          foo = _.assign (new $.RegistryReference),
             manifest:
               name: "foo"
               version: "1.0.0"
               exports:
                 ".": import: "./build/import/src/a.js"
 
-          assert.equal 1, _.size a.exports
-          assert a.exports["."]?
-          assert.equal "./build/import/src/a.js", a.exports["."]
+          assert.equal 1, _.size foo.exports
+          assert foo.exports["."]?
+          assert.equal "./build/import/src/a.js", foo.exports["."]
 
-        test "...with subpath pattern",  (a = undefined) ->
+        test "...with subpath pattern",  (foo = undefined) ->
 
-          a = _.assign (new $.RegistryReference),
+          foo = _.assign (new $.RegistryReference),
             manifest:
               name: "foo"
               version: "1.0.0"
@@ -143,17 +142,17 @@ do ->
               "./build/import/src/d/e.js"
             ]
 
-          assert.equal 5, _.size a.exports
-          assert a.exports["."]?
-          assert.equal "./build/import/src/a.js", a.exports["."]
-          assert.equal "./build/import/src/b.js", a.exports["./b"]
-          assert.equal "./build/import/src/c.js", a.exports["./c"]
-          assert.equal "./build/import/src/d/e.js", a.exports["./d/e"]
+          assert.equal 5, _.size foo.exports
+          assert foo.exports["."]?
+          assert.equal "./build/import/src/a.js", foo.exports["."]
+          assert.equal "./build/import/src/b.js", foo.exports["./b"]
+          assert.equal "./build/import/src/c.js", foo.exports["./c"]
+          assert.equal "./build/import/src/d/e.js", foo.exports["./d/e"]
 
         test "...with subpath pattern within import condition",
-          (a = undefined) ->
+          (foo = undefined) ->
 
-            a = _.assign (new $.RegistryReference),
+            foo = _.assign (new $.RegistryReference),
               manifest:
                 name: "foo"
                 version: "1.0.0"
@@ -167,15 +166,17 @@ do ->
                 "./build/import/src/d/e.js"
               ]
 
-            assert.equal 5, _.size a.exports
-            assert a.exports["."]?
-            assert.equal "./build/import/src/a.js", a.exports["."]
-            assert.equal "./build/import/src/b.js", a.exports["./b"]
-            assert.equal "./build/import/src/c.js", a.exports["./c"]
-            assert.equal "./build/import/src/d/e.js", a.exports["./d/e"]
+            assert.equal 5, _.size foo.exports
+            assert foo.exports["."]?
+            assert.equal "./build/import/src/a.js", foo.exports["."]
+            assert.equal "./build/import/src/b.js", foo.exports["./b"]
+            assert.equal "./build/import/src/c.js", foo.exports["./c"]
+            assert.equal "./build/import/src/d/e.js", foo.exports["./d/e"]
 
-        test "...throws if there's no import condition", (a = undefined) ->
-          a = _.assign (new $.RegistryReference),
+        # TODO should we throw here, or just ignore?
+        test "...throws if there's no import condition", (foo = undefined) ->
+
+          foo = _.assign (new $.RegistryReference),
             name: "foo"
             manifest:
               name: "foo"
@@ -190,7 +191,7 @@ do ->
               "./build/import/src/d/e.js"
             ]
 
-          assert.throws (-> a.exports),
+          assert.throws (-> foo.exports),
             message:
               "package foo@1.0.0 uses exports conditions,
                 but does not provide an 'import' condition"
@@ -201,42 +202,39 @@ do ->
 
     test "aliases (internal imports)", [
 
-        test "...with #",  (a = undefined) ->
+        test "...with #",  (foo = undefined) ->
 
-          a = _.assign (new $.RegistryReference),
+          foo = _.assign (new $.RegistryReference),
             manifest:
               name: "foo"
               version: "1.0.0"
               imports:
                 "#a": "./build/import/src/a.js"
 
-          assert.equal 1, _.size a.aliases
-          assert a.aliases["#a"]?
-          assert.equal "./build/import/src/a.js", a.aliases["#a"]
+          assert.equal 1, _.size foo.aliases
+          assert foo.aliases["#a"]?
+          assert.equal "./build/import/src/a.js", foo.aliases["#a"]
 
-        test "...with # in import condition",  (a = undefined) ->
+        test "...with # in import condition",  (foo = undefined) ->
 
-          a = _.assign (new $.RegistryReference),
+          foo = _.assign (new $.RegistryReference),
             manifest:
               name: "foo"
               version: "1.0.0"
               imports:
                 "#a": import: "./build/import/src/a.js"
 
-          assert.equal 1, _.size a.aliases
-          assert a.aliases["#a"]?
-          assert.equal "./build/import/src/a.js", a.aliases["#a"]
+          assert.equal 1, _.size foo.aliases
+          assert foo.aliases["#a"]?
+          assert.equal "./build/import/src/a.js", foo.aliases["#a"]
 
-        test "...with subpath pattern",  (a = undefined) ->
+        test "...with subpath pattern",  (foo = undefined) ->
 
-          a = _.assign (new $.RegistryReference),
+          foo = _.assign (new $.RegistryReference),
             name: "foo"
             manifest:
               name: "foo"
               version: "1.0.0"
-              exports:
-                ".": "./build/import/src/a.js"
-                "./*": "./build/import/src/*.js"
               imports:
                 "#local": "./build/import/src/a.js"
                 "#local/*": "./build/import/src/*.js"
@@ -248,22 +246,20 @@ do ->
               "./build/import/src/d/e.js"
             ]
 
-          assert.equal 5, _.size a.aliases
-          assert.equal "./build/import/src/a.js", a.aliases["#local"]
-          assert.equal "./build/import/src/b.js", a.aliases["#local/b"]
-          assert.equal "./build/import/src/d/e.js", a.aliases["#local/d/e"]
+          assert.equal 5, _.size foo.aliases
+          assert.equal "./build/import/src/a.js", foo.aliases["#local"]
+          assert.equal "./build/import/src/b.js", foo.aliases["#local/b"]
+          assert.equal "./build/import/src/c.js", foo.aliases["#local/c"]
+          assert.equal "./build/import/src/d/e.js", foo.aliases["#local/d/e"]
 
         test "...with subpath pattern within import condition",
-          (a = undefined) ->
+          (foo = undefined) ->
 
-          a = _.assign (new $.RegistryReference),
+          foo = _.assign (new $.RegistryReference),
             name: "foo"
             manifest:
               name: "foo"
               version: "1.0.0"
-              exports:
-                ".": "./build/import/src/a.js"
-                "./*": "./build/import/src/*.js"
               imports:
                 "#local": "./build/import/src/a.js"
                 "#local/*": import: "./build/import/src/*.js"
@@ -275,20 +271,19 @@ do ->
               "./build/import/src/d/e.js"
             ]
 
-          assert.equal 5, _.size a.aliases
-          assert.equal "./build/import/src/a.js", a.aliases["#local"]
-          assert.equal "./build/import/src/b.js", a.aliases["#local/b"]
-          assert.equal "./build/import/src/d/e.js", a.aliases["#local/d/e"]
+          assert.equal 5, _.size foo.aliases
+          assert.equal "./build/import/src/a.js", foo.aliases["#local"]
+          assert.equal "./build/import/src/b.js", foo.aliases["#local/b"]
+          assert.equal "./build/import/src/c.js", foo.aliases["#local/c"]
+          assert.equal "./build/import/src/d/e.js", foo.aliases["#local/d/e"]
 
-        test "...throws if there's no import condition", (a = undefined) ->
-          a = _.assign (new $.RegistryReference),
+        # TODO should we throw here, or just ignore?
+        test "...throws if there's no import condition", (foo = undefined) ->
+          foo = _.assign (new $.RegistryReference),
             name: "foo"
             manifest:
               name: "foo"
               version: "1.0.0"
-              exports:
-                ".": "./build/import/src/a.js"
-                "./*": "./build/import/src/*.js"
               imports:
                 "#local": "./build/import/src/a.js"
                 "#local/*": require: "./build/import/src/*.js"
@@ -300,7 +295,7 @@ do ->
               "./build/import/src/d/e.js"
             ]
 
-          assert.throws (-> a.aliases),
+          assert.throws (-> foo.aliases),
             message:
               "package foo@1.0.0 uses exports conditions,
                 but does not provide an 'import' condition"
@@ -309,7 +304,7 @@ do ->
 
     test "import map", [
 
-      test "scope", await do (a = undefined, b = undefined) ->
+      test "scope", await do (foo = undefined) ->
 
         foo = await $.Scope.create "foo"
         foo.add Fixtures.d1
