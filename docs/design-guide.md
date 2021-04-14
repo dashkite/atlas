@@ -12,14 +12,12 @@ Atlas defines three main types:
 
 ## Reference
 
-There are two main `Reference` subtypes:
+There are two `Reference` subtypes:
 
 - `RegistryReference`, a reference to a module in the NPM registry
 - `FileReference`, a reference to module available from the local filesystem
 
-Eventually `Reference` will be extended to support GitHub and general Web references.
-
-The `Reference` interface allows for the inspection of a module and for comparisons with other modules. Thus, all References have properties such a `dependencies` and `files` and `Reference` defines functions like `similar` and `choose`.
+`Reference` will be extended to support GitHub and general Web references.
 
 ## Scope
 
