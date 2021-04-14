@@ -19,8 +19,6 @@ class Scope
 
   add: (d) -> @dependencies.add d
 
-  delete: (d) -> @dependencies.delete d
-
   canAdd: (d) ->
     for _d from @dependencies
       if (d.name == _d.name)
