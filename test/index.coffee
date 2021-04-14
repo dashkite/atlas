@@ -195,33 +195,115 @@ do ->
               "package foo@1.0.0 uses exports conditions,
                 but does not provide an 'import' condition"
 
-        test "...with local exports", (a = undefined) ->
+      ]
+
+    ]
+
+    test "aliases (internal imports)", [
+
+        test "...with #",  (a = undefined) ->
+
+          a = _.assign (new $.RegistryReference),
+            manifest:
+              name: "foo"
+              version: "1.0.0"
+              imports:
+                "#a": "./build/import/src/a.js"
+
+          assert.equal 1, _.size a.aliases
+          assert a.aliases["#a"]?
+          assert.equal "./build/import/src/a.js", a.aliases["#a"]
+
+        test "...with # in import condition",  (a = undefined) ->
+
+          a = _.assign (new $.RegistryReference),
+            manifest:
+              name: "foo"
+              version: "1.0.0"
+              imports:
+                "#a": import: "./build/import/src/a.js"
+
+          assert.equal 1, _.size a.aliases
+          assert a.aliases["#a"]?
+          assert.equal "./build/import/src/a.js", a.aliases["#a"]
+
+        test "...with subpath pattern",  (a = undefined) ->
+
           a = _.assign (new $.RegistryReference),
             name: "foo"
             manifest:
               name: "foo"
               version: "1.0.0"
               exports:
-                ".": "./build/import/src/z.js"
+                ".": "./build/import/src/a.js"
                 "./*": "./build/import/src/*.js"
-                "#local": "./build/import/local/z.js"
-                "#local/*": "./build/import/local/*.js"
+              imports:
+                "#local": "./build/import/src/a.js"
+                "#local/*": "./build/import/src/*.js"
 
             files: [
-              "./build/import/src/x.js"
-              "./build/import/src/y/z.js"
-              "./build/import/local/x.js"
-              "./build/import/local/y/z.js"
+              "./build/import/src/a.js"
+              "./build/import/src/b.js"
+              "./build/import/src/c.js"
+              "./build/import/src/d/e.js"
             ]
 
-          assert.equal 3, _.size a.locals
-          assert.equal "./build/import/local/z.js", a.locals["#local"]
-          assert.equal "./build/import/local/x.js", a.locals["#local/x"]
-          assert.equal "./build/import/local/y/z.js", a.locals["#local/y/z"]
-          assert !(a.exports["#local"]?)
-          assert !(a.exports["./local/x"]?)
+          assert.equal 5, _.size a.aliases
+          assert.equal "./build/import/src/a.js", a.aliases["#local"]
+          assert.equal "./build/import/src/b.js", a.aliases["#local/b"]
+          assert.equal "./build/import/src/d/e.js", a.aliases["#local/d/e"]
 
-      ]
+        test "...with subpath pattern within import condition",
+          (a = undefined) ->
+
+          a = _.assign (new $.RegistryReference),
+            name: "foo"
+            manifest:
+              name: "foo"
+              version: "1.0.0"
+              exports:
+                ".": "./build/import/src/a.js"
+                "./*": "./build/import/src/*.js"
+              imports:
+                "#local": "./build/import/src/a.js"
+                "#local/*": import: "./build/import/src/*.js"
+
+            files: [
+              "./build/import/src/a.js"
+              "./build/import/src/b.js"
+              "./build/import/src/c.js"
+              "./build/import/src/d/e.js"
+            ]
+
+          assert.equal 5, _.size a.aliases
+          assert.equal "./build/import/src/a.js", a.aliases["#local"]
+          assert.equal "./build/import/src/b.js", a.aliases["#local/b"]
+          assert.equal "./build/import/src/d/e.js", a.aliases["#local/d/e"]
+
+        test "...throws if there's no import condition", (a = undefined) ->
+          a = _.assign (new $.RegistryReference),
+            name: "foo"
+            manifest:
+              name: "foo"
+              version: "1.0.0"
+              exports:
+                ".": "./build/import/src/a.js"
+                "./*": "./build/import/src/*.js"
+              imports:
+                "#local": "./build/import/src/a.js"
+                "#local/*": require: "./build/import/src/*.js"
+
+            files: [
+              "./build/import/src/a.js"
+              "./build/import/src/b.js"
+              "./build/import/src/c.js"
+              "./build/import/src/d/e.js"
+            ]
+
+          assert.throws (-> a.aliases),
+            message:
+              "package foo@1.0.0 uses exports conditions,
+                but does not provide an 'import' condition"
 
     ]
 
@@ -249,7 +331,6 @@ do ->
       test "generation", do (json = undefined, map = undefined) ->
 
         json = Fixtures.a.map.toJSON $.jsdelivr
-        console.log json
         map = JSON.parse json
 
         [
@@ -286,7 +367,7 @@ do ->
             assert scope["d/x"]?
             assert scope["d/y/z"]?
 
-          test "and the right local scopes", (scope = undefined) ->
+          test "and the right internal imports", (scope = undefined) ->
             assert (scope =
               map.scopes["https://cdn.jsdelivr.net/npm/b@1.0.0"])?
             assert scope["#z"]?

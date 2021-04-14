@@ -71,11 +71,11 @@ class ImportMap
           scopeExports scope, generator
 
     for scope from @reference.scopes
-      if !_.isEmpty scope.locals
+      if !_.isEmpty scope.aliases
         (result.scopes ?= {})[ generator scope ] =
           project _.identity,
             (generator scope),
-            scope.locals
+            scope.aliases
     result
 
     JSON.stringify result, null, 2

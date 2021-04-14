@@ -6,8 +6,6 @@ import { ModuleScope } from "../scope"
 import { ImportMap } from "../import-map"
 import { error } from "../errors"
 
-# TODO handle # paths for local aliases
-
 class Reference
 
   @equal: (a, b) ->
@@ -33,7 +31,7 @@ class Reference
     _.getters
       version: -> @manifest.version
       exports: -> @_exports = exports @
-      locals: -> @_locals = locals @
+      aliases: -> @_locals = aliases @
       # scope: -> @ # @_scope ?= ModuleScope.create @
       scopes: ->
         @_scopes ?= do =>
@@ -54,6 +52,15 @@ class Reference
 
   toString: -> @resource.specifier
 
+capture = (pattern, file) ->
+  matches = micromatch.capture (pattern.replace "*", "**/*"),
+    file.replace /^\.\//, ""
+  if matches?
+    [directory, basename] = matches
+    if directory == ""
+      basename
+    else
+      P.join directory, basename
 
 entry = (path) ->
   if path.startsWith "."
@@ -61,16 +68,27 @@ entry = (path) ->
   else
     "./#{path}"
 
-isWildCard = (path) ->
-  (_.isString path) && (path.startsWith ".") && (path.endsWith "*")
+isRelativePath = (path) ->
+  (_.isString path) && path.startsWith "."
 
-isLocalExport = (path) ->
+isWildCard = (path) ->
+  (isRelativePath path) && (path.endsWith "*")
+
+isAliasPath = (path) ->
   (_.isString path) && path.startsWith "#"
 
-isLocalWildCard = (path) ->
-  (isLocalExport path) && (path.endsWith "*")
+isAliasWildCard = (path) ->
+  (isAliasPath path) && (path.endsWith "*")
 
 isReference = _.isKind Reference
+
+hasExportsObject = (reference) -> _.isObject reference.manifest.exports
+
+hasExportsString = (reference) -> _.isString reference.manifest.exports
+
+hasImportsObject = (reference) -> _.isObject reference.manifest.imports
+
+hasImportsString = (reference) -> _.isString reference.manifest.imports
 
 subpath = _.generic
   name: "subpath"
@@ -98,24 +116,6 @@ _.generic subpath,
       rx[ (from.replace "*", path) ] = to.replace "*", path
     rx
 
-_.generic subpath,
-  isReference, isLocalExport, _.isString,
-  (reference, from, to) -> {}
-
-capture = (pattern, file) ->
-  matches = micromatch.capture (pattern.replace "*", "**/*"),
-    file.replace /^\.\//, ""
-  if matches?
-    [directory, basename] = matches
-    if directory == ""
-      basename
-    else
-      P.join directory, basename
-
-hasExportsObject = (reference) -> _.isObject reference.manifest.exports
-
-hasExportsString = (reference) -> _.isString reference.manifest.exports
-
 exports = _.generic
   name: "exports"
   description: "Return relative exports for a module"
@@ -132,35 +132,33 @@ _.generic exports, hasExportsObject, (reference) ->
 _.generic exports, hasExportsString, (reference) ->
   ".": entry reference.manifest.exports
 
-
-
-locals = _.generic
-  name: "locals"
-  description: "Return the local exports for a module"
+aliases = _.generic
+  name: "aliases"
+  description: "Return the aliases (internal imports) for a module"
   default: -> {}
 
-_.generic locals, hasExportsObject, (reference) ->
+_.generic aliases, hasImportsObject, (reference) ->
   _.merge (
-    for key, value of reference.manifest.exports
-      locals reference, key, value
+    for key, value of reference.manifest.imports
+      aliases reference, key, value
   )...
 
-_.generic locals,
-  isReference, isLocalExport, _.isObject,
+_.generic aliases,
+  isReference, isAliasPath, _.isObject,
   (reference, from, to) ->
     if to.import?
-      locals reference, from, to.import
+      aliases reference, from, to.import
     else
       throw error "no import condition",
         reference.name, reference.version
 
-_.generic locals,
-  isReference, isLocalExport, _.isString,
+_.generic aliases,
+  isReference, isAliasPath, _.isString,
   (reference, from, to) ->
     [from]: to
 
-_.generic locals,
-  isReference, isLocalWildCard, _.isString,
+_.generic aliases,
+  isReference, isAliasWildCard, _.isString,
   (reference, from, to) ->
     rx = {}
     for path in reference.capture to
