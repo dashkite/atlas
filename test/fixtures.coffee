@@ -6,7 +6,7 @@ e1 = _.assign (new $.RegistryReference),
   range: "^1.0.0"
   manifest:
     name: "e"
-    version: "1.0.0"
+    version: "1.1.0"
     exports:
       ".": "./build/import/src/z.js"
       "./*": "./build/import/src/*.js"

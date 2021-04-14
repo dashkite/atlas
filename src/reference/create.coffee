@@ -3,7 +3,6 @@ import * as _ from "@dashkite/joy"
 import { Reference } from "./reference"
 
 import { FileReference } from "./file"
-import { WebReference } from "./web"
 import { RegistryReference } from "./registry"
 
 # Reference.create is defined separately from the Reference type
@@ -13,8 +12,10 @@ import { RegistryReference } from "./registry"
 
 handlers =
   file: FileReference
-  http: WebReference
-  git: create: -> throw error "git URL"
+  http: create: (name, description) ->
+    throw error "http URL", name, description
+  git: create: (name, description) ->
+    throw error "git URL", name, description
 
 createFromURL = (name, description, url) ->
   protocol = url.protocol[...-1]

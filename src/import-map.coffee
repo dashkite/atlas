@@ -19,10 +19,10 @@ optimize = (scopes) ->
       if root.has dependency || parent.has dependency
         continue
 
-      if root.canPlace dependency
-        root.place dependency
-      else if parent.canPlace dependency
-        parent.place dependency
+      if root.canAdd dependency
+        root.add dependency
+      else if parent.canAdd dependency
+        parent.add dependency
       else
         self.add dependency
 

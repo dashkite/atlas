@@ -10,28 +10,21 @@ class Scope
       size: -> @dependencies.size
   ]
 
-  has: (d) -> @dependencies.has d
+  has: (d) ->
+    (@dependencies.has d) || do =>
+      for _d from @dependencies
+        if Reference.equal d, _d
+          return true
+      false
 
   add: (d) -> @dependencies.add d
 
   delete: (d) -> @dependencies.delete d
 
-  canPlace: (d) ->
+  canAdd: (d) ->
     for _d from @dependencies
-      if (Reference.conflict d, _d)
+      if (d.name == _d.name)
         return false
-      else if (Reference.similar d, _d)
-        return true
     return true
-
-  place: (d) ->
-    for _d from @dependencies
-      if (Reference.similar d, _d)
-        d = Reference.choose d, _d
-        if d != _d
-          @delete _d
-          @add d
-        return @dependencies
-    @dependencies.add d
 
 export { Scope }

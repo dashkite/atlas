@@ -59,24 +59,10 @@ class RegistryReference extends Reference
       description: -> @range
   ]
 
-_.generic Reference.conflict,
+# equality for registry references just means
+# they are the same module and version
+_.generic Reference.equal,
   (_.isType RegistryReference), (_.isType RegistryReference),
-  (a, b) -> (a.name == b.name) && !(Reference.similar a, b)
-
-_.generic Reference.similar,
-  (_.isType RegistryReference), (_.isType RegistryReference),
-  (a, b) ->
-    (a.name == b.name) &&
-      ((semver.satisfies a.version, b.range) ||
-        (semver.satisfies b.version, a.range))
-
-_.generic Reference.choose,
-  (_.isType RegistryReference), (_.isType RegistryReference),
-  (a, b) ->
-    if (semver.gt a.version, b.version) && (semver.satisfies a.version, b.range)
-      a
-    else if (semver.satisfies b.version, a.range)
-      b
-    else throw error "reference conflict", a, b
+  (a, b) -> (a.name == b.name) && (a.version == b.version)
 
 export { RegistryReference }

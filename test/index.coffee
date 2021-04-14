@@ -304,22 +304,24 @@ do ->
 
     test "import map", [
 
-      test "scope", await do (foo = undefined) ->
+      test "scope", do (foo = undefined) ->
 
-        foo = await $.Scope.create "foo"
+        foo = $.Scope.create "foo"
         foo.add Fixtures.d1
         foo.add Fixtures.e1
 
         [
 
-          test "canPlace", ->
-            assert foo.canPlace Fixtures.e2
-            assert !(foo.canPlace Fixtures.d2)
-
-          test "place", ->
-            foo.place Fixtures.e2
+          test "has", ->
+            # different objects but same name/version
             assert foo.has Fixtures.e2
-            assert !(foo.has Fixtures.e1)
+            # different objects, same name, but different version
+            assert !(foo.has Fixtures.d2)
+
+          test "canAdd", ->
+            assert foo.canAdd Fixtures.c
+            assert !(foo.canAdd Fixtures.d2)
+            assert !(foo.canAdd Fixtures.e2)
 
         ]
 

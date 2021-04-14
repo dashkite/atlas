@@ -29,4 +29,10 @@ class FileReference extends Reference
       path: ->  P.join (fileURLToPath @url), "package.json"
   ]
 
+# equality for file references just means
+# they are the same path
+_.generic Reference.equal,
+  (_.isType FileReference), (_.isType FileReference),
+  (a, b) -> (a.path == b.path)
+
 export { FileReference }

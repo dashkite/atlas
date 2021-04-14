@@ -1,4 +1,6 @@
-git URL: git URLs are not supported yet
+http URL: http(s) URLs are not supported yet (package %s, url %s)
+
+git URL: git URLs are not supported yet (package %s, url %s)
 
 unsupported protocol: unsupported protocol '%s'
 
