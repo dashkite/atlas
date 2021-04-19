@@ -90,6 +90,7 @@ exports = _.generic
 # trivial case: two relative paths, just return them as a mapping
 # wild-cards are handled in subsequent generics that will match
 # before this one...
+#
 _.generic exports,
   isReference, isRelativePath, isRelativePath,
   (reference, from, to) ->
@@ -140,7 +141,10 @@ _.generic exports, isReference, ({manifest}) ->
 _.generic exports, hasExportsObject, (reference) ->
   _.merge (
     for key, value of reference.manifest.exports
-      exports reference, key, value
+      if key == "import"
+        ".": value
+      else
+        exports reference, key, value
   )...
 
 #

@@ -57,10 +57,13 @@ class ImportMap
 
   toJSON: (generator) ->
 
-    # TODO I think we need to add the local exports here too
+    # TODO should we make the path configurable?
+    #      this assumes that . maps to the empty string
+    #      or can we somehow make this part of the
+    #      generator interface?
     result = imports:
       project (resolve @reference.name),
-        (generator @reference),
+        (-> ""),
         @reference.exports
 
     for scope from optimize @reference.scopes
