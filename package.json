@@ -6,7 +6,11 @@
   "scripts": {
     "test": "genie test"
   },
-  "keywords": [ "import maps", "module", "registry" ],
+  "keywords": [
+    "import maps",
+    "module",
+    "registry"
+  ],
   "author": "Dan Yoder",
   "license": "See license in LICENSE.md",
   "devDependencies": {
@@ -19,7 +23,7 @@
     "panda-quill": "^5.0.0"
   },
   "dependencies": {
-    "@dashkite/joy": "file:../joy",
+    "@dashkite/joy": "^0.1.0",
     "fast-glob": "^3.2.5",
     "js-yaml": "^4.0.0",
     "micromatch": "^4.0.2",
