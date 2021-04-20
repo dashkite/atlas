@@ -1,7 +1,7 @@
 {
   "name": "@dashkite/atlas",
   "version": "0.1.0",
-  "description": "",
+  "description": "Generate import maps",
   "main": "src/index.coffee",
   "scripts": {
     "test": "genie test"
