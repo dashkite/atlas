@@ -1,6 +1,6 @@
 {
   "name": "@dashkite/atlas",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Generate import maps",
   "main": "build/node/src/index.js",
   "main:coffee": "src/index.coffee",
