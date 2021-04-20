@@ -2,7 +2,13 @@
   "name": "@dashkite/atlas",
   "version": "0.1.0",
   "description": "Generate import maps",
-  "main": "src/index.coffee",
+  "main": "build/node/src/index.js",
+  "main:coffee": "src/index.coffee",
+  "exports": "build/node/src/index.js",
+  "files": [
+    "build/node/src",
+    "src"
+  ],
   "scripts": {
     "test": "genie test"
   },
@@ -11,6 +17,8 @@
     "module",
     "registry"
   ],
+  "homepage": "https://github.com/dashkite/atlas#readme",
+  "repository": "github:dashkite/atlas",
   "author": "Dan Yoder",
   "license": "See license in LICENSE.md",
   "devDependencies": {

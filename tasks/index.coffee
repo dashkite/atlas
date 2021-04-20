@@ -9,7 +9,13 @@ import * as _ from "@dashkite/joy"
 
 t.define "clean", -> m.rm "build"
 
-t.define "build", "clean", m.start [
+t.define "yaml", m.start [
+  m.glob [ "src/**/*.yaml" ], "."
+  m.read
+  m.copy p.join "build", "node"
+]
+
+t.define "build", [ "clean", "yaml" ], m.start [
   m.glob [ "{src,test}/**/*.coffee" ], "."
   m.read
   _.flow [
