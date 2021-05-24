@@ -18,7 +18,7 @@
   },
   "main": "build/node/src/index.js",
   "files": [
-    "./build/node/src"
+    "build/node/src"
   ],
   "scripts": {
     "test": "genie test"
