@@ -10,7 +10,7 @@ jsdelivr = _.generic
     "https://cdn.jsdelivr.net/npm/#{name}@#{version}"
 
 _.generic jsdelivr, (_.isKind FileReference), ({name, version}) ->
-  "/node_modules/#{name}@#{version}/"
+  "/node_modules/#{name}"
 
 _.generic jsdelivr, (_.isKind Scope), ({name}) ->
   "https://cdn.jsdelivr.net/npm/#{name}"
