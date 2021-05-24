@@ -2,16 +2,6 @@
   "name": "@dashkite/atlas",
   "version": "0.1.1",
   "description": "Generate import maps",
-  "main": "build/node/src/index.js",
-  "main:coffee": "src/index.coffee",
-  "exports": "build/node/src/index.js",
-  "files": [
-    "build/node/src",
-    "src"
-  ],
-  "scripts": {
-    "test": "genie test"
-  },
   "keywords": [
     "import maps",
     "module",
@@ -19,23 +9,36 @@
   ],
   "homepage": "https://github.com/dashkite/atlas#readme",
   "repository": "github:dashkite/atlas",
-  "author": "Dan Yoder",
   "license": "See license in LICENSE.md",
+  "author": "Dan Yoder",
+  "exports": {
+    ".": {
+      "node": "./build/node/src/index.js"
+    }
+  },
+  "main": "build/node/src/index.js",
+  "files": [
+    "./build/node/src"
+  ],
+  "scripts": {
+    "test": "genie test"
+  },
+  "dependencies": {
+    "@dashkite/joy": "^0.3.4",
+    "fast-glob": "^3.2.5",
+    "js-yaml": "^4.1.0",
+    "micromatch": "^4.0.4",
+    "node-fetch": "^2.6.1",
+    "semver": "^7.3.5"
+  },
   "devDependencies": {
-    "@babel/core": "^7.13.14",
-    "@babel/preset-env": "^7.13.12",
-    "@dashkite/genie": "^0.1.0",
-    "@dashkite/masonry": "^0.6.0",
+    "@babel/core": "^7.14.3",
+    "@babel/preset-env": "^7.14.2",
+    "@dashkite/genie": "^0.3.3",
+    "@dashkite/genie-presets": "^0.1.6",
+    "@dashkite/masonry": "^0.10.3",
     "amen": "^3.0.0",
     "coffeescript": "^2.5.1",
     "panda-quill": "^5.0.0"
-  },
-  "dependencies": {
-    "@dashkite/joy": "^0.1.0",
-    "fast-glob": "^3.2.5",
-    "js-yaml": "^4.0.0",
-    "micromatch": "^4.0.2",
-    "node-fetch": "^2.6.1",
-    "semver": "^6.3.0"
   }
 }
