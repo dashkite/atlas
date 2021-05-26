@@ -24,7 +24,7 @@ jspm = _.generic
 _.generic jspm, (_.isKind FileReference), ({name, version}) ->
   "/node_modules/#{name}"
 
-_.generic jsdelivr, (_.isKind Scope), ({name}) ->
+_.generic jspm, (_.isKind Scope), ({name}) ->
   "https://ga.jspm.io/npm:#{name}"
 
 export {
