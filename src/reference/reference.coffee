@@ -71,10 +71,11 @@ isAliasWildCardPath = (path) ->
   (isAliasPath path) && (path.endsWith "*")
 
 entry = (path) ->
-  if path.startsWith "."
-    path
-  else
-    "./#{path}"
+  unless path.startsWith "."
+    path = "./#{path}"
+  unless path.endsWith ".js"
+    path = "#{path}/index.js"
+  path
 
 #
 # exports private generic
