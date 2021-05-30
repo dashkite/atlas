@@ -74,7 +74,12 @@ entry = (path) ->
   unless path.startsWith "."
     path = "./#{path}"
   unless path.endsWith ".js"
-    path = "#{path}/index.js"
+    path += if path.endsWith "index"
+      ".js"
+    else if path.endsWith "/"
+      "index.js"
+    else
+      "/index.js"
   path
 
 #
