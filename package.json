@@ -11,12 +11,6 @@
   "repository": "github:dashkite/atlas",
   "license": "See license in LICENSE.md",
   "author": "Dan Yoder",
-  "exports": {
-    ".": {
-      "node": "./build/node/src/index.js"
-    }
-  },
-  "main": "build/node/src/index.js",
   "files": [
     "build/node/src"
   ],
@@ -35,8 +29,8 @@
     "@babel/core": "^7.14.3",
     "@babel/preset-env": "^7.14.4",
     "@dashkite/genie": "^0.5.2",
-    "@dashkite/genie-presets": "^0.2.0",
-    "@dashkite/masonry": "^0.11.4",
+    "@dashkite/genie-presets": "^0.2.2",
+    "@dashkite/masonry": "^0.11.5",
     "amen": "^3.0.0",
     "coffeescript": "^2.5.1",
     "panda-quill": "^5.0.0"
