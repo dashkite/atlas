@@ -113,6 +113,8 @@ _.generic exports,
   (reference, from, to) ->
     if to.import?
       exports reference, from, to.import
+    else if to.browser?
+      exports reference, from, to.browser
     else
       throw error "no import condition", reference
 
