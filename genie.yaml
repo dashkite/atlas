@@ -1,8 +1,11 @@
 presets:
-  coffeescript:
-    targets:
-      - node
   verify: null
   update: null
   release: null
   esm: null
+  coffeescript:
+    targets:
+      node:
+        - preset: node
+          glob:
+            - '{src,test}/**/*.coffee'

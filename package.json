@@ -11,6 +11,12 @@
   "repository": "github:dashkite/atlas",
   "license": "See license in LICENSE.md",
   "author": "Dan Yoder",
+  "exports": {
+    ".": {
+      "node": "./build/node/src/index.js"
+    }
+  },
+  "main": "build/node/src/index.js",
   "files": [
     "build/node/src"
   ],
