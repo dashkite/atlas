@@ -34,9 +34,9 @@
   "devDependencies": {
     "@babel/core": "^7.14.3",
     "@babel/preset-env": "^7.14.4",
-    "@dashkite/genie": "^0.4.1",
-    "@dashkite/genie-presets": "^0.1.14",
-    "@dashkite/masonry": "^0.10.8",
+    "@dashkite/genie": "^0.5.0",
+    "@dashkite/genie-presets": "^0.2.0",
+    "@dashkite/masonry": "^0.11.0",
     "amen": "^3.0.0",
     "coffeescript": "^2.5.1",
     "panda-quill": "^5.0.0"
