@@ -24,7 +24,7 @@
     "test": "genie test"
   },
   "dependencies": {
-    "@dashkite/joy": "^0.3.7",
+    "@dashkite/joy": "^0.3.9",
     "fast-glob": "^3.2.5",
     "js-yaml": "^4.1.0",
     "micromatch": "^4.0.4",
@@ -35,7 +35,7 @@
     "@babel/core": "^7.14.3",
     "@babel/preset-env": "^7.14.4",
     "@dashkite/genie": "^0.5.2",
-    "@dashkite/genie-presets": "^0.2.2",
+    "@dashkite/genie-presets": "^0.2.3",
     "@dashkite/masonry": "^0.11.5",
     "amen": "^3.0.0",
     "coffeescript": "^2.5.1",
