@@ -27,15 +27,15 @@
     "@dashkite/joy": "^0.3.9",
     "fast-glob": "^3.2.5",
     "js-yaml": "^4.1.0",
+    "make-fetch-happen": "^9.0.2",
     "micromatch": "^4.0.4",
-    "node-fetch": "^2.6.1",
     "semver": "^7.3.5"
   },
   "devDependencies": {
     "@babel/core": "^7.14.3",
     "@babel/preset-env": "^7.14.4",
     "@dashkite/genie": "^0.5.2",
-    "@dashkite/genie-presets": "^0.2.3",
+    "@dashkite/genie-presets": "^0.2.5",
     "@dashkite/masonry": "^0.11.5",
     "amen": "^3.0.0",
     "coffeescript": "^2.5.1",
