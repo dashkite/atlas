@@ -27,6 +27,7 @@ class FileReference extends Reference
     _.getters
       description: -> @url
       path: ->  P.join (fileURLToPath @url), "package.json"
+      directory: -> fileURLToPath @url
   ]
 
 # equality for file references just means

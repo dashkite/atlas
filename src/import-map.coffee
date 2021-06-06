@@ -36,7 +36,7 @@ optimize = (scopes) ->
 project = (fkey, url, _exports) ->
   result = {}
   for key, value of _exports
-    result[ (fkey key) ] = value.replace ".", url
+    result[ (fkey key) ] = value.replace ".", if url == "/" then "" else url
   result
 
 resolve = (name) -> (key) -> key.replace ".", name
@@ -51,11 +51,29 @@ scopeExports = (scope, generator) ->
 
 class ImportMap
 
+  # set of instances of ImportMap
+  @maps: new Map
+
   @create: (reference) ->
-    _.assign new @,
-      reference: reference
+    if @maps.has reference
+      @maps.get reference
+    else
+      @maps.set reference,
+        result = _.assign new @, reference: reference
+      result
+
+  constructor: ->
+    # set of import maps as JSON for this ImportMap
+    @maps = new Map
 
   toJSON: (generator) ->
+    if @maps.has generator
+      @maps.get generator
+    else
+      @maps.set generator, result = @_toJSON generator
+      result
+
+  _toJSON: (generator) ->
 
     # TODO should we make the path configurable?
     #      this assumes that . maps to the empty string

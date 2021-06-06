@@ -1,7 +1,8 @@
-import fetch from "node-fetch"
+import Fetch from "make-fetch-happen"
 import * as _ from "@dashkite/joy"
 import { error } from "./errors"
 
+fetch = Fetch.defaults cachePath: "./.atlas"
 fetchJSON = _.flow [
   fetch
   # TODO fix client issue in mercury
