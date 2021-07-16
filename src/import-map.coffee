@@ -1,30 +1,28 @@
+import Path from "path"
 import * as _ from "@dashkite/joy"
-import { Scope } from "./scope"
+import { Scope, ParentScope } from "./scope"
 
-optimize = (scopes) ->
+optimize = (dependencies) ->
 
   results = new Set
 
   root = Scope.create "root"
 
-  for scope from scopes
+  for dependency from dependencies
+    self = Scope.create dependency
+    parent = ParentScope.create dependency
 
-    # TODO this hardcodes the name@version convention
-    #      before we've generated the URL
-    self = Scope.create "#{scope.name}@#{scope.version}"
-    parent = Scope.create scope.name
+    for _dependency from dependency.dependencies
 
-    for dependency from scope.dependencies
-
-      if root.has dependency || parent.has dependency
+      if root.has _dependency || parent.has _dependency
         continue
 
-      if root.canAdd dependency
-        root.add dependency
-      else if parent.canAdd dependency
-        parent.add dependency
+      if root.canAdd _dependency
+        root.add _dependency
+      else if parent.canAdd _dependency
+        parent.add _dependency
       else
-        self.add dependency
+        self.add _dependency
 
     results.add self unless _.isEmpty self
     results.add parent unless _.isEmpty parent
@@ -32,22 +30,28 @@ optimize = (scopes) ->
   results.add root unless _.isEmpty root
   results
 
+buildExports = (dependency, url) ->
+  r = {}
+  for key, value of dependency.exports
+    _key = key.replace ".", dependency.name
+    r[ _key ] = value.replace "./", url
+  r
 
-project = (fkey, url, _exports) ->
-  result = {}
-  for key, value of _exports
-    result[ (fkey key) ] = value.replace ".", if url == "/" then "" else url
-  result
+buildImports = (reference, url) ->
+  if !_.isEmpty reference.aliases
+    r = {}
+    for key, value of reference.aliases
+      r[ key ] = value.replace "./", url
+    r
 
-resolve = (name) -> (key) -> key.replace ".", name
+build = (scope, generator) ->
+  r = {}
+  for dependency from scope.dependencies
+    _.assign r, buildExports dependency, generator dependency
+  r
 
-scopeExports = (scope, generator) ->
-  _.merge (
-    for dependency from scope.dependencies
-      project (resolve dependency.name),
-        (generator dependency),
-        dependency.exports
-    )...
+softMerge = (object, key, value) ->
+  object[key] = _.merge (object[key] ? {}), value
 
 class ImportMap
 
@@ -75,31 +79,26 @@ class ImportMap
 
   _toJSON: (generator) ->
 
-    # TODO should we make the path configurable?
-    #      this assumes that . maps to the empty string
-    #      or can we somehow make this part of the
-    #      generator interface?
-    result = imports:
-      project (resolve @reference.name),
-        (-> ""),
-        @reference.exports
+    result =
+      imports: buildExports @reference, "/"
+      scopes: {}
 
     for scope from optimize @reference.scopes
-      if scope.name == "root"
-        _.assign result.imports, scopeExports scope, generator
+      if scope.reference == "root"
+        _.assign result.imports, build scope, generator
       else
-        (result.scopes ?= {})[ generator scope ] =
-          scopeExports scope, generator
+        result.scopes[ generator scope ] = build scope, generator
 
-    for scope from @reference.scopes
-      if !_.isEmpty scope.aliases
-        (result.scopes ?= {})[ generator scope ] =
-          project _.identity,
-            (generator scope),
-            scope.aliases
+    for reference from @reference.scopes
+      if !(_.isEmpty reference.aliases)
+        if reference == @reference
+          softMerge result.scopes, "/", buildImports @reference, "/"
+        else
+          softMerge result.scopes, (generator reference),
+            buildImports reference, generator reference
+
     result
 
     JSON.stringify result, null, 2
-
 
 export { ImportMap }

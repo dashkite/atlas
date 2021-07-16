@@ -1,37 +1,33 @@
 import Path from "path"
 import * as _ from "@dashkite/joy"
 import { FileReference } from "./reference/file"
-import { Scope } from "./scope"
+import { Scope, ParentScope } from "./scope"
 import { error } from "./errors"
+
+local = _.pipe [
+  _.split "/"
+  _.second
+]
 
 jsdelivr = _.generic
   name: "jsdelivr"
   description: "jsdelivr URL generator"
   default: ({name, version}) ->
-    "https://cdn.jsdelivr.net/npm/#{name}@#{version}"
+    "https://cdn.jsdelivr.net/npm/#{name}@#{version}/"
 
-_.generic jsdelivr, (_.isKind FileReference), ({directory, name}) ->
-  if directory == process.cwd()
-    "/"
-  else
-    "/node_modules/#{name}"
+_.generic jsdelivr, _.isString, (name) ->
+  "https://cdn.jsdelivr.net/npm/#{name}/"
 
-_.generic jsdelivr, (_.isKind Scope), ({name}) ->
-  "https://cdn.jsdelivr.net/npm/#{name}"
+_.generic jsdelivr, (_.isKind FileReference), ({name}) ->
+  "/#{local name}/"
 
-jspm = _.generic
-  name: "jspm"
-  description: "jsdelivr URL generator"
-  default: ({name, version}) ->
-    "https://ga.jspm.io/npm:#{name}@#{version}"
+_.generic jsdelivr, (_.isKind Scope), ({reference}) -> jsdelivr reference
 
-_.generic jspm, (_.isKind FileReference), ({name, version}) ->
-  "/node_modules/#{name}"
-
-_.generic jspm, (_.isKind Scope), ({name}) ->
-  "https://ga.jspm.io/npm:#{name}"
+_.generic jsdelivr, (_.isKind ParentScope), ({reference}) ->
+  # hacky AF but just need to get this working
+  # amounts to a no-op for file references
+  (jsdelivr reference).replace "@#{reference.version}", ""
 
 export {
   jsdelivr
-  jspm
 }

@@ -337,6 +337,7 @@ do ->
             assert _.isObject JSON.parse json
 
           test "with the right imports", ->
+            console.log map
             assert map.imports?
             assert map.imports["a"]?
             assert map.imports["a/x"]?
@@ -359,14 +360,14 @@ do ->
           test "and the right scopes", (scope = undefined) ->
             assert map.scopes?
 
-            assert (scope = map.scopes["https://cdn.jsdelivr.net/npm/c"])?
+            assert (scope = map.scopes["https://cdn.jsdelivr.net/npm/c/"])?
             assert scope["d"]?
             assert scope["d/x"]?
             assert scope["d/y/z"]?
 
           test "and the right internal imports", (scope = undefined) ->
             assert (scope =
-              map.scopes["https://cdn.jsdelivr.net/npm/b@1.0.0"])?
+              map.scopes["https://cdn.jsdelivr.net/npm/b@1.0.0/"])?
             assert scope["#z"]?
             assert scope["#local/x"]?
             assert scope["#local/y/z"]?

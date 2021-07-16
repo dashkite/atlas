@@ -3,7 +3,7 @@ import { Reference } from "./reference"
 
 class Scope
 
-  @create: (name) -> _.assign new @, {name, dependencies: new Set}
+  @create: (reference) -> _.assign new @, {reference, dependencies: new Set}
 
   _.mixin @::, [
     _.getters
@@ -25,4 +25,6 @@ class Scope
         return false
     return true
 
-export { Scope }
+class ParentScope extends Scope
+
+export { Scope, ParentScope }
