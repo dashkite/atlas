@@ -71,13 +71,6 @@ class ImportMap
     @maps = new Map
 
   toJSON: (generator) ->
-    if @maps.has generator
-      @maps.get generator
-    else
-      @maps.set generator, result = @_toJSON generator
-      result
-
-  _toJSON: (generator) ->
 
     result =
       imports: buildExports @reference, "/"
@@ -96,8 +89,6 @@ class ImportMap
         else
           softMerge result.scopes, (generator reference),
             buildImports reference, generator reference
-
-    result
 
     JSON.stringify result, null, 2
 

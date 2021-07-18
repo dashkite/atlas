@@ -337,7 +337,6 @@ do ->
             assert _.isObject JSON.parse json
 
           test "with the right imports", ->
-            console.log map
             assert map.imports?
             assert map.imports["a"]?
             assert map.imports["a/x"]?
