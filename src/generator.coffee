@@ -18,8 +18,12 @@ jsdelivr = _.generic
 _.generic jsdelivr, _.isString, (name) ->
   "https://cdn.jsdelivr.net/npm/#{name}/"
 
-_.generic jsdelivr, (_.isKind FileReference), ({name}) ->
-  "/#{local name}/"
+_.generic jsdelivr, (_.isKind FileReference), (reference) ->
+  { name } = reference
+  if _.startsWith "@", name
+    "/#{local name}/"
+  else
+    "/#{name}/"
 
 _.generic jsdelivr, (_.isKind Scope), ({reference}) -> jsdelivr reference
 
