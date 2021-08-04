@@ -139,9 +139,15 @@ _.generic exports,
 # if we get here, it's because there's no exports object or string
 #
 _.generic exports, isReference, ({manifest}) ->
-  ".": entry (manifest.module ? manifest.browser ?
-    manifest.main ? "index.js")
-
+  ".": entry do ->
+    if _.isString manifest.module
+      manifest.module
+    else if _.isString manifest.browser
+      manifest.browser
+    else if _.isString manifest.main
+      manifest.main
+    else
+      "index.js"
 #
 # if we get an object, iterate through the properties and generate
 # exports for each, merging the results into a single object
