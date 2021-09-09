@@ -188,7 +188,8 @@ aliases = _.generic
 _.generic aliases,
   isReference, isAliasPath, _.isString,
   (reference, from, to) ->
-    [from]: to
+    root = reference.root ? "."
+    [from]: "/" + P.relative root, to
 
 #
 # if we get an object, attempt to generate a mapping using the `import`
@@ -214,8 +215,10 @@ _.generic aliases,
   isReference, isAliasWildCardPath, _.isString,
   (reference, from, to) ->
     rx = {}
+    root = reference.root ? "."
     for path in reference.capture to
-      rx[ (from.replace "*", path) ] = to.replace "*", path
+      rx[ (from.replace "*", path) ] = 
+        "/" + P.relative root, to.replace "*", path
     rx
 
 #
