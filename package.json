@@ -24,19 +24,19 @@
     "test": "genie test"
   },
   "dependencies": {
-    "@dashkite/joy": "^0.3.10",
-    "fast-glob": "^3.2.6",
+    "@dashkite/joy": "^0.3.11",
+    "fast-glob": "^3.2.7",
     "js-yaml": "^4.1.0",
-    "make-fetch-happen": "^9.0.3",
+    "make-fetch-happen": "^9.1.0",
     "micromatch": "^4.0.4",
     "semver": "^7.3.5"
   },
   "devDependencies": {
-    "@babel/core": "^7.14.6",
-    "@babel/preset-env": "^7.14.7",
+    "@babel/core": "^7.15.5",
+    "@babel/preset-env": "^7.15.4",
     "@dashkite/genie": "^0.5.4",
-    "@dashkite/genie-presets": "^0.4.7",
-    "@dashkite/masonry": "^0.11.8",
+    "@dashkite/genie-presets": "^0.4.14",
+    "@dashkite/masonry": "^0.11.12",
     "amen": "^3.0.0",
     "coffeescript": "^2.5.1",
     "panda-quill": "^5.0.0"
