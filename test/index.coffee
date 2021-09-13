@@ -213,7 +213,7 @@ do ->
 
           assert.equal 1, _.size foo.aliases
           assert foo.aliases["#a"]?
-          assert.equal "/build/import/src/a.js", foo.aliases["#a"]
+          assert.equal "./build/import/src/a.js", foo.aliases["#a"]
 
         test "...with # in import condition",  (foo = undefined) ->
 
@@ -226,7 +226,7 @@ do ->
 
           assert.equal 1, _.size foo.aliases
           assert foo.aliases["#a"]?
-          assert.equal "/build/import/src/a.js", foo.aliases["#a"]
+          assert.equal "./build/import/src/a.js", foo.aliases["#a"]
 
         test "...with subpath pattern",  (foo = undefined) ->
 
@@ -247,10 +247,10 @@ do ->
             ]
 
           assert.equal 5, _.size foo.aliases
-          assert.equal "/build/import/src/a.js", foo.aliases["#local"]
-          assert.equal "/build/import/src/b.js", foo.aliases["#local/b"]
-          assert.equal "/build/import/src/c.js", foo.aliases["#local/c"]
-          assert.equal "/build/import/src/d/e.js", foo.aliases["#local/d/e"]
+          assert.equal "./build/import/src/a.js", foo.aliases["#local"]
+          assert.equal "./build/import/src/b.js", foo.aliases["#local/b"]
+          assert.equal "./build/import/src/c.js", foo.aliases["#local/c"]
+          assert.equal "./build/import/src/d/e.js", foo.aliases["#local/d/e"]
 
         test "...with subpath pattern within import condition",
           (foo = undefined) ->
@@ -272,10 +272,10 @@ do ->
             ]
 
           assert.equal 5, _.size foo.aliases
-          assert.equal "/build/import/src/a.js", foo.aliases["#local"]
-          assert.equal "/build/import/src/b.js", foo.aliases["#local/b"]
-          assert.equal "/build/import/src/c.js", foo.aliases["#local/c"]
-          assert.equal "/build/import/src/d/e.js", foo.aliases["#local/d/e"]
+          assert.equal "./build/import/src/a.js", foo.aliases["#local"]
+          assert.equal "./build/import/src/b.js", foo.aliases["#local/b"]
+          assert.equal "./build/import/src/c.js", foo.aliases["#local/c"]
+          assert.equal "./build/import/src/d/e.js", foo.aliases["#local/d/e"]
 
         # TODO should we throw here, or just ignore?
         test "...throws if there's no import condition", (foo = undefined) ->
