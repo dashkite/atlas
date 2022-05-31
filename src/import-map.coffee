@@ -53,6 +53,15 @@ build = (scope, generator) ->
 softMerge = (object, key, value) ->
   object[key] = _.merge (object[key] ? {}), value
 
+sortObject = ( object ) ->
+  addToImports = ( result, key ) ->
+    result[ key ] = object[ key ]
+    result
+
+  ( Object.keys object )
+    .sort()
+    .reduce addToImports, {}
+
 class ImportMap
 
   # set of instances of ImportMap
@@ -89,6 +98,12 @@ class ImportMap
         else
           softMerge result.scopes, (generator reference),
             buildImports reference, generator reference
+
+    # maintain sort order for diffing
+    result.imports = sortObject result.imports
+    result.scopes = sortObject result.scopes
+    for key, scope in result.scopes
+      result.scopes[ key ] = sortObject scope
 
     JSON.stringify result, null, 2
 
