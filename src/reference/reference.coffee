@@ -111,12 +111,11 @@ _.generic exports,
 _.generic exports,
   isReference, isRelativePath, _.isObject,
   (reference, from, to) ->
-    if to.import?
-      exports reference, from, to.import
-    else if to.browser?
-      exports reference, from, to.browser
-    else
-      throw error "no import condition", reference
+    conditions = ( process.env["ATLAS_CONDITIONS"]?.split /\s+/ ) ? [ "import", "browser" ]
+    for condition in conditions
+      if to[ condition ]?
+        return exports reference, from, to[ condition ]
+    throw error "no import condition", reference
 
 #
 # for a wildcard path, we use the target pattern to
@@ -202,10 +201,11 @@ _.generic aliases,
 _.generic aliases,
   isReference, isAliasPath, _.isObject,
   (reference, from, to) ->
-    if to.import?
-      aliases reference, from, to.import
-    else
-      throw error "no import condition", reference
+    conditions = ( process.env["ATLAS_CONDITIONS"]?.split /\s+/ ) ? [ "import", "browser" ]
+    for condition in conditions
+      if to[ condition ]?
+        return aliases reference, from, to[ condition ]
+    throw error "no import condition", reference
 
 #
 # for a wildcard path, we use the target pattern to

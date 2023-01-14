@@ -19,9 +19,15 @@ You know the drill.
 npm i @dashkite/atlas
 ```
 
+## Usage
+
+### ATLAS_CONDITIONS
+
+Set the `ATLAS_CONDITIONS` environment variable to set the import conditions that Atlas uses to determine the path for an import map.
+
 ## Status
 
-Atlas is experimental and under active development. You should probably not use it in production.
+Atlas is experimental and under active development. You probably not use it in production.
 
 ## Resources
 
