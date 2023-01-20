@@ -13,6 +13,7 @@ import { error } from "../errors"
 
 handlers =
   file: FileReference
+  link: FileReference
   http: create: (name, description) ->
     throw error "http URL", name, description
   git: create: (name, description) ->
