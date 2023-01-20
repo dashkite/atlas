@@ -34,6 +34,7 @@
   "devDependencies": {
     "@babel/core": "^7.20.12",
     "@babel/preset-env": "^7.20.2",
+    "@dashkite/amen-console": "^0.0.2",
     "@dashkite/genie": "^0.5.11",
     "@dashkite/genie-presets": "^0.5.7",
     "@dashkite/masonry": "^0.12.4",
