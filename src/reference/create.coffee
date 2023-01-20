@@ -4,6 +4,7 @@ import { Reference } from "./reference"
 
 import { FileReference } from "./file"
 import { RegistryReference } from "./registry"
+import { error } from "../errors"
 
 # Reference.create is defined separately from the Reference type
 # because we need to import the subtypes for dynamic create.
