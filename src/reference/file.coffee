@@ -6,9 +6,17 @@ import fglob from "fast-glob"
 import { Reference } from "./reference"
 
 # you've got to be kidding me...
-fileURLToPath = (s) ->
-  if s.startsWith "file:." then P.resolve s[5..]
-  else _fileURLToPath s
+isFileLike = ( reference ) ->
+  ( reference.startsWith "file:." ) ||
+    ( reference.startsWith "link:."  )
+
+getPathFromReference = ( reference ) ->
+  # WARNING this just happens to work because file/link both have 4 char
+  reference[5..]
+
+fileURLToPath = ( reference ) ->
+  if ( isFileLike reference ) then getPathFromReference reference
+  else _fileURLToPath reference
 
 class FileReference extends Reference
 
