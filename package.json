@@ -25,20 +25,18 @@
   },
   "dependencies": {
     "@dashkite/joy": "^0.3.16",
-    "fast-glob": "^3.2.12",
+    "@dashkite/polaris": "link:../vedic-dolphin/polaris",
+    "esbuild": "^0.19.2",
     "js-yaml": "^4.1.0",
-    "make-fetch-happen": "^11.0.2",
     "micromatch": "^4.0.5",
-    "semver": "^7.3.8"
+    "semver": "^7.5.4"
   },
   "devDependencies": {
-    "@babel/core": "^7.20.12",
-    "@babel/preset-env": "^7.20.2",
+    "@dashkite/amen": "^0.2.2",
+    "@dashkite/amen-console": "^0.0.2",
+    "@dashkite/assert": "^0.1.4",
     "@dashkite/genie": "^0.5.11",
-    "@dashkite/genie-presets": "^0.5.7",
-    "@dashkite/masonry": "^0.12.4",
-    "amen": "^3.0.0",
-    "coffeescript": "^2.7.0",
-    "panda-quill": "^5.0.0"
+    "@dashkite/genie-presets": "^0.7.0",
+    "coffeescript": "^2.7.0"
   }
 }
