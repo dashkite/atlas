@@ -25,7 +25,7 @@
   },
   "dependencies": {
     "@dashkite/joy": "^0.3.16",
-    "@dashkite/polaris": "link:../vedic-dolphin/polaris",
+    "@dashkite/polaris": "link:../polaris",
     "esbuild": "^0.19.2",
     "js-yaml": "^4.1.0",
     "micromatch": "^4.0.5",

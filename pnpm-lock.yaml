@@ -9,8 +9,8 @@ dependencies:
     specifier: ^0.3.16
     version: 0.3.16
   '@dashkite/polaris':
-    specifier: link:../vedic-dolphin/polaris
-    version: link:../vedic-dolphin/polaris
+    specifier: link:../polaris
+    version: link:../polaris
   esbuild:
     specifier: ^0.19.2
     version: 0.19.2
