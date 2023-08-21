@@ -101,14 +101,6 @@ generic getURL, isLocal, ({ path }) ->
   expand "/${ path }",
     path: Path.relative "build/browser/src", path
 
-generic getURL, isProduction, 
-	expand "https://cdn.jsdelivr.net/npm/\
-    ${ name }@${ version}/${ path }"
-
-generic getURL, isScopedProduction, 
-	expand "https://cdn.jsdelivr.net/npm/\
-    @${ scope }/${ name }@${ version}/${ path }"
-
 generic getURL, isDevelopment, 
 	expand "https://modules.dashkite.io/\
     ${ hash }/${ name }@${ version}/${ path }"
@@ -116,6 +108,14 @@ generic getURL, isDevelopment,
 generic getURL, isScopedDevelopment, 
 	expand "https://modules.dashkite.io/\
     ${ hash }/@${ scope }/${ name }@${ version}/${ path }"
+
+generic getURL, isProduction, 
+	expand "https://cdn.jsdelivr.net/npm/\
+    ${ name }@${ version}/${ path }"
+
+generic getURL, isScopedProduction, 
+	expand "https://cdn.jsdelivr.net/npm/\
+    @${ scope }/${ name }@${ version}/${ path }"
 
 includeMapping = ( mapping ) ->
   mapping.external != true && 
@@ -126,7 +126,12 @@ getContext = ({ path, entries }) ->
   url = await getURL { info..., entries, source: { path }}
   { info..., source: { path }, url }
 
-generate = ( entries ) ->
+getParentURL = ( url ) ->
+  i = url.lastIndexOf "/"
+  if i > 0 then url[...i] else ""
+
+generate = ( entries, map ) ->
+
   { metafile } = await esbuild.build
       entryPoints: entries
       bundle: true
@@ -164,6 +169,40 @@ generate = ( entries ) ->
     mappings = ( specifier[ mapping.url ] ?= [])
     mappings.push mapping
 
-  specifiers
+  map ?=
+    imports: {}
+    scopes: {}
+
+  { imports, scopes } = map
+  
+  addScopedMapping = ( scope, specifier, url ) ->
+    ( scope = scopes[ mapping.import.scope ] ?= {} )
+    scope[ specifier ] = url
+  
+  addImportMapping = ( specifier, url ) ->
+    imports[ specifier ] = url
+
+  isModuleSpecifier = ( specifier ) ->
+    !( specifier.startsWith "." || specifier.startsWith "/" )
+
+  isLocalSpecifier = ( specifier ) -> specifier.startsWith "."
+  
+  hasConflict = ( mappings, mapping ) ->
+    if ( url = mappings[ mapping.import.specifier ])?
+      mapping.url != url
+    else false
+
+  for specifier, modules of specifiers
+    for url, mappings of modules
+      for mapping in mappings
+        if isModuleSpecifier mapping.import.specifier
+          if hasConflict imports, mapping
+              addScopedMapping mapping.import.scope, specifier, url
+          else
+            addImportMapping specifier, url
+        else if ! isLocalSpecifier mapping.import.specifier
+          addScopedMapping mapping.import.scope, specifier, url
+
+  { imports, scopes }
 
 export { generate }
