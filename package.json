@@ -37,7 +37,7 @@
     "@babel/preset-env": "^7.20.2",
     "@dashkite/amen-console": "^0.0.2",
     "@dashkite/genie": "^0.5.11",
-    "@dashkite/genie-presets": "^0.5.7",
+    "@dashkite/genie-presets": "^0.7.0",
     "@dashkite/masonry": "^0.12.4",
     "amen": "^3.0.0",
     "coffeescript": "^2.7.0",
