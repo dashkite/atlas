@@ -43,25 +43,24 @@
     "@dashkite/quark": "https://modules.dashkite.io/5a6ebfc9e74e6bb452f35d9e9d6d7cbab78aff60/@dashkite/quark@2.0.0-beta.0/build/browser/src/index.js",
     "@dashkite/sites-resource": "https://modules.dashkite.io/164dc86dd5c9aafa6b7db8edab0b289fe8e5f810/@dashkite/sites-resource@0.0.0/build/browser/src/index.js",
     "@dashkite/neon": "https://modules.dashkite.io/38a4da728f23cc1dd9e6e2b06e576d5b050ff446/@dashkite/neon@0.5.1/build/browser/src/index.js",
-    "#templates/header": "/templates/header.js",
-    "#templates/footer": "/templates/footer.js",
-    "#templates/workspace-header": "/templates/workspace-header.js",
-    "#templates/back-home": "/templates/back-home.js",
-    "#templates/back": "/templates/back.js",
-    "#templates/workspace-product-header": "/templates/workspace-product-header.js",
-    "#templates/db-header": "/templates/db-header.js",
-    "#templates/back-databases": "/templates/back-databases.js",
-    "#templates/sites-builder": "/templates/sites-builder.js",
-    "#templates/sites-header": "/templates/sites-header.js",
+    "#templates/header": "https://modules.dashkite.io/127ff3480bad0f402ad8b00d592178cce41e47ce/@dashkite/workspace-client@0.0.0/build/browser/src/templates/header.js",
+    "#templates/footer": "https://modules.dashkite.io/127ff3480bad0f402ad8b00d592178cce41e47ce/@dashkite/workspace-client@0.0.0/build/browser/src/templates/footer.js",
+    "#templates/workspace-header": "https://modules.dashkite.io/127ff3480bad0f402ad8b00d592178cce41e47ce/@dashkite/workspace-client@0.0.0/build/browser/src/templates/workspace-header.js",
+    "#templates/back-home": "https://modules.dashkite.io/127ff3480bad0f402ad8b00d592178cce41e47ce/@dashkite/workspace-client@0.0.0/build/browser/src/templates/back-home.js",
+    "#templates/back": "https://modules.dashkite.io/127ff3480bad0f402ad8b00d592178cce41e47ce/@dashkite/workspace-client@0.0.0/build/browser/src/templates/back.js",
+    "#templates/workspace-product-header": "https://modules.dashkite.io/127ff3480bad0f402ad8b00d592178cce41e47ce/@dashkite/workspace-client@0.0.0/build/browser/src/templates/workspace-product-header.js",
+    "#templates/db-header": "https://modules.dashkite.io/127ff3480bad0f402ad8b00d592178cce41e47ce/@dashkite/workspace-client@0.0.0/build/browser/src/templates/db-header.js",
+    "#templates/back-databases": "https://modules.dashkite.io/127ff3480bad0f402ad8b00d592178cce41e47ce/@dashkite/workspace-client@0.0.0/build/browser/src/templates/back-databases.js",
+    "#templates/sites-builder": "https://modules.dashkite.io/127ff3480bad0f402ad8b00d592178cce41e47ce/@dashkite/workspace-client@0.0.0/build/browser/src/templates/sites-builder.js",
+    "#templates/sites-header": "https://modules.dashkite.io/127ff3480bad0f402ad8b00d592178cce41e47ce/@dashkite/workspace-client@0.0.0/build/browser/src/templates/sites-header.js",
     "@dashkite/oxygen": "https://modules.dashkite.io/8df00a48ba79a65ec74d62b6e53098ade7f7d94f/@dashkite/oxygen@0.4.0/build/browser/src/index.js",
     "@dashkite/workspace-components": "https://modules.dashkite.io/6c262cdb1f9c174463184a23d956f077c96fef10/@dashkite/workspace-components@0.0.1/build/browser/src/index.js"
   },
   "scopes": {
-    "https://modules.dashkite.io/046b78a00ac1ff4f4856644d731cd828cc3d7b52/@dashkite/media-type@0.0.0/build/browser/src/index.js": {
-      "@dashkite/parse": "https://modules.dashkite.io/6a13a2d5146e6d22cfe18ae13f75a7cdd5e743e6/@dashkite/parse@0.4.3/build/browser/src/index.js"
-    },
-    "https://modules.dashkite.io/38a4da728f23cc1dd9e6e2b06e576d5b050ff446/@dashkite/neon@0.5.1/build/browser/src/index.js": {
-      "diffhtml": "https://cdn.jsdelivr.net/npm/diffhtml@1.0.0-beta.20/dist/es/index.js"
+    "https://modules.dashkite.io": {
+      "@dashkite/parse": "https://modules.dashkite.io/6a13a2d5146e6d22cfe18ae13f75a7cdd5e743e6/@dashkite/parse@0.4.3/build/browser/src/index.js",
+      "diffhtml": "https://cdn.jsdelivr.net/npm/diffhtml@1.0.0-beta.20/dist/es/index.js",
+      "@dashkite/helium": "https://cdn.jsdelivr.net/npm/@dashkite/helium@0.4.3/build/browser/src/index.js"
     }
   }
 }

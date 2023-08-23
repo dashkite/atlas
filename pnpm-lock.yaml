@@ -38,7 +38,7 @@ devDependencies:
     specifier: ^0.5.11
     version: 0.5.11
   '@dashkite/genie-presets':
-    specifier: ^0.7.0
+    specifier: link:../genie-presets
     version: 0.7.0
   coffeescript:
     specifier: ^2.7.0

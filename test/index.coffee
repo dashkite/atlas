@@ -15,8 +15,7 @@ do ->
 
     test "registy reference", ->
       map = await $.generate [
-        "../vedic-dolphin/.tempo/workspace-client\
-          /build/browser/src/index.js"
+        "../workspace-client/build/browser/src/index.js"
       ]
 
       FS.writeFile "import-map.json", ( JSON.stringify map, null, 2 )
