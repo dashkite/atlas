@@ -17,7 +17,7 @@ readModuleInfo = Fn.memoize ( path ) ->
   else { name, version, path }
 
 getModulePath = Fn.memoize ( path ) ->
-  directory = Path.dirname Path.resolve path
+  directory = Path.dirname path
   until directory == "."
     if await exists Path.join directory, "package.json"
       return directory

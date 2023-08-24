@@ -12,7 +12,7 @@ generate = ( entries, map ) ->
   await do Fn.flow [
     -> analyze entries
     It.map Build.decorator
-    It.map Resource.decorator
+    It.map Resource.decorator entries
     It.reduce ImportMap.add,
       if map then ImportMap.from map else ImportMap.make()
 

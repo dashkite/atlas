@@ -17,12 +17,17 @@ getBuildInfo = ( description ) ->
   module:
     hash: await getHash description.module.path
 
+decorateModule = ( description ) ->
+  description.module.hash ?=
+    ( await getBuildInfo description ).module.hash
+
 Build =
+
   decorator: Fn.tee ( dependency ) ->
-    dependency.module.hash =
-      ( await getBuildInfo dependency )?.module.hash
-    dependency.import.scope.module.hash =
-      ( await getBuildInfo dependency.import.scope )?.module.hash
+    Promise.all [
+      decorateModule dependency
+      decorateModule dependency.import.scope
+    ] 
 
 export {
   readBuildInfo

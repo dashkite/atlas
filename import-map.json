@@ -11,22 +11,22 @@
     "@dashkite/url-codex": "https://modules.dashkite.io/54c42ae0ad7ffd6c63578a0ce598b581b80f4c13/@dashkite/url-codex@0.0.0/build/browser/src/index.js",
     "@dashkite/joy/predicate": "https://cdn.jsdelivr.net/npm/@dashkite/joy@0.3.16/build/browser/src/predicate.js",
     "@dashkite/url-router": "https://modules.dashkite.io/678ac683f0ea054d472c299b8d4e90669ca08085/@dashkite/url-router@0.0.0/build/browser/src/index.js",
-    "es6-url-template": "https://cdn.jsdelivr.net/npm/es6-url-template@3.0.2/url-template.js",
+    "es6-url-template": "https://cdn.jsdelivr.net/npm//es6-url-template@3.0.2/url-template.js",
     "@dashkite/navigate": "https://cdn.jsdelivr.net/npm/@dashkite/navigate@0.3.2/build/import/src/index.js",
     "@dashkite/katana": "https://cdn.jsdelivr.net/npm/@dashkite/katana@0.4.8/build/import/src/index.js",
     "@dashkite/katana/sync": "https://cdn.jsdelivr.net/npm/@dashkite/katana@0.4.8/build/import/src/sync.js",
     "@dashkite/stylist": "https://cdn.jsdelivr.net/npm/@dashkite/stylist@0.0.6/build/import/src/index.js",
     "@dashkite/joy/metaclass": "https://cdn.jsdelivr.net/npm/@dashkite/joy@0.3.16/build/browser/src/metaclass.js",
-    "object-observer": "https://cdn.jsdelivr.net/npm/object-observer@5.1.6/dist/object-observer.min.js",
+    "object-observer": "https://cdn.jsdelivr.net/npm//object-observer@5.1.6/dist/object-observer.min.js",
     "@dashkite/katana/async": "https://cdn.jsdelivr.net/npm/@dashkite/katana@0.4.8/build/import/src/async.js",
-    "diffhtml": "https://cdn.jsdelivr.net/npm/diffhtml@1.0.0-beta.29/dist/es/index.js",
+    "diffhtml": "https://cdn.jsdelivr.net/npm//diffhtml@1.0.0-beta.29/dist/es/index.js",
     "@dashkite/base64": "https://cdn.jsdelivr.net/npm/@dashkite/base64@1.0.1/lib-es6/base64.js",
     "@dashkite/utf8": "https://cdn.jsdelivr.net/npm/@dashkite/utf8@1.0.1/lib-es6/utf8.js",
     "@dashkite/bake": "https://cdn.jsdelivr.net/npm/@dashkite/bake@0.0.6/build/browser/src/index.js",
     "@dashkite/tweetnacl": "https://cdn.jsdelivr.net/npm/@dashkite/tweetnacl@1.0.3/nacl-fast-es6.js",
     "@dashkite/joy": "https://cdn.jsdelivr.net/npm/@dashkite/joy@0.3.16/build/browser/src/index.js",
     "@dashkite/joy/array": "https://cdn.jsdelivr.net/npm/@dashkite/joy@0.3.16/build/browser/src/array.js",
-    "panda-confidential": "https://cdn.jsdelivr.net/npm/panda-confidential@3.1.2/build/browser/src/index.js",
+    "panda-confidential": "https://cdn.jsdelivr.net/npm//panda-confidential@3.1.2/build/browser/src/index.js",
     "@dashkite/url-codex/parsers": "https://modules.dashkite.io/54c42ae0ad7ffd6c63578a0ce598b581b80f4c13/@dashkite/url-codex@0.0.0/build/browser/src/parsers/index.js",
     "@dashkite/lru-cache": "https://modules.dashkite.io/64211122718106a076f9699d0fa75e6e1954237c/@dashkite/lru-cache@0.0.0/build/browser/src/index.js",
     "@dashkite/scan": "https://modules.dashkite.io/f6570c625063b0689c25f703d171ce1341a961ad/@dashkite/scan@0.0.0/build/browser/src/index.js",
@@ -59,7 +59,10 @@
   "scopes": {
     "https://modules.dashkite.io": {
       "@dashkite/parse": "https://modules.dashkite.io/6a13a2d5146e6d22cfe18ae13f75a7cdd5e743e6/@dashkite/parse@0.4.3/build/browser/src/index.js",
-      "diffhtml": "https://cdn.jsdelivr.net/npm/diffhtml@1.0.0-beta.20/dist/es/index.js",
+      "diffhtml": "https://cdn.jsdelivr.net/npm//diffhtml@1.0.0-beta.20/dist/es/index.js",
+      "@dashkite/helium": "https://cdn.jsdelivr.net/npm/@dashkite/helium@0.4.3/build/browser/src/index.js"
+    },
+    "/": {
       "@dashkite/helium": "https://cdn.jsdelivr.net/npm/@dashkite/helium@0.4.3/build/browser/src/index.js"
     }
   }

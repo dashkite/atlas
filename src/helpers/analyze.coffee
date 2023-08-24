@@ -21,20 +21,20 @@ analyze = ( entries ) ->
       metafile: true
 
   for path, mappings of metafile.inputs when mappings.imports.length > 0
-    module = await getModuleInfo path
+    scope = { 
+      source: { path }
+      module: await getModuleInfo path
+    }
 
     for mapping in mappings.imports when includeMapping mapping
       yield {
-          source:
-            path: mapping.path
-          module: ( _module = await getModuleInfo mapping.path )
-          path: Path.relative _module.path, mapping.path
-          local: ( entries.find ( entry ) ->
-              Directory.within _module.path, entry )?            
-          import: {
-            scope: { module }
-            specifier: mapping.original
-          }
+        source:
+          path: mapping.path
+        module: await getModuleInfo mapping.path
+        import: { 
+          scope
+          specifier: mapping.original
         }
+      }
 
 export { analyze }

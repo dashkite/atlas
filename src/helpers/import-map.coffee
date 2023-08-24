@@ -1,9 +1,5 @@
 import * as Fn from "@dashkite/joy/function"
 
-getParentURL = ( url ) ->
-  i = url.lastIndexOf "/"
-  if i > 0 then url[...i] else ""
-
 getParentScope = ( scope ) ->
   i = scope.lastIndexOf "/"
   if i >= 0
@@ -14,10 +10,7 @@ getParentScope = ( scope ) ->
       else result
   else scope
 
-isRootScope = ( scope ) ->
-  switch getParentScope scope
-    when scope, "/" then true
-    else false
+isRootScope = ( scope ) -> scope == getParentScope scope
     
 hasSpecifierConflict = ( mappings, dependency ) ->
   if ( url = mappings[ dependency.import.specifier ])? then url != dependency.url
@@ -30,7 +23,7 @@ hasScopeConflict = ( map, scope, dependency ) ->
     false
 
 findMinimalScope = ( map, dependency ) ->
-  current = dependency.import.scope.module.url
+  current = dependency.import.scope.url
   loop
     parent = getParentScope current
     break if hasScopeConflict map, parent, dependency
@@ -50,7 +43,7 @@ addImportMapping = ( map, dependency ) ->
 isModuleSpecifier = ( specifier ) ->
   !( specifier.startsWith "." || specifier.startsWith "/" )
 
-isLocalSpecifier = ( specifier ) -> specifier.startsWith "."
+isRelativeSpecifier = ( specifier ) -> specifier.startsWith "."
 
 ImportMap =
 
@@ -66,7 +59,7 @@ ImportMap =
           addScopedMapping map, dependency
       else
         addImportMapping map, dependency
-    else if ! isLocalSpecifier dependency.import.specifier
+    else if ! isRelativeSpecifier dependency.import.specifier
       addScopedMapping map, dependency
     map
 
