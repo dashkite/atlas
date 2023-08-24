@@ -27,11 +27,11 @@ getURL = ( entries, description ) ->
       "/#{ path }"
     else if Directory.contains "node_modules", source.path
       if module.scope?
-        "https://cdn.jsdelivr.net/npm/\
-          @#{ module.scope }/#{ module.name }@#{ module.version }\
+        "https://cdn.jsdelivr.net/npm\
+          /@#{ module.scope }/#{ module.name }@#{ module.version }\
           /#{ path }"
       else
-        "https://cdn.jsdelivr.net/npm/\
+        "https://cdn.jsdelivr.net/npm\
           /#{ module.name }@#{ module.version }\
           /#{ path }"
     else

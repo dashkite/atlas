@@ -9,6 +9,15 @@ import {
   exists
 } from "./file"
 
+getModulePath = Fn.memoize ( path ) ->
+  loop
+    current = Path.dirname current ? path
+    if await exists Path.join current, "package.json"
+      break
+    else if current == "."
+      throw new Error "No module path found for #{ path }"
+  current
+
 readModuleInfo = Fn.memoize ( path ) ->
   { name, version } = JSON.parse await read Path.join path, "package.json"
   if name.startsWith "@"
@@ -16,13 +25,6 @@ readModuleInfo = Fn.memoize ( path ) ->
     { scope, name, version, path }
   else { name, version, path }
 
-getModulePath = Fn.memoize ( path ) ->
-  directory = Path.dirname path
-  until directory == "."
-    if await exists Path.join directory, "package.json"
-      return directory
-    directory = Path.dirname directory
-  throw new Error "No module path found for #{ path }"
 
 getModuleInfo = Fn.flow [
   getModulePath

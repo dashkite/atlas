@@ -15,7 +15,6 @@ generate = ( entries, map ) ->
     It.map Resource.decorator entries
     It.reduce ImportMap.add,
       if map then ImportMap.from map else ImportMap.make()
-
   ]
 
 export { generate }
