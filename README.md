@@ -3,34 +3,27 @@
 *Manage JavaScript modules in JavaScript.*
 
 ```coffeescript
-import { Reference, jsdelivr } from "@dashkite/atlas"
+import * as Atlas from "@dashkite/atlas"
 
-reference = Reference.create "@dashkite/quark", "latest"
+do ->
+  # generate an import map
+  console.log await Atlas.generate [ "build/index.js" ]
 
-# generate an import map using jsdelivr as the backing store...
-console.log reference.map.toJSON jsdelivr
 ```
 
 ## Install
 
-You know the drill.
+You know the drill. Using your favorite package manager, install `@dashkite/atlas`. For example, to install with `pnpm`, run:
 
 ```
-npm i @dashkite/atlas
+pnpm add -D @dashkite/atlas
 ```
-
-## Usage
-
-### ATLAS_CONDITIONS
-
-Set the `ATLAS_CONDITIONS` environment variable to set the import conditions that Atlas uses to determine the path for an import map.
 
 ## Status
 
-Atlas is experimental and under active development. You probably not use it in production.
+Atlas is experimental and under active development. You probably should not use it in production. You may want to check out [JSPM](https://jspm.org/).
 
-## Resources
+## Limitations
 
-- [API Reference](./docs/api-reference.md)
-- [Design Guide](./docs/design-guide.md)
+The import map that Atlas generates is unlikely to work for your development process and cannot currently be customized. Making Atlas configuable is on [our roadmap](https://github.com/dashkite/atlas/issues).
 
