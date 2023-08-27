@@ -13,14 +13,15 @@ do ->
 
   print await test "atlas", [
 
-    test "registy reference", ->
+    test "generate", ->
       map = await $.generate [
         "../workspace-client/build/browser/src/index.js"
       ]
 
-      FS.writeFile "import-map.json", ( JSON.stringify map, null, 2 )
-
-      # console.log files.filter ({ type }) -> type == "development"
+      assert map.imports?
+      assert map.scopes?
+      assert map.imports[ "@dashkite/joy/function" ]?
+      assert map.scopes[ "/" ]?
 
   ]
 
