@@ -24,6 +24,7 @@
   "dependencies": {
     "@dashkite/joy": "^0.3.16",
     "@dashkite/polaris": "link:../polaris",
+    "@dashkite/zephyr": "link:../zephyr",
     "esbuild": "^0.19.2",
     "js-yaml": "^4.1.0",
     "micromatch": "^4.0.5",

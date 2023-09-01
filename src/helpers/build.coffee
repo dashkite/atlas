@@ -2,24 +2,26 @@ import Path from "node:path"
 import * as YAML from "js-yaml"
 
 import * as Fn from "@dashkite/joy/function"
+import * as Obj from "@dashkite/joy/object"
+import Zephyr from "@dashkite/zephyr"
 
 import { read } from "./file"
 
+
 readBuildInfo = Fn.memoize ( path ) ->
-  try
-    YAML.load await read Path.join path, ".genie/build.yaml"
-  catch
-    {}
+  module: Obj.get "data",
+    await Zephyr.read Path.join path, ".genie", "build.yaml"
+  files: Obj.get "data",
+    await Zephyr.read Path.join path, ".genie", "hashes.yaml"
 
-getHash = ( path ) -> ( await readBuildInfo path ).hash
-
-getBuildInfo = ( description ) ->
-  module:
-    hash: await getHash description.module.path
+getBuildInfo = ({ module }) -> readBuildInfo module.path
 
 decorateModule = ( description ) ->
-  description.module.hash ?=
-    ( await getBuildInfo description ).module.hash
+  do ({ module, source } = description ) ->
+    info = await getBuildInfo description
+    path = Path.relative module.path, source.path
+    module.hash ?= info.module?.hash
+    source.hash ?= info.files[ path ]
 
 Build =
 
@@ -31,7 +33,6 @@ Build =
 
 export {
   readBuildInfo
-  getHash
   getBuildInfo
   Build
 }

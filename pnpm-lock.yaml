@@ -11,6 +11,9 @@ dependencies:
   '@dashkite/polaris':
     specifier: link:../polaris
     version: link:../polaris
+  '@dashkite/zephyr':
+    specifier: link:../zephyr
+    version: link:../zephyr
   esbuild:
     specifier: ^0.19.2
     version: 0.19.2

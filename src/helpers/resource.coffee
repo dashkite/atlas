@@ -36,11 +36,11 @@ getURL = ( entries, description ) ->
           /#{ path }"
     else
       if module.scope?
-        "https://modules.dashkite.io/#{ module.hash }\
+        "https://modules.dashkite.io/#{ source.hash }\
           /@#{ module.scope }/#{ module.name }@#{ module.version}\
           /#{ path }"
       else
-        "https://modules.dashkite.io/#{ module.hash }\
+        "https://modules.dashkite.io/#{ source.hash }\
           /#{ module.name }@#{ module.version}\
           /#{ path }"
 
