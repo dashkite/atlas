@@ -1,8 +1,4 @@
 presets:
-  verify: null
-  update: null
-  release: null
-  esm: null
   coffeescript:
     targets:
       node:

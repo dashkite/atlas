@@ -1,0 +1,8 @@
+src/index.coffee: c84342ecea0bda99637c5c635e708b7b18f8eee2
+test/index.coffee: 99218f5050fd466bf3b2cd2ffb50ec3c0c7525d3
+src/helpers/resource.coffee: 13c10b92f43ef73e4f234f9c67d4dc874a34dee7
+src/helpers/module.coffee: 314b561b79b45fe5f797de61ffdf3ee6c6c7d1f7
+src/helpers/import-map.coffee: 823225e35606845ddcb32e7056ff32734b4015db
+src/helpers/file.coffee: 28f3699d88ffaba65496902c7a11f4f44f24e5e0
+src/helpers/build.coffee: eabc7a102a9776a89bb5dff15e942c7e298437cb
+src/helpers/analyze.coffee: 878d2eb58cf8e84b8c2a54585c0099b46e63aa4e

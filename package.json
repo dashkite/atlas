@@ -33,7 +33,7 @@
     "@dashkite/amen": "^0.2.2",
     "@dashkite/amen-console": "^0.0.2",
     "@dashkite/assert": "^0.1.4",
-    "@dashkite/genie": "^0.5.11",
+    "@dashkite/genie": "link:../genie",
     "@dashkite/genie-presets": "link:../genie-presets",
     "coffeescript": "^2.7.0"
   }

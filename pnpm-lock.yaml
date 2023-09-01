@@ -35,7 +35,7 @@ devDependencies:
     specifier: ^0.1.4
     version: 0.1.4
   '@dashkite/genie':
-    specifier: ^0.5.11
+    specifier: link:../genie
     version: 0.5.11
   '@dashkite/genie-presets':
     specifier: link:../genie-presets
