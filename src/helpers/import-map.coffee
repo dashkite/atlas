@@ -59,7 +59,7 @@ ImportMap =
           addScopedMapping map, dependency
       else
         addImportMapping map, dependency
-    else if ! isRelativeSpecifier dependency.import.specifier
+    else if !( isRelativeSpecifier dependency.import.specifier )
       addScopedMapping map, dependency
     else
       addScopedMapping map, dependency
