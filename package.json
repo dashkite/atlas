@@ -14,7 +14,6 @@
       "node": "./build/node/src/index.js"
     }
   },
-  "main": "build/node/src/index.js",
   "files": [
     "build/node/src"
   ],
@@ -27,15 +26,13 @@
     "@dashkite/zephyr": "link:../zephyr",
     "esbuild": "^0.19.2",
     "js-yaml": "^4.1.0",
-    "micromatch": "^4.0.5",
-    "semver": "^7.5.4"
+    "micromatch": "^4.0.5"
   },
   "devDependencies": {
     "@dashkite/amen": "^0.2.2",
     "@dashkite/amen-console": "^0.0.2",
     "@dashkite/assert": "^0.1.4",
     "@dashkite/genie": "link:../genie",
-    "@dashkite/genie-presets": "link:../genie-presets",
-    "coffeescript": "^2.7.0"
+    "@dashkite/genie-coffee": "link:../genie-coffee"
   }
 }
