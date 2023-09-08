@@ -18,6 +18,7 @@
     "build/node/src"
   ],
   "scripts": {
+    "build": "genie build",
     "test": "genie test"
   },
   "dependencies": {

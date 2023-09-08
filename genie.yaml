@@ -1,6 +1,3 @@
 coffee:
   targets:
-    node:
-      - preset: node
-        glob:
-          - '{src,test}/**/*.coffee'
+    - node
