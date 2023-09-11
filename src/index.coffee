@@ -17,4 +17,5 @@ generate = ( entries, map ) ->
       if map then ImportMap.from map else ImportMap.make()
   ]
 
+export default { generate }
 export { generate }
