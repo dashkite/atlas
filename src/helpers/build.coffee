@@ -9,10 +9,8 @@ import { read } from "./file"
 
 
 readBuildInfo = Fn.memoize ( path ) ->
-  module: Obj.get "data",
-    await Zephyr.read Path.join path, ".genie", "build.yaml"
-  files: Obj.get "data",
-    await Zephyr.read Path.join path, ".genie", "hashes.yaml"
+  module: await Zephyr.read Path.join path, ".genie", "build.yaml"
+  files: await Zephyr.read Path.join path, ".genie", "hashes.yaml"
 
 getBuildInfo = ({ module }) -> readBuildInfo module.path
 
