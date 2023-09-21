@@ -5,12 +5,14 @@ import * as Fn from "@dashkite/joy/function"
 import * as Obj from "@dashkite/joy/object"
 import Zephyr from "@dashkite/zephyr"
 
-import { read } from "./file"
+lift = ( value ) -> value ? {}
 
+read = ( path, name ) ->
+  Zephyr.read Path.join path, ".genie", "#{ name }.yaml"
 
 readBuildInfo = Fn.memoize ( path ) ->
-  module: await Zephyr.read Path.join path, ".genie", "build.yaml"
-  files: await Zephyr.read Path.join path, ".genie", "hashes.yaml"
+  module: lift await read path, "build"
+  files: lift await read path, "hashes"
 
 getBuildInfo = ({ module }) -> readBuildInfo module.path
 
