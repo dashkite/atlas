@@ -5,6 +5,9 @@ settings:
   excludeLinksFromLockfile: false
 
 dependencies:
+  '@dashkite/drn-sky':
+    specifier: link:../drn-sky
+    version: link:../drn-sky
   '@dashkite/joy':
     specifier: ^0.3.16
     version: 0.3.16

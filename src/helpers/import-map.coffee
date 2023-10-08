@@ -1,3 +1,4 @@
+import $Path from "node:path"
 import * as Fn from "@dashkite/joy/function"
 
 getParentScope = ( scope ) ->
@@ -5,45 +6,83 @@ getParentScope = ( scope ) ->
   if i >= 0
     result = scope[...i]
     switch result
-      when "" then "/"
-      when "https:/" then scope
+      when "", "https:/" then null
       else result
-  else scope
+  else null
 
-isRootScope = ( scope ) -> scope == getParentScope scope
+isRootScope = ( scope ) -> !( getParentScope scope )?
     
-hasSpecifierConflict = ( mappings, dependency ) ->
-  if ( url = mappings[ dependency.import.specifier ])? then url != dependency.url
-  else false
+hasSpecifierConflict = ({ scope, specifier, url }) ->
+  if ( _url = scope[ specifier ])? then _url != url else false
 
-hasScopeConflict = ( map, scope, dependency ) ->
-  if map.scopes[ scope ]?
-    hasSpecifierConflict map.scopes[ scope ], dependency
+hasScopeConflict = ({ scope, specifier, url }) ->
+  if scope?
+    hasSpecifierConflict {
+      scope
+      specifier
+      url
+    }
   else
     false
 
-findMinimalScope = ( map, dependency ) ->
-  current = dependency.import.scope.url
+findMinimalScope = ({ map, scope, specifier, url }) ->
   loop
-    parent = getParentScope current
-    break if hasScopeConflict map, parent, dependency
-    current = parent
-    break if isRootScope current
-  current
+    parent = getParentScope scope
+    _scope = if parent?
+      map.scopes[ parent ]
+    else
+      map.imports
+    if hasScopeConflict { scope: _scope, specifier, url }
+      return map.scopes[ scope ] ?= {}
+    if parent == null
+      return map.imports
+    scope = parent
 
-addScopedMapping = do ({ mappings } = {}) ->
+normalizeSpecifier = ( specifier ) ->
+  if specifier.endsWith ".js"
+    specifier = specifier[...-3]
+  if specifier.endsWith "/index"
+    specifier = specifier[...-6]
+  specifier
+
+addMinimallyScopedMapping = do ({ mappings } = {}) ->
   ( map, dependency ) ->
-    scope = findMinimalScope map, dependency
-    ( mappings = map.scopes[ scope ] ?= {} )
-    mappings[ dependency.import.specifier ] = dependency.url
+    scope = findMinimalScope {
+      map
+      scope: dependency.import.scope.module.url
+      specifier: dependency.import.specifier
+      url: dependency.url
+    }
+    scope[ normalizeSpecifier dependency.import.specifier ] = dependency.url
+
+addModuleScopedMapping = do ({ mappings } = {}) ->
+  ( map, dependency ) ->
+    relative = $Path.relative dependency.module.path, 
+        dependency.source.path
+    specifier = "#{ dependency.module.specifier }/#{ relative }"
+    scope = findMinimalScope {
+      map
+      scope: dependency.import.scope.module.url
+      specifier
+      url: dependency.url
+    }
+    scope[ normalizeSpecifier specifier ] = dependency.url
 
 addImportMapping = ( map, dependency ) ->
-  map.imports[ dependency.import.specifier ] = dependency.url
+  map.imports[ normalizeSpecifier dependency.import.specifier ] =  dependency.url
 
 isModuleSpecifier = ( specifier ) ->
   !( specifier.startsWith "." || specifier.startsWith "/" )
 
-isRelativeSpecifier = ( specifier ) -> specifier.startsWith "."
+isRelative = ( dependency ) -> 
+  dependency.url.startsWith "/"
+
+_URL =
+  join: ( a, b ) ->
+    if a.startsWith "/"
+      $Path.join ( $Path.dirname a ), b
+    else
+      ( new URL b, a ).toString()
 
 ImportMap =
 
@@ -53,17 +92,15 @@ ImportMap =
 
   from: ({ imports, scopes }) -> { imports, scopes }
 
-  add: ( map, dependency ) ->
-    if isModuleSpecifier dependency.import.specifier
-      if hasSpecifierConflict map.imports, dependency
-          addScopedMapping map, dependency
-      else
-        addImportMapping map, dependency
-    else if !( isRelativeSpecifier dependency.import.specifier )
-      addScopedMapping map, dependency
+  add: Fn.tee ( map, dependency ) ->
+    if dependency.import.specifier.startsWith "."
+      specifier = _URL.join dependency.import.scope.url,
+        dependency.import.specifier
+      if specifier != dependency.url
+        scope = map.scopes[ dependency.import.scope.url ] ?= {}
+        scope[ specifier ] = dependency.url
     else
-      addScopedMapping map, dependency
-    map
+      map.imports[ dependency.import.specifier ] = dependency.url
 
 export {
   ImportMap

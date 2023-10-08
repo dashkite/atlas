@@ -20,10 +20,12 @@ getModulePath = Fn.memoize ( path ) ->
 
 readModuleInfo = Fn.memoize ( path ) ->
   { name, version } = JSON.parse await read Path.join path, "package.json"
+  specifier = name
   if name.startsWith "@"
     [ scope, name ] = name[1..].split "/"
-    { scope, name, version, path }
-  else { name, version, path }
+    { scope, name, specifier, version, path }
+
+  else { name, specifier, version, path }
 
 
 getModuleInfo = Fn.flow [

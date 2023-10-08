@@ -22,6 +22,7 @@
     "test": "genie test"
   },
   "dependencies": {
+    "@dashkite/drn-sky": "link:../drn-sky",
     "@dashkite/joy": "^0.3.16",
     "@dashkite/polaris": "link:../polaris",
     "@dashkite/zephyr": "link:../zephyr",
