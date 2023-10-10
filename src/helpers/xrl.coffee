@@ -53,7 +53,9 @@ XRL =
       reduce join, first, rest
     
     generic join, isAbsolute, isPath, ( base, rest ) ->
-      ( new URL rest, base ).toString()
+      parsed = new URL base
+      parsed.pathname = $Path.posix.join parsed.pathname, rest
+      parsed.toString()
 
     generic join, isPath, isPath, Path.join
     
@@ -67,7 +69,7 @@ XRL =
 
     generic pop, isAbsolute, ( url ) ->
       parsed = new URL url
-      parsed.pathname = pop parsed.pathname
+      parsed.pathname = $Path.posix.dirname parsed.pathname
       parsed.toString()
 
     pop

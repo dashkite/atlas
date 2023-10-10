@@ -16,18 +16,19 @@ hasScopeConflict = ({ scope, specifier, target }) ->
     false
     
 findMinimalScope = ({ map, scope, specifier, target }) ->
+  current = scope
   loop 
-    child = scope
-    scope = XRL.pop scope
-    return map.imports if child == scope
-    conflicted = hasScopeConflict { 
-      scope: map.scopes[ scope ]
-      specifier
-      target 
-    }
-    return map.scopes[ child ] ?= {} if conflicted
+    previous = current
+    current = XRL.pop current
+    # console.log { current }
+    scope = if current == previous
+      map.imports
+    else
+      map.scopes[ current ]
+    conflicted = hasScopeConflict { scope, specifier, target }
+    return ( map.scopes[ previous ] ?= {} ) if conflicted
+    return map.imports if current == previous
       
-
 Map =
 
   make: -> imports: {}, scopes: {}

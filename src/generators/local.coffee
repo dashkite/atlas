@@ -30,7 +30,7 @@ Local =
             dependency.import.scope.source.path
 
         specifier = XRL.Path.join [ 
-          scope
+          XRL.pop scope
           dependency.import.specifier
         ]
 

@@ -18,7 +18,6 @@ getURL = ({ dependency }) ->
       else
         XRL.join [
           "https://cdn.jsdelivr.net/npm"
-          "@#{ scope }"
           "#{ name }@#{ version }"
           path
         ]
@@ -26,7 +25,7 @@ getURL = ({ dependency }) ->
 getSpecifier = ({ dependency }) ->
   if Specifier.isRelative dependency
     XRL.join [
-      getURL dependency: dependency.import.scope
+      XRL.pop getURL dependency: dependency.import.scope
       dependency.import.specifier
     ]      
   else 

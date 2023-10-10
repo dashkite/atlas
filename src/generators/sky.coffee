@@ -56,7 +56,10 @@ Sky =
           dependency: dependency.import.scope 
         }
 
-        specifier = XRL.join scope, dependency.import.specifier
+        specifier = XRL.join [
+          XRL.pop scope
+          dependency.import.specifier
+        ]
 
       else
 
