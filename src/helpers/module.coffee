@@ -1,40 +1,27 @@
 import Path from "node:path"
-import FS from "node:fs/promises"
 
 import * as Fn from "@dashkite/joy/function"
+import Zephyr from "@dashkite/zephyr"
 
-import {
-  join
-  read
-  exists
-} from "./file"
+normalize = ({ name, version, path }) ->
+  do ({ specifier } = {}) ->
+    specifier = name
+    if name.startsWith "@"
+      [ scope, name ] = name[1..].split "/"
+      { scope, name, specifier, version, path }
+    else { name, specifier, version, path }
 
-getModulePath = Fn.memoize ( path ) ->
-  loop
-    current = Path.dirname current ? path
-    if await exists Path.join current, "package.json"
-      break
-    else if current == "."
-      throw new Error "No module path found for #{ path }"
-  current
+Module =
 
-readModuleInfo = Fn.memoize ( path ) ->
-  { name, version } = JSON.parse await read Path.join path, "package.json"
-  specifier = name
-  if name.startsWith "@"
-    [ scope, name ] = name[1..].split "/"
-    { scope, name, specifier, version, path }
-
-  else { name, specifier, version, path }
+  read: Fn.memoize ( path ) ->
+    current = path
+    until current == "."
+      current = Path.dirname current
+      module = Path.join current, "package.json"
+      if ( data = await Zephyr.read module )?
+        return normalize { data..., path: Path.dirname module }
+    throw new Error "No module path found for #{ path }"
 
 
-getModuleInfo = Fn.flow [
-  getModulePath
-  readModuleInfo
-]
-
-export {
-  readModuleInfo
-  getModulePath
-  getModuleInfo
-}
+export { Module }
+export default Module

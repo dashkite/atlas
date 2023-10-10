@@ -1,107 +1,49 @@
-import $Path from "node:path"
-import * as Fn from "@dashkite/joy/function"
+import XRL from "#helpers/xrl"
 
-getParentScope = ( scope ) ->
-  i = scope.lastIndexOf "/"
-  if i >= 0
-    result = scope[...i]
-    switch result
-      when "", "https:/" then null
-      else result
-  else null
+hasSpecifierConflict = ({ scope, specifier, target }) ->
+  if ( _target = scope[ specifier ])?
+    _target != target 
+  else false
 
-isRootScope = ( scope ) -> !( getParentScope scope )?
-    
-hasSpecifierConflict = ({ scope, specifier, url }) ->
-  if ( _url = scope[ specifier ])? then _url != url else false
-
-hasScopeConflict = ({ scope, specifier, url }) ->
+hasScopeConflict = ({ scope, specifier, target }) ->
   if scope?
     hasSpecifierConflict {
       scope
       specifier
-      url
+      target
     }
   else
     false
-
-findMinimalScope = ({ map, scope, specifier, url }) ->
-  loop
-    parent = getParentScope scope
-    _scope = if parent?
-      map.scopes[ parent ]
-    else
-      map.imports
-    if hasScopeConflict { scope: _scope, specifier, url }
-      return map.scopes[ scope ] ?= {}
-    if parent == null
-      return map.imports
-    scope = parent
-
-normalizeSpecifier = ( specifier ) ->
-  if specifier.endsWith ".js"
-    specifier = specifier[...-3]
-  if specifier.endsWith "/index"
-    specifier = specifier[...-6]
-  specifier
-
-addMinimallyScopedMapping = do ({ mappings } = {}) ->
-  ( map, dependency ) ->
-    scope = findMinimalScope {
-      map
-      scope: dependency.import.scope.module.url
-      specifier: dependency.import.specifier
-      url: dependency.url
-    }
-    scope[ normalizeSpecifier dependency.import.specifier ] = dependency.url
-
-addModuleScopedMapping = do ({ mappings } = {}) ->
-  ( map, dependency ) ->
-    relative = $Path.relative dependency.module.path, 
-        dependency.source.path
-    specifier = "#{ dependency.module.specifier }/#{ relative }"
-    scope = findMinimalScope {
-      map
-      scope: dependency.import.scope.module.url
+    
+findMinimalScope = ({ map, scope, specifier, target }) ->
+  loop 
+    child = scope
+    scope = XRL.pop scope
+    return map.imports if child == scope
+    conflicted = hasScopeConflict { 
+      scope: map.scopes[ scope ]
       specifier
-      url: dependency.url
+      target 
     }
-    scope[ normalizeSpecifier specifier ] = dependency.url
+    return map.scopes[ child ] ?= {} if conflicted
+      
 
-addImportMapping = ( map, dependency ) ->
-  map.imports[ normalizeSpecifier dependency.import.specifier ] =  dependency.url
+Map =
 
-isModuleSpecifier = ( specifier ) ->
-  !( specifier.startsWith "." || specifier.startsWith "/" )
-
-isRelative = ( dependency ) -> 
-  dependency.url.startsWith "/"
-
-_URL =
-  join: ( a, b ) ->
-    if a.startsWith "/"
-      $Path.join ( $Path.dirname a ), b
-    else
-      ( new URL b, a ).toString()
-
-ImportMap =
-
-  make: ->
-    imports: {}
-    scopes: {}
+  make: -> imports: {}, scopes: {}
 
   from: ({ imports, scopes }) -> { imports, scopes }
 
-  add: Fn.tee ( map, dependency ) ->
-    if dependency.import.specifier.startsWith "."
-      specifier = _URL.join dependency.import.scope.url,
-        dependency.import.specifier
-      if specifier != dependency.url
-        scope = map.scopes[ dependency.import.scope.url ] ?= {}
-        scope[ specifier ] = dependency.url
-    else
-      map.imports[ dependency.import.specifier ] = dependency.url
+  add: ( map, mapping ) ->
+    if mapping?
+      do ({ scope, specifier, target } = mapping ) ->
+        scope = if scope?
+          findMinimalScope { map, scope, specifier, target }
+          # map.scopes[ scope ] ?= {}
+        else
+          map.imports
+        ( scope[ specifier ] = target ) unless specifier == target
+    map
 
-export {
-  ImportMap
-}
+export default Map
+export { Map }

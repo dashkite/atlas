@@ -1,12 +1,13 @@
+# TODO move this into its own module?
+#      with or without the module decoration?
+
 import Path from "node:path"
-
 import esbuild from "esbuild"
-import { Directory } from "./file"
-import { getModuleInfo } from "./module"
+import Module from "./module"
 
-includeMapping = ( mapping ) ->
-  mapping.external != true && 
-    !( mapping.path.startsWith "(disabled):" )
+include = ( _import ) ->
+  _import.external != true && 
+    !( _import.path.startsWith "(disabled):" )
 
 analyze = ( entries ) ->
 
@@ -20,21 +21,25 @@ analyze = ( entries ) ->
       external: [ "esbuild" ]
       metafile: true
 
-  for path, mappings of metafile.inputs when mappings.imports.length > 0
-    scope = { 
-      source: { path }
-      module: await getModuleInfo path
-    }
-
-    for mapping in mappings.imports when includeMapping mapping
-      yield {
-        source:
-          path: mapping.path
-        module: await getModuleInfo mapping.path
-        import: { 
-          scope
-          specifier: mapping.original
-        }
+  for path, dependency of metafile.inputs 
+    path = Path.normalize path
+    if dependency.imports.length > 0
+      scope = { 
+        source: { path }
+        module: await Module.read path
       }
 
+      for _import in dependency.imports
+        if include _import
+          yield {
+            source:
+              path: Path.normalize _import.path
+            module: await Module.read _import.path
+            import: { 
+              scope
+              specifier: _import.original
+            }
+          }
+
+export default analyze
 export { analyze }

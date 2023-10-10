@@ -12,6 +12,26 @@
   "exports": {
     ".": {
       "node": "./build/node/src/index.js"
+    },
+    "./generators": {
+      "node": "./build/node/src/generators/index.js"
+    },
+    "./generators/*.js": {
+      "node": "./build/node/src/generators/*.js"
+    },
+    "./presets/*": {
+      "node": "./build/node/src/presets/*.js"
+    }
+  },
+  "imports": { 
+    "#helpers/*": {
+      "node": "./build/node/src/helpers/*.js"
+    },
+    "#generators": {
+      "node": "./build/node/src/generators/index.js"
+    },
+    "#generators/*": {
+      "node": "./build/node/src/generators/*.js"
     }
   },
   "files": [
