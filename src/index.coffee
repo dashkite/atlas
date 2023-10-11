@@ -5,7 +5,7 @@ import Map from "#helpers/import-map"
 
 generate = ( entries, map ) ->
   map = if map? then Map.from map else Map.make()
-  await Map.add map, analyze entries
+  Map.add map, analyze entries
 
 export default { generate }
 export { generate }
