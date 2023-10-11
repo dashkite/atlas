@@ -17,27 +17,26 @@ Generators =
 
   default: 
     match: -> true
-    apply: ({ dependency }) ->
+    apply: ( dependency ) ->
       specifier: dependency.import.specifier
       url: dependency.source.path
-    scope: ({ dependency }) ->
-      dependency.source.path
+    scope: ( dependency ) -> dependency.source.path
 
-  match: ( context ) ->
-    ( generator ) -> generator.matches context
+  match: ( dependency ) ->
+    ( generator ) -> generator.matches dependency
 
-  find: ( context ) ->
-    generators.find Generators.match context
+  find: ( dependency ) ->
+    generators.find Generators.match dependency
 
-  apply: ( context ) ->
+  apply: ( dependency ) ->
     Generators
-      .find context
-      .apply context
+      .find dependency
+      .apply dependency
 
-  scope: ( context ) ->
+  scope: ( dependency ) ->
     Generators
-      .find context
-      .scope context
+      .find dependency
+      .scope dependency
 
 register Generators.default
 

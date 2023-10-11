@@ -1,3 +1,4 @@
+import Path from "node:path"
 import Directory from "#helpers/directory"
 
 Specifier =
@@ -11,6 +12,9 @@ Specifier =
 export { Specifier }
 
 Source =
+
+  relative: ({ source, module }) -> 
+    Path.relative module.path, source.path
 
   isRelative: ({ source }) -> source.path.startsWith "."
 

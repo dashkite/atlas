@@ -5,41 +5,36 @@ import Path from "node:path"
 import esbuild from "esbuild"
 import Module from "./module"
 
-include = ( _import ) ->
-  _import.external != true && 
-    !( _import.path.startsWith "(disabled):" )
+include = ( dependency ) ->
+  dependency.external != true && 
+    !( dependency.path.startsWith "(disabled):" )
 
 analyze = ( entries ) ->
 
-  { metafile } = await esbuild.build
-      entryPoints: entries
-      bundle: true
-      sourcemap: false
-      platform: "browser"
-      conditions: [ "browser" ]
-      outfile: "/dev/null"
-      external: [ "esbuild" ]
-      metafile: true
+  do ({ metafile, path, imports, dependency } = {}) ->
 
-  for path, dependency of metafile.inputs 
-    path = Path.normalize path
-    if dependency.imports.length > 0
-      scope = { 
-        source: { path }
-        module: await Module.read path
-      }
+    { metafile } = await esbuild.build
+        entryPoints: entries
+        bundle: true
+        sourcemap: false
+        platform: "browser"
+        conditions: [ "browser" ]
+        outfile: "/dev/null"
+        external: [ "esbuild" ]
+        metafile: true
 
-      for _import in dependency.imports
-        if include _import
-          yield {
+    for path, { imports } of metafile.inputs 
+      for dependency in imports
+        if include dependency
+          yield
             source:
-              path: Path.normalize _import.path
-            module: await Module.read _import.path
-            import: { 
-              scope
-              specifier: _import.original
-            }
-          }
+              path: Path.normalize dependency.path
+            module: await Module.read dependency.path
+            import:
+              scope:
+                source: path: Path.normalize path
+                module: await Module.read path
+              specifier: dependency.original
 
 export default analyze
 export { analyze }

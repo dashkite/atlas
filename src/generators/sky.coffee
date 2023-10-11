@@ -9,7 +9,7 @@ getHashes = ({ module }) ->
 getHash = ({ module, source }) ->
   do ({ path, hashes } = {}) ->    
     if ( hashes = await getHashes { module } )?
-      path = Path.relative module.path, source.path
+      path = Source.relative { source, module }
       hashes[ path ] ?
         throw new Error "No hash for [ #{ path }]"
     else
@@ -31,43 +31,44 @@ getURL = ({ origin, dependency }) ->
   do ({ hash, base, path } = {}) ->
     hash = await getHash dependency
     base = getModuleURL { origin, dependency }
-    path = Path.relative dependency.module.path,
-      dependency.source.path
+    path = Source.relative dependency
     XRL.join [ base, hash, path ]
       
 Sky =
 
   make: ({ origin }) ->
 
-    _getURL = ({ dependency }) ->
+    _getURL = ( dependency ) ->
       getURL { origin, dependency }
 
-    matches: ({ dependency }) -> 
+    matches: ( dependency ) -> 
       ( Source.isExternal dependency ) &&
         !( Source.isInstalled dependency )
       
 
-    apply: ({ dependency }) ->
+    apply: ( dependency ) ->
 
-      if Specifier.isRelative dependency
+      do ({ scope, specifier, target } = {}) ->
 
-        scope = await getURL {
-          origin
-          dependency: dependency.import.scope 
-        }
+        if Specifier.isRelative dependency
 
-        specifier = XRL.join [
-          XRL.pop scope
-          dependency.import.specifier
-        ]
+          scope = await getURL {
+            origin
+            dependency: dependency.import.scope 
+          }
 
-      else
+          specifier = XRL.join [
+            XRL.pop scope
+            dependency.import.specifier
+          ]
 
-        specifier = dependency.import.specifier
+        else
 
-      target = await _getURL { dependency }
+          specifier = dependency.import.specifier
 
-      { scope, specifier, target }
+        target = await _getURL dependency
+
+        { scope, specifier, target }
 
     scope: _getURL
 

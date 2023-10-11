@@ -7,38 +7,37 @@ Local =
 
   make: ({ build }) ->
 
-    url = ({ dependency }) ->
-      XRL.Path.root do ->
-        Path.relative build, dependency.source.path
+    getURL = ( dependency ) ->
+      XRL.Path.root Path.relative build, dependency.source.path
 
-    matches: ({ dependency }) ->
-      !( Source.isRelative dependency ) &&
-        !( Directory.contains "node_modules", 
-          dependency.source.path )
+    matches: ( dependency ) ->
+      Directory.within build, dependency.source.path
 
-    apply: ({ dependency }) ->
+    apply: ( dependency ) ->
 
-      if Specifier.isAlias dependency
+      do ({ scope, specifier, target } = {}) ->
 
-        scope = XRL.Path.root()
-        specifier = dependency.import.specifier
+        if Specifier.isAlias dependency
 
-      else
+          scope = XRL.Path.root()
+          specifier = dependency.import.specifier
 
-        scope = XRL.Path.root do ->
-          Path.relative build, 
-            dependency.import.scope.source.path
+        else
 
-        specifier = XRL.Path.join [ 
-          XRL.pop scope
-          dependency.import.specifier
-        ]
+          scope = XRL.Path.root do ->
+            Path.relative build, 
+              dependency.import.scope.source.path
 
-      target = url { dependency } 
+          specifier = XRL.Path.join [ 
+            XRL.pop scope
+            dependency.import.specifier
+          ]
 
-      { scope, specifier, target }
+        target = getURL dependency
 
-    scope: url
+        { scope, specifier, target }
+
+    scope: getURL
 
 
 export { Local }

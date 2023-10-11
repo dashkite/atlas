@@ -1,12 +1,11 @@
-import Path from "node:path"
 import Directory from "#helpers/directory"
 import XRL from "#helpers/xrl"
-import { Specifier } from "#helpers/dependency"
+import { Source, Specifier } from "#helpers/dependency"
 import Generators from "#generators"
 
-getURL = ({ dependency }) ->
-  do ({ path } = {}, { source, module } = dependency ) ->
-    path = Path.relative module.path, source.path
+getURL = ({ source, module }) ->
+  do ({ path } = {}) ->
+    path = Source.relative { source, module }
     do ({ scope, name, version } = module ) ->
       if scope?
         XRL.join [
@@ -22,10 +21,10 @@ getURL = ({ dependency }) ->
           path
         ]
 
-getSpecifier = ({ dependency }) ->
+getSpecifier = ( dependency ) ->
   if Specifier.isRelative dependency
     XRL.join [
-      XRL.pop getURL dependency: dependency.import.scope
+      XRL.pop getURL dependency.import.scope
       dependency.import.specifier
     ]      
   else 
@@ -35,16 +34,14 @@ CDNs =
 
   jsdelivr:
 
-    matches: ({ dependency }) ->
+    matches: ( dependency ) ->
       Directory.contains "node_modules",
         dependency.source.path
 
-    apply: ({ dependency }) ->
-      scope = await Generators.scope 
-        dependency: dependency.import.scope
-      specifier = getSpecifier { dependency }
-      target = getURL { dependency }
-      { scope, specifier, target }
+    apply: ( dependency ) ->
+      scope: await Generators.scope dependency.import.scope
+      specifier: getSpecifier dependency
+      target: getURL dependency
     
     scope: getURL
 
