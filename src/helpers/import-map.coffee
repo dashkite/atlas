@@ -58,12 +58,11 @@ Map =
     
     generic add, Type.isObject, isMapping,
       ( map, { scope, specifier, target }) ->
-        scope = if scope?
-          findMinimalScope { map, scope, specifier, target }
-          # map.scopes[ scope ] ?= {}
-        else
-          map.imports
         unless specifier == target
+          scope = if scope?
+            findMinimalScope { map, scope, specifier, target }
+          else
+            map.imports
           scope[ specifier ] = target
         map
 
