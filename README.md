@@ -30,10 +30,10 @@ By default, Atlas just blindly maps import specifiers to source paths. You must 
 ```coffeescript
 import Atlas from "@dashkite/atlas"
 import CDN from "@dashkite/atlas/generators/cdn"
-import Local from "@dashkite/atlas/generators/local"
+import Relative from "@dashkite/atlas/generators/relative"
 
 Atlas.register CDN.make provider: "jsdeliver"
-Atlas.register Local.make build: "build/browser/src"
+Atlas.register Relative.make build: "build/browser/src"
 ```
 
 You may also pass an array to `register` to register multiple presets at once:
@@ -41,7 +41,7 @@ You may also pass an array to `register` to register multiple presets at once:
 ```coffeescript
 Atlas.register [
   CDN.make provider: "jsdeliver"
-  Local.make build: "build/browser/src"
+  Realtive.make build: "build/browser/src"
 ]
 ```
 
@@ -50,7 +50,7 @@ The order in which they are evaluated is last-first.
 There are presently three generators available:
 
 - `CDN`: generates mappings for dependencies installed into `node_modules` for a given CDN. Presently, only the JSDelivr CDN is supported.
-- `Local`: generates mappings for dependencies within a given directory. You must provide the directory.
+- `Relative`: generates mappings for dependencies within a given directory. You must provide the directory.
 - `Sky`: generators mappings for dependencies outside the current directory and not installed into `node_modules`, using the Sky module loading convention for a given domain.
 
 ### Presets

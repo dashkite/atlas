@@ -3,7 +3,7 @@ import Directory from "#helpers/directory"
 import XRL from "#helpers/xrl"
 import { Specifier, Source } from "#helpers/dependency"
 
-Local =
+Relative =
 
   make: ({ build }) ->
 
@@ -40,5 +40,5 @@ Local =
     scope: getURL
 
 
-export { Local }
-export default Local
+export { Relative }
+export default Relative

@@ -1,6 +1,6 @@
 import Generators from "#generators"
 import CDN from "#generators/cdn"
-import Local from "#generators/local"
+import Relative from "#generators/relative"
 import Sky from "#generators/sky"
 
 Preset =
@@ -8,7 +8,7 @@ Preset =
   apply: ({ origin, build }) ->
     Generators.register [
       CDN.make "jsdelivr"
-      Local.make { build }
+      Relative.make { build }
       Sky.make { origin }
     ]
 
