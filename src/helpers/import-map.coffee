@@ -66,7 +66,12 @@ Map =
         unless specifier == target
           scope[ specifier ] = target
         map
-    
+
+    generic add, Type.isObject, Type.isReactor, ( map, it ) ->
+      for await dependency from it
+        await Map.add map, dependency
+      map
+
     add
       
 
