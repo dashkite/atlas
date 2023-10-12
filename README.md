@@ -7,6 +7,7 @@ import Atlas from "@dashkite/atlas"
 import SkyPreset from "@dashkite/atlas/presets/sky"
 
 SkyPreset.apply
+	provider: "jsdelivr"
   origin: "https://modules.acme.org"
   build: "/build/browser/src"
 

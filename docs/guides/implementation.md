@@ -346,3 +346,7 @@ Atlas works well for our present purposes, but to make it more generally useful,
 - Expand the README documentation
 - Add tests (we currently test by using the generated import maps in our apps)
 - Handle aliases in all the generators (or remove support for them in the Sky generator)
+- Support dynamic configuration, ex: `“sky", { origin }`
+- Dynamically import preset modules based on configuration
+- Support use of configuration files that are automatically imported
+- Add CLI support and plug-ins for popular task runners
