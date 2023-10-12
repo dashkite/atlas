@@ -20,7 +20,8 @@ Generators =
     apply: ( dependency ) ->
       specifier: dependency.import.specifier
       url: dependency.source.path
-    scope: ( dependency ) -> dependency.source.path
+    scope: ( dependency ) -> 
+      dependency.import.scope.source.path
 
   match: ( dependency ) ->
     ( generator ) -> generator.matches dependency

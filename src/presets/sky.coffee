@@ -5,9 +5,9 @@ import Sky from "#generators/sky"
 
 Preset =
 
-  apply: ({ origin, build }) ->
+  apply: ({ provider, build, origin }) ->
     Generators.register [
-      CDN.make "jsdelivr"
+      CDN.make { provider }
       Relative.make { build }
       Sky.make { origin }
     ]

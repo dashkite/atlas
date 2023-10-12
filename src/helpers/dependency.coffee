@@ -20,7 +20,7 @@ Source =
 
   isExternal: ({ source }) -> source.path.startsWith ".."
 
-  isInstalled: ({ source }) ->
+  isPublished: ({ source }) ->
     Directory.contains "node_modules", source.path
 
 

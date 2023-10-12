@@ -6,20 +6,12 @@ import Generators from "#generators"
 getURL = ({ source, module }) ->
   do ({ path } = {}) ->
     path = Source.relative { source, module }
-    do ({ scope, name, version } = module ) ->
-      if scope?
-        XRL.join [
-          "https://cdn.jsdelivr.net/npm"
-          "@#{ scope }"
-          "#{ name }@#{ version }"
-          path
-        ]
-      else
-        XRL.join [
-          "https://cdn.jsdelivr.net/npm"
-          "#{ name }@#{ version }"
-          path
-        ]
+    do ({ specifier, version } = module ) ->
+      XRL.join [
+        "https://cdn.jsdelivr.net/npm"
+        "#{ specifier }@#{ version }"
+        path
+      ]
 
 getSpecifier = ( dependency ) ->
   if Specifier.isRelative dependency
@@ -35,8 +27,7 @@ CDNs =
   jsdelivr:
 
     matches: ( dependency ) ->
-      Directory.contains "node_modules",
-        dependency.source.path
+      Source.isPublished dependency
 
     apply: ( dependency ) ->
       scope: await Generators.scope dependency.import.scope
@@ -47,7 +38,7 @@ CDNs =
 
 CDN =
 
-  make: ( name ) -> CDNs[ name ]
+  make: ({ provider }) -> CDNs[ provider ]
 
 export { CDN }
 export default CDN

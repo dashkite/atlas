@@ -8,7 +8,8 @@ Relative =
   make: ({ build }) ->
 
     getURL = ( dependency ) ->
-      XRL.Path.root Path.relative build, dependency.source.path
+      XRL.Path.root Path.relative build, 
+        dependency.source.path
 
     matches: ( dependency ) ->
       Directory.within build, dependency.source.path
@@ -17,21 +18,19 @@ Relative =
 
       do ({ scope, specifier, target } = {}) ->
 
-        if Specifier.isAlias dependency
+        scope = XRL.Path.root do ->
+          Path.relative build, 
+            dependency.import.scope.source.path
 
-          scope = XRL.Path.root()
-          specifier = dependency.import.specifier
+        specifier = do ->
 
-        else
-
-          scope = XRL.Path.root do ->
-            Path.relative build, 
-              dependency.import.scope.source.path
-
-          specifier = XRL.Path.join [ 
-            XRL.pop scope
+          if Specifier.isAlias dependency
             dependency.import.specifier
-          ]
+          else
+            XRL.Path.join [ 
+              XRL.pop scope
+              dependency.import.specifier
+            ]
 
         target = getURL dependency
 

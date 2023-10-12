@@ -2,6 +2,7 @@ import Path from "node:path"
 import Zephyr from "@dashkite/zephyr"
 import XRL from "#helpers/xrl"
 import { Specifier, Source } from "#helpers/dependency"
+import Generators from "#generators"
 
 getHashes = ({ module }) ->
   Zephyr.read Path.join module.path, ".sky", "hashes.yaml"
@@ -11,21 +12,14 @@ getHash = ({ module, source }) ->
     if ( hashes = await getHashes { module } )?
       path = Source.relative { source, module }
       hashes[ path ] ?
-        throw new Error "No hash for [ #{ path }]"
+        throw new Error "No hash for [ #{ path } ]"
     else
       throw new Error "No hashes found for module at 
         [ #{ module.path } ]"
 
 getModuleURL = ({ origin, dependency }) ->
-  do ({ scope, name } = dependency.module ) ->
-    if scope?
-      XRL.join [
-        origin
-        "@#{ scope }"
-        name
-      ]
-    else
-      XRL.join origin, name
+  do ({ specifier } = dependency.module ) ->
+    XRL.join origin, specifier
 
 getURL = ({ origin, dependency }) ->
   do ({ hash, base, path } = {}) ->
@@ -43,7 +37,7 @@ Sky =
 
     matches: ( dependency ) -> 
       ( Source.isExternal dependency ) &&
-        !( Source.isInstalled dependency )
+        !( Source.isPublished dependency )
       
 
     apply: ( dependency ) ->
@@ -52,10 +46,7 @@ Sky =
 
         if Specifier.isRelative dependency
 
-          scope = await getURL {
-            origin
-            dependency: dependency.import.scope 
-          }
+          scope = await _getURL dependency.import.scope 
 
           specifier = XRL.join [
             XRL.pop scope
@@ -63,6 +54,8 @@ Sky =
           ]
 
         else
+
+          scope = await Generators.scope dependency.import.scope
 
           specifier = dependency.import.specifier
 
