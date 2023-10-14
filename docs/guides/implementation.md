@@ -343,6 +343,8 @@ Atlas works well for our present purposes, but to make it more generally useful,
 - Provide an implementer’s guide for generators and presets
 - Move the Sky generator and preset into a separate module
 - Add a Local generator for developing against a local server
+- Allow HTML files as entry points (extracting the JS files from the HTML)
+- Provide support for auto-injection of the resulting map(s) into the HTML
 - Expand the README documentation
 - Add tests (we currently test by using the generated import maps in our apps)
 - Handle aliases in all the generators (or remove support for them in the Sky generator)
