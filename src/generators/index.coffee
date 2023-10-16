@@ -23,6 +23,10 @@ Generators =
     scope: ( dependency ) -> 
       dependency.import.scope.source.path
 
+  initialize: ->
+    for generator in generators
+      generator.initialize?()
+
   match: ( dependency ) ->
     ( generator ) -> generator.matches dependency
 

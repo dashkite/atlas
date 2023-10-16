@@ -35,6 +35,8 @@ Sky =
     _getURL = ( dependency ) ->
       getURL { origin, dependency }
 
+    initialize: -> Zephyr.clear()
+
     matches: ( dependency ) -> 
       ( Source.isExternal dependency ) &&
         !( Source.isPublished dependency )

@@ -3,6 +3,8 @@ import Path from "node:path"
 import * as Fn from "@dashkite/joy/function"
 import Zephyr from "@dashkite/zephyr"
 
+cache = {}
+
 normalize = ({ name, version, path }) ->
   do ({ specifier } = {}) ->
     specifier = name
@@ -11,17 +13,23 @@ normalize = ({ name, version, path }) ->
       { scope, name, specifier, version, path }
     else { name, specifier, version, path }
 
+_read = ( path ) ->
+  current = path
+  until current == "."
+    current = Path.dirname current
+    module = Path.join current, "package.json"
+    if ( data = await Zephyr.read module )?
+      return normalize { data..., path: Path.dirname module }
+  throw new Error "No module path found for #{ path }"
+
 Module =
 
-  read: Fn.memoize ( path ) ->
-    current = path
-    until current == "."
-      current = Path.dirname current
-      module = Path.join current, "package.json"
-      if ( data = await Zephyr.read module )?
-        return normalize { data..., path: Path.dirname module }
-    throw new Error "No module path found for #{ path }"
+  initialize: ->
+    Zephyr.clear()
+    cache = {}
 
+  read: ( path ) ->
+    cache[ path ] ?= _read path 
 
 export { Module }
 export default Module
