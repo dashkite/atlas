@@ -12,7 +12,9 @@ getHash = ({ module, source }) ->
     if ( hashes = await getHashes { module } )?
       path = Source.relative { source, module }
       hashes[ path ] ?
-        throw new Error "No hash for [ #{ path } ]"
+        throw new Error "No hash 
+          for[ #{ path } ] 
+          in [ #{ module.name } ]"
     else
       throw new Error "No hashes found for module at 
         [ #{ module.path } ]"
