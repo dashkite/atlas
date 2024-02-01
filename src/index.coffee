@@ -7,7 +7,7 @@ import Generators from "#generators"
 generate = ( entries, map ) ->
   Generators.initialize()
   map = if map? then Map.from map else Map.make()
-  Map.add map, analyze entries
+  Map.compact await Map.add map, analyze entries
 
 export default { generate }
 export { generate }

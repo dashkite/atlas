@@ -43,6 +43,8 @@ XRL =
 
   isAbsolute: isAbsolute
 
+  isDirectory: ( url ) -> url.endsWith "/"
+
   join: do ({ join } = {}) ->
 
     join = generic 
@@ -73,6 +75,13 @@ XRL =
       parsed.toString()
 
     pop
+
+  hasExtension: ( url ) -> /\.\w+$/.test url
+
+  directory: ( url ) ->
+    if !( XRL.isDirectory url ) && !( XRL.hasExtension url )
+      "#{ url }/"
+    else url
 
 export { XRL }
 export default XRL

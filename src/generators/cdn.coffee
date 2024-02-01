@@ -27,7 +27,9 @@ CDNs =
   jsdelivr:
 
     matches: ( dependency ) ->
-      Source.isPublished dependency
+      ( Source.isPublished dependency ) ||
+        (( dependency.import?.scope? ) &&
+          ( Source.isPublished dependency.import.scope ))
 
     apply: ( dependency ) ->
       scope: await Generators.scope dependency.import.scope

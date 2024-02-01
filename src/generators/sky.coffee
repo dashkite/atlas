@@ -30,6 +30,8 @@ getURL = ({ origin, dependency }) ->
     path = Source.relative dependency
     XRL.join [ base, hash, path ]
       
+count = 0
+
 Sky =
 
   make: ({ origin }) ->
@@ -41,13 +43,14 @@ Sky =
 
     matches: ( dependency ) -> 
       ( Source.isExternal dependency ) &&
-        !( Source.isPublished dependency )
-      
+        !( Source.isPublished dependency ) &&
+        !(( dependency.import?.scope? ) &&
+          ( Source.isPublished dependency.import.scope ))
 
     apply: ( dependency ) ->
 
       do ({ scope, specifier, target } = {}) ->
-
+        
         if Specifier.isRelative dependency
 
           scope = await _getURL dependency.import.scope 

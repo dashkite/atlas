@@ -1,5 +1,6 @@
 import { generic } from "@dashkite/joy/generic"
 import * as Type from "@dashkite/joy/type"
+import XRL from "#helpers/xrl"
 
 generators = []
 
@@ -16,7 +17,7 @@ Generators =
   register: register
 
   default: 
-    match: -> true
+    matches: -> true
     apply: ( dependency ) ->
       specifier: dependency.import.specifier
       url: dependency.source.path
