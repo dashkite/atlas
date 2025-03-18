@@ -21,6 +21,7 @@ hasScopeConflict = ({ scope, specifier, target }) ->
     false
     
 findMinimalScope = ({ map, scope, specifier, target }) ->
+  # map.scopes[ scope ]
   do ({ current, previous, confliced } = {}) ->
     current = scope
     loop 
@@ -74,6 +75,7 @@ Map =
               map.imports
             else
               map.scopes[ XRL.directory XRL.pop scope ] ?= {}
+              # map.scopes[ scope ] ?= {}
           else
             map.imports
           _scope[ specifier ] = target
@@ -87,33 +89,33 @@ Map =
     add
 
   compact: ( map ) ->
-    result = map.scopes
-    scopes = Object.keys map.scopes
-    last = []
-    while !( Val.equal scopes, last )
-      last = scopes
-      previous = result
-      result = {}
-      for current in scopes
-        parent = XRL.directory XRL.pop current
-        if !( result[ parent ]? )
-          result[ parent ] = previous[ current ]
-        else
-          conflict = false
-          for specifier, target of result[ parent ]
-            conflict = hasSpecifierConflict
-              scope: previous[ current ]
-              specifier: specifier
-              target: target
-            break if conflict
-          if !conflict
-            Object.assign result[ parent ], previous[ current ]
-          else if result[ current ]?
-            Object.assign result[ current ], previous[ current ]
-          else
-            result[ current ] = previous[ current ]
-      scopes = Object.keys result
-    map.scopes = result
+    # result = map.scopes
+    # scopes = Object.keys map.scopes
+    # last = []
+    # while !( Val.equal scopes, last )
+    #   last = scopes
+    #   previous = result
+    #   result = {}
+    #   for current in scopes
+    #     parent = XRL.directory XRL.pop current
+    #     if !( result[ parent ]? )
+    #       result[ parent ] = previous[ current ]
+    #     else
+    #       conflict = false
+    #       for specifier, target of result[ parent ]
+    #         conflict = hasSpecifierConflict
+    #           scope: previous[ current ]
+    #           specifier: specifier
+    #           target: target
+    #         break if conflict
+    #       if !conflict
+    #         Object.assign result[ parent ], previous[ current ]
+    #       else if result[ current ]?
+    #         Object.assign result[ current ], previous[ current ]
+    #       else
+    #         result[ current ] = previous[ current ]
+    #   scopes = Object.keys result
+    # map.scopes = result
     map
 
 export default Map
