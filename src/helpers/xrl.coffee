@@ -2,8 +2,6 @@ import $Path from "node:path"
 import { generic } from "@dashkite/joy/generic"
 import * as Type from "@dashkite/joy/type"
 
-# TODO fix this in Joy
-# https://github.com/dashkite/joy/issues/14
 
 reduce = ( acc, initial, items ) ->
   items.reduce (( result, item ) -> acc result, item ), initial

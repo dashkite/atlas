@@ -1,5 +1,3 @@
-# TODO move this into its own module?
-#      with or without the module decoration?
 
 import Path from "node:path"
 import esbuild from "esbuild"
