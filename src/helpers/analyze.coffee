@@ -20,6 +20,7 @@ analyze = ( entries ) ->
         outfile: "/dev/null"
         external: [ "esbuild" ]
         metafile: true
+        format: "esm"
 
     for path, { imports } of metafile.inputs 
       for dependency in imports
