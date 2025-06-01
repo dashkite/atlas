@@ -21,6 +21,7 @@ analyze = ( entries ) ->
         external: [ "esbuild" ]
         metafile: true
         format: "esm"
+        treeShaking: false
 
     for path, { imports } of metafile.inputs 
       for dependency in imports
