@@ -35,7 +35,8 @@
     }
   },
   "files": [
-    "build/node/src"
+    "build/node/src",
+    "build/browser/src"
   ],
   "scripts": {
     "build": "genie build",
