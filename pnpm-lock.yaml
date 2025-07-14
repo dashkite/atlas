@@ -48,6 +48,9 @@ importers:
       '@dashkite/genie-coffee':
         specifier: link:../genie-coffee
         version: link:../genie-coffee
+      '@dashkite/genie-release':
+        specifier: ^0.2.10
+        version: 0.2.10
 
 packages:
 
@@ -60,6 +63,9 @@ packages:
   '@dashkite/assert@0.1.4':
     resolution: {integrity: sha512-OLOzI/lA+EwCh6znSexGAG1V4bkaT5gU04xl6ApEluv5jICnHhinZ707MObu+jhVVJ9uHDDlG85O+Afn1aTQoQ==}
 
+  '@dashkite/genie-release@0.2.10':
+    resolution: {integrity: sha512-8pczG/SY+Nbstl+cIc9s0+tsNewNTyNfi60g7RHvpzxe6Qd2/WUCIfmFqcF39CAUVlAq94+6M29vhDOwPlLk/Q==}
+
   '@dashkite/genie@0.8.4':
     resolution: {integrity: sha512-f4c84JoTaIoEvSwwre9lOD4V1/AHMp9prIeiJrD4/hRWiGcO+HYqjzjK7mNA2kfq68K/I3y9F5QYhlaG8QpCYA==}
     engines: {node: '>=20.0.0'}
@@ -70,6 +76,9 @@ packages:
 
   '@dashkite/kaiko@0.3.3':
     resolution: {integrity: sha512-XnAvVr9y2MsDqMLr4A24vkLF7Iuq3E8RjHEEpqhe29P5NevVX9jXKcXUStNMp9MSJbjHd2pqUNiM5Vvdja9ggg==}
+
+  '@dashkite/zephyr@0.2.0':
+    resolution: {integrity: sha512-l3Fm9nyOIp1yBnv4IzGOKVgo1/UucU5WLvsqAfcP2jEVlE4AgpPkODssyloxTyC3N+bhcz1DXqC/7KokI1eVjA==}
 
   '@esbuild/aix-ppc64@0.19.12':
     resolution: {integrity: sha512-bmoCYyWdEL3wDQIVbcyzRyeKLgk2WtWLTWz1ZIAZF/EGbNOwSA6ew3PftJ1PqMiOOGu0OyFMzG53L0zqIpPeNA==}
@@ -410,6 +419,11 @@ packages:
     resolution: {integrity: sha512-65P7iz6X5yEr1cwcgvQxbbIw7Uk3gOy5dIdtZ4rDveLqhrdJP+Li/Hx6tyK0NEb+2GCyneCMJiGqrADCSNk8sQ==}
     engines: {node: '>=8.0'}
 
+  zx@8.7.0:
+    resolution: {integrity: sha512-pArftqj5JV/er8p+czFZwF+k6SbCldl7kcfCR+rIiDIh3gUsLB0F3Xh05diP8PzToZ39D/GWeFoVFimjHQkbAg==}
+    engines: {node: '>= 12.17.0'}
+    hasBin: true
+
 snapshots:
 
   '@dashkite/amen-console@0.0.2':
@@ -421,6 +435,11 @@ snapshots:
   '@dashkite/assert@0.1.4':
     dependencies:
       '@dashkite/joy': 0.3.16
+
+  '@dashkite/genie-release@0.2.10':
+    dependencies:
+      '@dashkite/zephyr': 0.2.0
+      zx: 8.7.0
 
   '@dashkite/genie@0.8.4':
     dependencies:
@@ -440,6 +459,11 @@ snapshots:
   '@dashkite/joy@0.3.16': {}
 
   '@dashkite/kaiko@0.3.3': {}
+
+  '@dashkite/zephyr@0.2.0':
+    dependencies:
+      '@dashkite/joy': 0.3.16
+      js-yaml: 4.1.0
 
   '@esbuild/aix-ppc64@0.19.12':
     optional: true
@@ -694,3 +718,5 @@ snapshots:
   to-regex-range@5.0.1:
     dependencies:
       is-number: 7.0.0
+
+  zx@8.7.0: {}
