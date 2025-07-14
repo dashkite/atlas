@@ -43,10 +43,10 @@
     "release": "genie release"
   },
   "dependencies": {
-    "@dashkite/drn-sky": "link:../drn-sky",
+    "@dashkite/drn-sky": "0.4.0",
     "@dashkite/joy": "^0.3.16",
-    "@dashkite/polaris": "link:../polaris",
-    "@dashkite/zephyr": "link:../zephyr",
+    "@dashkite/polaris": "0.5.0",
+    "@dashkite/zephyr": "0.9.0",
     "esbuild": "^0.19.2",
     "js-yaml": "^4.1.0",
     "micromatch": "^4.0.5"
