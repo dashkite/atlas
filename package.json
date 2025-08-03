@@ -44,7 +44,7 @@
     "release": "genie release"
   },
   "dependencies": {
-    "@dashkite/drn-sky": "^0.8.5",
+    "@dashkite/drn-sky": "^0.8.6",
     "@dashkite/joy": "^0.7.0",
     "@dashkite/polaris": "^0.10.6",
     "@dashkite/zephyr": "^0.9.0",

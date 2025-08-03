@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       '@dashkite/drn-sky':
-        specifier: ^0.8.5
-        version: 0.8.5(@aws-sdk/credential-provider-node@3.529.0)
+        specifier: ^0.8.6
+        version: 0.8.6(@aws-sdk/credential-provider-node@3.529.0)
       '@dashkite/joy':
         specifier: ^0.7.0
         version: 0.7.0
@@ -870,11 +870,11 @@ packages:
   '@dashkite/dolores@0.8.0':
     resolution: {integrity: sha512-ga+AxqsQcUjW3D5J6mCQqTU7GqJsmnlT9OfqYrmPA3lGJSjk0GqJRQb3RIjoqjjXVszeK8vAW3RdJPx0W7OhNw==}
 
-  '@dashkite/drn-sky@0.8.5':
-    resolution: {integrity: sha512-06VxvJqARW4W6Q8idFbRgp9VOSoltsp4eRHziAYbUWNWyhB01YfP8IYFD0+hwObe/61MR5wS46JUKOCkwbm8kQ==}
+  '@dashkite/drn-sky@0.8.6':
+    resolution: {integrity: sha512-SZhWpax2ge+tqjGKveOYRBekxbCLhR8bJxBezNHuQQjg7ndN7CEMv2aFPTLl8vPjIfkPQYa5pEyTOz7Ta76f9g==}
 
-  '@dashkite/drn@0.12.6':
-    resolution: {integrity: sha512-ML6aapwswGRBA6kHABs6ieEku7L0JdR1CVB+6vyJxh4U1R0Njjm4eR0NNk1LHUyfJJ6y5Xmqg1eLPVnpjK0WEg==}
+  '@dashkite/drn@0.12.7':
+    resolution: {integrity: sha512-PKESauREexQ/PHxfqdCEXeIsFZ7D5t+f2KWloHM83NkWiZMbNRFTmY7IOcLNx1UUDuI2dVNHMEVs/ehCKUPRMQ==}
 
   '@dashkite/genie-clean@0.9.0':
     resolution: {integrity: sha512-cR5IaFycabxIOH0XrExG5DCrm91milsdPqt104+AcIFEtpthwQ55lgOkS660tC8l7SxnwZzMZbZxHP3oK0iT0A==}
@@ -4101,11 +4101,11 @@ snapshots:
       - aws-crt
       - encoding
 
-  '@dashkite/drn-sky@0.8.5(@aws-sdk/credential-provider-node@3.529.0)':
+  '@dashkite/drn-sky@0.8.6(@aws-sdk/credential-provider-node@3.529.0)':
     dependencies:
       '@dashkite/bake': 0.0.6
       '@dashkite/dolores': 0.8.0(@aws-sdk/credential-provider-node@3.529.0)
-      '@dashkite/drn': 0.12.6
+      '@dashkite/drn': 0.12.7
       '@dashkite/joy': 0.7.0
       '@dashkite/sky-local-storage': 0.8.0
       '@dashkite/xrl': 0.4.0
@@ -4117,7 +4117,7 @@ snapshots:
       - aws-crt
       - encoding
 
-  '@dashkite/drn@0.12.6':
+  '@dashkite/drn@0.12.7':
     dependencies:
       '@dashkite/bake': 0.0.6
       '@dashkite/joy': 0.7.0
