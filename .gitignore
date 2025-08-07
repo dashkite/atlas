@@ -4,3 +4,5 @@ build
 .atlas
 .genie
 
+
+pnpm-lock.yaml
