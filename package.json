@@ -44,9 +44,9 @@
     "release": "genie release"
   },
   "dependencies": {
-    "@dashkite/drn-sky": "^0.8.16",
+    "@dashkite/drn-sky": "^0.8.17",
     "@dashkite/joy": "^0.7.0",
-    "@dashkite/polaris": "^0.10.35",
+    "@dashkite/polaris": "^0.10.36",
     "@dashkite/zephyr": "^0.9.0",
     "esbuild": "^0.19.12",
     "js-yaml": "^4.1.0",
