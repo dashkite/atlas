@@ -65,6 +65,10 @@ Map =
     generic add, Type.isObject, isDependency, 
       ( map, dependency ) -> 
         add map, await Generators.apply dependency
+        # console.log { dependency }
+        # resolved = await Generators.apply dependency
+        # console.log { resolved }
+        # add map, resolved
     
     generic add, Type.isObject, isMapping,
       ( map, { scope, specifier, target }) ->
