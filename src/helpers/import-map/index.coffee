@@ -4,6 +4,7 @@ import { generic } from "@dashkite/joy/generic"
 import * as Type from "@dashkite/joy/type"
 import XRL from "#helpers/xrl"
 import Generators from "#generators"
+
 import groupByMapping from "./group-by-mapping"
 import groupBySpecifier from "./group-by-specifier"
 import resolve from "./resolve"
@@ -65,8 +66,6 @@ Map =
             map = modified
             break
     compact map
-
-  compact: ( map ) -> Map.optimize map
 
 export default Map
 export { Map }

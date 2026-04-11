@@ -59,9 +59,9 @@ do ->
           "/a/b/c/": "x": "v1"
           "/a/b/d/": "x": "v1"
           "/other/": "x": "v2"
-      
+
       optimized = Map.optimize map
-      
+
       expected =
         imports:
           x: "v1"
@@ -69,7 +69,7 @@ do ->
         scopes:
           "/other/":
             x: "v2"
-            
+
       assert.deepEqual expected, optimized
 
     test "shadowing conflict", ->
@@ -80,7 +80,7 @@ do ->
           "/a/1/": "x": "v1"
           "/a/2/": "x": "v2"
           "/a/3/": "x": "v2"
-      
+
       optimized = Map.optimize map
       
       assert.equal "v1",
