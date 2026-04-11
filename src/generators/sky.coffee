@@ -33,6 +33,7 @@ getURL = ({ origin, dependency }) ->
 count = 0
 
 Sky =
+  name: "sky"
 
   make: ({ origin }) ->
 

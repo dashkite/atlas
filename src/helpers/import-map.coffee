@@ -5,45 +5,33 @@ import * as Type from "@dashkite/joy/type"
 import XRL from "#helpers/xrl"
 import Generators from "#generators"
 
-hasSpecifierConflict = ({ scope, specifier, target }) ->
-  if scope[ specifier ]?
-    scope[ specifier ] != target
-  else false
+hasConflict = ({ mapping, specifier }) ->
+  mapping?[ specifier ]?
 
-hasScopeConflict = ({ scope, specifier, target }) ->
-  if scope?
-    hasSpecifierConflict {
-      scope
-      specifier
-      target
-    }
-  else
-    false
-    
+popScope = ( scope ) ->
+  if candidate == current then "/" else candidate
+
 findMinimalScope = ({ map, scope, specifier, target }) ->
-  # map.scopes[ scope ]
-  do ({ current, previous, confliced } = {}) ->
-    current = scope
-    loop 
-      previous = current
-      current = XRL.directory XRL.pop current
-      _scope = if current == previous
-        if current == "/"
-          map.imports
+  current = last = scope
+  loop
+    current = XRL.pop current
+    if current == last
+      if map.imports[ specifier ]?
+        if map.imports[ specifier ] == target
+          return undefined
         else
-          map.scopes[ current ]
+          return last
       else
-        map.scopes[ current ]
-      conflicted = hasScopeConflict { scope: _scope, specifier, target }
-      if conflicted
-        return ( map.scopes[ previous ] ?= {}) 
-      if current == previous
-        return do ->
-          if current == "/"
-            map.imports
-          else
-            map.scopes[ current ] ?= {}
-
+        return "/"
+    else
+      if map.scopes[ current ]?[ specifier ]?
+        if map.imports[ specifier ] == target
+          return undefined
+        else
+          return last
+      else
+        last = current
+    
 isDependency = ( value ) ->
   value?.source? && value.import? && value.module?
 
@@ -65,21 +53,15 @@ Map =
     generic add, Type.isObject, isDependency, 
       ( map, dependency ) -> 
         add map, await Generators.apply dependency
-        # console.log { dependency }
-        # resolved = await Generators.apply dependency
-        # console.log { resolved }
-        # add map, resolved
     
     generic add, Type.isObject, isMapping,
       ( map, { scope, specifier, target }) ->
         unless specifier == target
           _scope = if scope?
-            # findMinimalScope { map, scope, specifier, target }
             if scope.startsWith "/"
               map.imports
             else
-              map.scopes[ XRL.directory XRL.pop scope ] ?= {}
-              # map.scopes[ scope ] ?= {}
+              map.scopes[ XRL.directory scope ] ?= {}
           else
             map.imports
           _scope[ specifier ] = target
@@ -89,37 +71,34 @@ Map =
       for await dependency from it
         await Map.add map, dependency
       map
-
     add
 
   compact: ( map ) ->
-    # result = map.scopes
-    # scopes = Object.keys map.scopes
-    # last = []
-    # while !( Val.equal scopes, last )
-    #   last = scopes
-    #   previous = result
-    #   result = {}
-    #   for current in scopes
-    #     parent = XRL.directory XRL.pop current
-    #     if !( result[ parent ]? )
-    #       result[ parent ] = previous[ current ]
-    #     else
-    #       conflict = false
-    #       for specifier, target of result[ parent ]
-    #         conflict = hasSpecifierConflict
-    #           scope: previous[ current ]
-    #           specifier: specifier
-    #           target: target
-    #         break if conflict
-    #       if !conflict
-    #         Object.assign result[ parent ], previous[ current ]
-    #       else if result[ current ]?
-    #         Object.assign result[ current ], previous[ current ]
-    #       else
-    #         result[ current ] = previous[ current ]
-    #   scopes = Object.keys result
-    # map.scopes = result
+    remove = []
+    for scope, mappings of map.scopes
+      for specifier, target of mappings
+        minimal = findMinimalScope { map, scope, specifier, target }
+        if !minimal?
+          # minimal scope already has this mapping
+          continue
+        else if minimal != scope
+          # minimal scope exists that isn't the full scope
+          remove.push { scope, specifier }
+          if minimal == "/"
+            map.imports[ specifier ] = target
+          else
+            map.scopes[ minimal ] ?= {}
+            map.scopes[ minimal ][ specifier ] = target
+
+    # remove all the redundant specifiers
+    for { scope, specifier } in remove
+      delete map.scopes[ scope ][ specifier ]
+    
+    # remove any (now) empty scopes
+    for scope, mappings of map.scopes
+      keys = Object.keys mappings
+      delete map.scopes[ scope ] if keys.length == 0
+
     map
 
 export default Map

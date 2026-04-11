@@ -30,18 +30,21 @@ Effectively, the scope and specifier are the URLs that the browser would compute
 Given a mapping, adding it to the map looks like this:
 
 ```coffeescript
-generic add, Type.isObject, isMapping,
-  ( map, { scope, specifier, target }) ->
-    unless specifier == target
-      scope = if scope?
-        findMinimalScope { map, scope, specifier, target }
-      else
-        map.imports
-      scope[ specifier ] = target
-    map
+    generic add, Type.isObject, isMapping,
+      ( map, { scope, specifier, target }) ->
+        unless specifier == target
+          _scope = if scope?
+            if scope.startsWith "/"
+              map.imports
+            else
+              map.scopes[ XRL.directory XRL.pop scope ] ?= {}
+          else
+            map.imports
+          _scope[ specifier ] = target
+        map
 ```
 
-We first check to see if the specifier and target are the same, which means we don’t need to add it. Next, we compute the scope by finding the minimal scope that doesn’t introduce a conflict. A conflict occurs when the same specifier is already mapped to a different target within the same scope. Once we have the minimal scope, we add the mapping.
+We first check to see if the specifier and target are the same, which means we don’t need to add it. Next, we determine the scope. If the scope is provided, we use it (ensuring it's treated as a directory-level scope); otherwise, we default to the global `imports`.
 
 But how did we get the mapping?
 
@@ -93,6 +96,10 @@ The module object consists of a `specifier`, `name`, `version`, and `path`. It m
 
 The import object consists of the import `specifier` and a `scope`. The import scope has `source` and `module` properties, just a dependency. Thus, the import scope is itself a dependency description, except without an `import` property. Future versions may simply reference the corresponding dependency directly.
 
+## The Compaction Algorithm
+
+TODO
+
 ## The Generators
 
 Generators are registered with Atlas using the `Generator.register` function. The argument must be a generator object, with `matches`, `apply`, and `scope` functions, or an array of such objects.
@@ -123,7 +130,7 @@ The predicate is relatively simple: we check to see if the source file is publis
 
 ```coffeescript
     matches: ( dependency ) ->
-    	Source.isPublished dependency
+        Source.isPublished dependency
 ```
 
 Applying the generator is bit trickier. We define helper functions here to keep things clean:
@@ -328,27 +335,29 @@ Import maps are extensively documented:
 - By the [W3C Working Group](https://github.com/WICG/import-maps#readme)
 - In [the specification](https://html.spec.whatwg.org/multipage/webappapis.html#import-map)
 
+
 However, there are a few things that may not be not immediately obvious:
 
 - The keys in a *module specifier map* (what we refer to as specifiers in Atlas) must be either bare module specifiers, URLs, or paths. Bare module specifiers are basically specifiers that aren’t URLs or paths.
 - Bare module specifiers, like `@dashkite/joy`, are mapped without transformation. However, paths are assumed to be relative URLs, where the document URL is the base. This is true even within scopes.
 - In other words, paths in scoped mappings are not resolved using the scope, but the document URL.
 - Similarly, aliases are treated as bare module specifiers.
+- At resolution time, scopes are consulted in order of most- to least-specific. If a matching scope does not contain an entry for a specifier, the browser [consults the next most-specific matching scope](https://html.spec.whatwg.org/multipage/webappapis.html#example-import-map-scopes-overlapping), eventually falling back to the top-level `imports`.
 
 ## Appendix: Roadmap
 
 Atlas works well for our present purposes, but to make it more generally useful, we would like need to make some improvements:
 
-- Provide API reference documentation
-- Provide an implementer’s guide for generators and presets
-- Move the Sky generator and preset into a separate module
-- Add a Local generator for developing against a local server
-- Allow HTML files as entry points (extracting the JS files from the HTML)
-- Provide support for auto-injection of the resulting map(s) into the HTML
-- Expand the README documentation
-- Add tests (we currently test by using the generated import maps in our apps)
-- Handle aliases in all the generators (or remove support for them in the Sky generator)
-- Support dynamic configuration, ex: `“sky", { origin }`
-- Dynamically import preset modules based on configuration
-- Support use of configuration files that are automatically imported
-- Add CLI support and plug-ins for popular task runners
+- [ ] Provide API reference documentation
+- [ ] Provide an implementer’s guide for generators and presets
+- [ ] Move the Sky generator and preset into a separate module
+- [ ] Add a Local generator for developing against a local server
+- [ ] Allow HTML files as entry points (extracting the JS files from the HTML)
+- [ ] Provide support for auto-injection of the resulting map(s) into the HTML
+- [ ] Expand the README documentation
+- [ ] Add tests
+- [ ] Handle aliases in all the generators (or remove support for them in the Sky generator)
+- [ ] Support dynamic configuration, ex: `“sky", { origin }`
+- [ ] Dynamically import preset modules based on configuration
+- [ ] Support use of configuration files that are automatically imported
+- [ ] Add CLI support and plug-ins for popular task runners

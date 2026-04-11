@@ -4,6 +4,7 @@ import XRL from "#helpers/xrl"
 import { Specifier, Source } from "#helpers/dependency"
 
 Relative =
+  name: "relative"
 
   make: ({ build }) ->
 

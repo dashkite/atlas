@@ -26,6 +26,8 @@ CDNs =
 
   jsdelivr:
 
+    name: "jsdelivr"
+
     matches: ( dependency ) ->
       ( Source.isPublished dependency ) ||
         (( dependency.import?.scope? ) &&
