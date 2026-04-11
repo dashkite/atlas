@@ -24,6 +24,9 @@
     }
   },
   "imports": {
+    "#helpers/import-map": {
+      "node": "./build/node/src/helpers/import-map/index.js"
+    },
     "#helpers/*": {
       "node": "./build/node/src/helpers/*.js"
     },

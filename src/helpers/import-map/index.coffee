@@ -8,7 +8,7 @@ import Generators from "#generators"
 import lca from "./lca"
 import groupByMapping from "./group-by-mapping"
 import buildScopes from "./build-scopes"
-import buildRoot from "./build-root"
+import resolve from "./resolve"
 
 isDependency = ( value ) ->
   value?.source? && value.import? && value.module?
@@ -52,17 +52,43 @@ Map =
     add
 
   compact: ( map ) ->
-    groups = groupByMapping { map.scopes..., "/": map.imports }
+
+    groups = groupByMapping {
+      $: map.imports
+      map.scopes...
+    }
+
     pairs = groups.map ({ mapping, scopes }) -> 
       { mapping, scopes: lca [ scopes... ] }
     
-    intermediate = buildScopes pairs
-    { imports, scopes } = buildRoot intermediate
+    { $: imports, scopes... } = buildScopes pairs
     
-    map.imports = imports
-    map.scopes = scopes
+    original = structuredClone map
+    map = { scopes, imports }
+
+    # Iterate through each scope and mapping and try
+    # removing it to see if it still resolves.
+    for scope, mappings of map.scopes
+      for specifier, target of mappings
+        delete map.scopes[scope][specifier]
+        if target == resolve { map, specifier, base: scope }
+          # still resolves, mapping was redundant
+          continue
+        else
+          # breaks resolution, put it back
+          map.scopes[scope][specifier] = target
     
+    # Cleanup empty scopes
+    for scope, mappings of map.scopes
+      if ( Object.keys mappings ).length == 0
+        delete map.scopes[scope]
+
+    before = ( JSON.stringify original ).length
+    after =  ( JSON.stringify map ).length
+    console.log "optimization saved #{ before - after } bytes"
     map
+
+
 
 export default Map
 export { Map }

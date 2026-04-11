@@ -1,4 +1,4 @@
-import XRL from "./xrl"
+import XRL from "../xrl"
 
 unique = ( set, prefix ) ->
   1 ==

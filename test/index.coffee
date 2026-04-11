@@ -1,11 +1,12 @@
 import assert from "@dashkite/assert"
 import { test, success } from "@dashkite/amen"
 import print from "@dashkite/amen-console"
-import lca from "../src/helpers/lca"
-import groupByMapping from "../src/helpers/group-by-mapping"
-import buildScopes from "../src/helpers/build-scopes"
-import buildRoot from "../src/helpers/build-root"
+import lca from "../src/helpers/import-map/lca"
+import groupByMapping from "../src/helpers/import-map/group-by-mapping"
+import buildScopes from "../src/helpers/import-map/build-scopes"
+import buildRoot from "../src/helpers/import-map/build-root"
 import Map from "../src/helpers/import-map"
+import resolve from "../src/helpers/import-map/resolve"
 
 do ->
   print await test "LCA", [
@@ -115,7 +116,8 @@ do ->
   print await test "Map.compact", [
     test "full integration", ->
       map = 
-        imports: {}
+        imports:
+          "z": "v1"
         scopes:
           "/a/b/c/": "x": "v1"
           "/a/b/d/": "x": "v1"
@@ -123,19 +125,51 @@ do ->
       
       compacted = Map.compact map
       
-      # x: v1 has 2 original scopes, which reduce to LCA /a/b/
-      # x: v2 has 1 original scope /other/
-      # Frequency: v1 (2) > v2 (1). v1 wins global imports.
-      # v2 remains in its scope.
+      # z: v1 stays in imports
+      # x: v1 (at /a/b/c/ and /a/b/d/) reduces to LCA /a/b/
+      # x: v2 stays in /other/
       
       expected =
         imports:
-          x: "v1"
+          z: "v1"
         scopes:
+          "/a/b/":
+            x: "v1"
           "/other/":
             x: "v2"
             
       assert.deepEqual expected, compacted
+  ]
+
+  print await test "resolve", [
+    test "nested scopes", ->
+      map =
+        imports:
+          "x": "global"
+        scopes:
+          "/a/":
+            "x": "v1"
+          "/a/b/":
+            "x": "v2"
+      
+      assert.equal "v2", 
+        resolve { map, specifier: "x", base: "/a/b/c.js" }
+      assert.equal "v1", 
+        resolve { map, specifier: "x", base: "/a/c.js" }
+      assert.equal "global", 
+        resolve { map, specifier: "x", base: "/other.js" }
+
+    test "shadowing", ->
+      map =
+        imports:
+          "x": "global"
+        scopes:
+          "/a/":
+            "y": "v1"
+      
+      # Specifier x is NOT in /a/, so it falls back to global
+      assert.equal "global",
+        resolve { map, specifier: "x", base: "/a/b.js" }
   ]
 
   process.exit if success then 0 else 1
