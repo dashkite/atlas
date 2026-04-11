@@ -4,11 +4,12 @@ import { generic } from "@dashkite/joy/generic"
 import * as Type from "@dashkite/joy/type"
 import XRL from "#helpers/xrl"
 import Generators from "#generators"
-
-import lca from "./lca"
 import groupByMapping from "./group-by-mapping"
-import buildScopes from "./build-scopes"
+import groupBySpecifier from "./group-by-specifier"
 import resolve from "./resolve"
+import deltas from "./deltas"
+import verify from "./verify"
+import compact from "./compact"
 
 isDependency = ( value ) ->
   value?.source? && value.import? && value.module?
@@ -51,44 +52,21 @@ Map =
       map
     add
 
-  compact: ( map ) ->
+  optimize: ( map ) ->
+    mappings = groupByMapping { $: map.imports, map.scopes... }
+    specifiers = groupBySpecifier mappings
 
-    groups = groupByMapping {
-      $: map.imports
-      map.scopes...
-    }
+    for { mapping, scopes } in mappings
+      { specifier, target } = mapping
+      for scope from scopes when scope != "$"
+        for delta from deltas { scope, specifier, target }
+          modified = delta structuredClone map
+          if verify { map: modified, specifier, target, scopes: specifiers[ specifier ] }
+            map = modified
+            break
+    compact map
 
-    pairs = groups.map ({ mapping, scopes }) -> 
-      { mapping, scopes: lca [ scopes... ] }
-    
-    { $: imports, scopes... } = buildScopes pairs
-    
-    original = structuredClone map
-    map = { scopes, imports }
-
-    # Iterate through each scope and mapping and try
-    # removing it to see if it still resolves.
-    for scope, mappings of map.scopes
-      for specifier, target of mappings
-        delete map.scopes[scope][specifier]
-        if target == resolve { map, specifier, base: scope }
-          # still resolves, mapping was redundant
-          continue
-        else
-          # breaks resolution, put it back
-          map.scopes[scope][specifier] = target
-    
-    # Cleanup empty scopes
-    for scope, mappings of map.scopes
-      if ( Object.keys mappings ).length == 0
-        delete map.scopes[scope]
-
-    before = ( JSON.stringify original ).length
-    after =  ( JSON.stringify map ).length
-    console.log "optimization saved #{ before - after } bytes"
-    map
-
-
+  compact: ( map ) -> Map.optimize map
 
 export default Map
 export { Map }

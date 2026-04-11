@@ -10,7 +10,8 @@ groupByMapping = ( scopes ) ->
   for specifier, targets of index
     for target, scopes of targets
       results.push { mapping: { specifier, target }, scopes }
-  results
+  
+  results.sort ( a, b ) -> b.scopes.size - a.scopes.size
 
 export default groupByMapping
 export { groupByMapping }

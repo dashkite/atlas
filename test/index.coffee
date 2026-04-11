@@ -1,34 +1,12 @@
 import assert from "@dashkite/assert"
 import { test, success } from "@dashkite/amen"
 import print from "@dashkite/amen-console"
-import lca from "../src/helpers/import-map/lca"
 import groupByMapping from "../src/helpers/import-map/group-by-mapping"
-import buildScopes from "../src/helpers/import-map/build-scopes"
-import buildRoot from "../src/helpers/import-map/build-root"
+import groupBySpecifier from "../src/helpers/import-map/group-by-specifier"
 import Map from "../src/helpers/import-map"
 import resolve from "../src/helpers/import-map/resolve"
 
 do ->
-  print await test "LCA", [
-    test "single tree", ->
-      scopes = [
-        "/a/b/c/"
-        "/a/b/d/"
-      ]
-      assert.deepEqual new Set([ "/a/b/" ]), lca scopes
-
-    test "multiple trees", ->
-      scopes = [
-        "https://cdn.com/a/b/c/"
-        "https://cdn.com/a/b/d/"
-        "https://other.com/x/y/"
-      ]
-      assert.deepEqual new Set([
-        "https://cdn.com/a/b/"
-        "https://other.com/x/y/"
-      ]), lca scopes
-  ]
-
   print await test "groupByMapping", [
     test "basic grouping", ->
 
@@ -37,7 +15,6 @@ do ->
           { mapping, scopes: [ scopes... ]}
 
       scopes =
-
         a: x: "v1"
         b: x: "v2"
         c:
@@ -45,8 +22,8 @@ do ->
           y: "v1"
 
       expected = [
-        { mapping: { specifier: "x", target: "v1" }, scopes: [ "a" ]}
         { mapping: { specifier: "x", target: "v2" }, scopes: [ "b", "c" ]}
+        { mapping: { specifier: "x", target: "v1" }, scopes: [ "a" ]}
         { mapping: { specifier: "y", target: "v1" }, scopes: [ "c" ]}
       ]
 
@@ -55,65 +32,25 @@ do ->
 
   ]
 
-  print await test "buildScopes", [
-    test "basic building", ->
-      groups = [
-        { mapping: { specifier: "x", target: "v1" }, scopes: new Set [ "a" ]}
-        { mapping: { specifier: "x", target: "v2" }, scopes: new Set [ "b", "c" ]}
-        { mapping: { specifier: "y", target: "v1" }, scopes: new Set [ "c" ]}
+  print await test "groupBySpecifier", [
+    test "aggregation by specifier", ->
+      mappings = [
+        { mapping: { specifier: "x", target: "v1" }, scopes: new Set [ "/a/" ]}
+        { mapping: { specifier: "x", target: "v2" }, scopes: new Set [ "/b/" ]}
+        { mapping: { specifier: "y", target: "v1" }, scopes: new Set [ "/c/" ]}
       ]
-
-      expected =
-        a: x: "v1"
-        b: x: "v2"
-        c:
-          x: "v2"
-          y: "v1"
-
-      assert.deepEqual expected, buildScopes groups
+      
+      expected = 
+        "x":
+          "/a/": "v1"
+          "/b/": "v2"
+        "y":
+          "/c/": "v1"
+          
+      assert.deepEqual expected, groupBySpecifier mappings
   ]
 
-  print await test "buildRoot", [
-    test "frequency sorting and conflicts", ->
-      scopes =
-        a: x: "v1"
-        b: x: "v2"
-        c:
-          x: "v2"
-          y: "v1"
-
-      # x: v2 has 2 scopes, x: v1 has 1. x: v2 wins.
-      # y: v1 has 1 scope and no conflicts.
-      expected = 
-        imports:
-          x: "v2"
-          y: "v1"
-        scopes:
-          a: x: "v1"
-
-      assert.deepEqual expected, buildRoot scopes
-
-    test "root scope prioritization", ->
-      scopes =
-        "/": x: "v1"
-        "a": x: "v2"
-        "b": x: "v2"
-        "c": x: "v2"
-      
-      # x: v2 has more scopes (3) but x: v1 is in root scope (/).
-      # Root scope wins.
-      expected = 
-        imports:
-          x: "v1"
-        scopes:
-          a: x: "v2"
-          b: x: "v2"
-          c: x: "v2"
-      
-      assert.deepEqual expected, buildRoot scopes
-  ]
-
-  print await test "Map.compact", [
+  print await test "Map.optimize", [
     test "full integration", ->
       map = 
         imports:
@@ -123,22 +60,35 @@ do ->
           "/a/b/d/": "x": "v1"
           "/other/": "x": "v2"
       
-      compacted = Map.compact map
-      
-      # z: v1 stays in imports
-      # x: v1 (at /a/b/c/ and /a/b/d/) reduces to LCA /a/b/
-      # x: v2 stays in /other/
+      optimized = Map.optimize map
       
       expected =
         imports:
+          x: "v1"
           z: "v1"
         scopes:
-          "/a/b/":
-            x: "v1"
           "/other/":
             x: "v2"
             
-      assert.deepEqual expected, compacted
+      assert.deepEqual expected, optimized
+
+    test "shadowing conflict", ->
+      map = 
+        imports:
+          "x": "v1"
+        scopes:
+          "/a/1/": "x": "v1"
+          "/a/2/": "x": "v2"
+          "/a/3/": "x": "v2"
+      
+      optimized = Map.optimize map
+      
+      assert.equal "v1",
+        resolve { map: optimized, specifier: "x", base: "/a/1/" }
+      assert.equal "v2",
+        resolve { map: optimized, specifier: "x", base: "/a/2/" }
+      assert.equal "v2",
+        resolve { map: optimized, specifier: "x", base: "/a/3/" }
   ]
 
   print await test "resolve", [
@@ -167,7 +117,6 @@ do ->
           "/a/":
             "y": "v1"
       
-      # Specifier x is NOT in /a/, so it falls back to global
       assert.equal "global",
         resolve { map, specifier: "x", base: "/a/b.js" }
   ]

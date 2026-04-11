@@ -9,7 +9,7 @@ The high-level algorithm is expressed in the `generate` function itself:
 ```coffeescript
 generate = ( entries, map ) ->
   map = if map? then Map.from map else Map.make()
-  Map.add map, analyze entries
+  Map.optimize await Map.add map, analyze entries
 ```
 
 There are two high-level interfaces here:
@@ -98,7 +98,15 @@ The import object consists of the import `specifier` and a `scope`. The import s
 
 ## The Compaction Algorithm
 
-TODO
+Atlas uses a **Top-Down Verified Compaction** algorithm to minimize the size of the generated import map while ensuring behavioral correctness.
+
+The process consists of three main phases:
+
+1.  **Grouping and Prioritization**: Mappings are grouped by their specifier and target, then sorted by frequency so that the most impactful optimizations are processed first.
+2.  **Verified Optimization**: For every mapping, Atlas attempts to find its most general "safe home"—starting with complete removal, then promotion to the root `imports`, and finally lifting through parent directories. Each move is verified against a resolver to ensure it perfectly preserves all original requirements.
+3.  **Final Cleanup**: After all optimizations are committed, any scopes that have become empty are removed from the map.
+
+This strategy ensures that Atlas generates the smallest possible map that is guaranteed to be 100% correct relative to the initial uncompacted results. (See the appendix for more on the rationale behind this design.)
 
 ## The Generators
 
@@ -344,6 +352,26 @@ However, there are a few things that may not be not immediately obvious:
 - Similarly, aliases are treated as bare module specifiers.
 - At resolution time, scopes are consulted in order of most- to least-specific. If a matching scope does not contain an entry for a specifier, the browser [consults the next most-specific matching scope](https://html.spec.whatwg.org/multipage/webappapis.html#example-import-map-scopes-overlapping), eventually falling back to the top-level `imports`.
 
+## Appendix: Compaction Rationale
+
+The primary challenge in import map compaction is avoiding **accidental shadowing**. Because the browser resolves specifiers by finding the **most specific** matching scope and stopping there, lifting a mapping to a broader parent scope can "capture" modules that weren't intended to be affected.
+
+### The Shadowing Problem
+
+Suppose we have two mappings with conflicting specifiers:
+1. $/a/b: x \to v1$
+2. $/a/c: x \to v2$
+
+If we promote (1) to the root scope and promote (2) to scope $/a$, we capture (1) with (2), because the resolution stops at the $/a$ scope and never falls back to the root.
+
+### The Solution: Top-Down Verification
+
+To solve this, Atlas checks each possible conflict when promoting:
+1.  **Grouping**: Group modules by their shared requirements.
+2.  **Greedy Lifting**: Start with the most frequent requirements and try to lift them to the broadest possible scope (root, then top-level parents).
+3.  **Verification**: For every move, simulate the browser's resolution for **every** module using that specifier. If even one module resolves to the wrong target, the move is rejected.
+4.  **Optimal Results**: By trying the broadest scopes first and only committing safe moves, we achieve maximal compaction without shadowing.
+
 ## Appendix: Roadmap
 
 Atlas works well for our present purposes, but to make it more generally useful, we would like need to make some improvements:
@@ -355,7 +383,6 @@ Atlas works well for our present purposes, but to make it more generally useful,
 - [ ] Allow HTML files as entry points (extracting the JS files from the HTML)
 - [ ] Provide support for auto-injection of the resulting map(s) into the HTML
 - [ ] Expand the README documentation
-- [ ] Add tests
 - [ ] Handle aliases in all the generators (or remove support for them in the Sky generator)
 - [ ] Support dynamic configuration, ex: `“sky", { origin }`
 - [ ] Dynamically import preset modules based on configuration
