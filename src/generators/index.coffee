@@ -17,14 +17,12 @@ Generators =
   register: register
 
   default: 
-    name: "default"
     matches: -> true
     apply: ( dependency ) ->
-      scope: dependency.import.scope.source.path
       specifier: dependency.import.specifier
       target: dependency.source.path
     scope: ( dependency ) -> 
-      dependency.source.path
+      dependency.import.scope.source.path
 
   initialize: ->
     for generator in generators
