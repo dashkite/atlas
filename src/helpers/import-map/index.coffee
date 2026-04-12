@@ -54,6 +54,7 @@ Map =
     add
 
   optimize: ( map ) ->
+
     mappings = groupByMapping { $: map.imports, map.scopes... }
     specifiers = groupBySpecifier mappings
 
@@ -62,9 +63,15 @@ Map =
       for scope from scopes when scope != "$"
         for delta from deltas { scope, specifier, target }
           modified = delta structuredClone map
-          if verify { map: modified, specifier, target, scopes: specifiers[ specifier ] }
-            map = modified
-            break
+          if verify { 
+              map: modified
+              specifier, 
+              target, 
+              scopes: specifiers[ specifier ]
+            }
+              map = modified
+              break
+
     compact map
 
 export default Map

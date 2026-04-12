@@ -65,4 +65,3 @@ Finally, you may define your own generators and presets. Documentation for defin
 ## Status
 
 Atlas is under active development. You should not use it in production. You may want to check out [JSPM](https://jspm.org/) instead.
-
