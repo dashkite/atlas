@@ -22,7 +22,7 @@ Generators =
       specifier: dependency.import.specifier
       target: dependency.source.path
     scope: ( dependency ) -> 
-      dependency.import.scope.source.path
+      dependency.source.path
 
   initialize: ->
     for generator in generators

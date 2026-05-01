@@ -25,8 +25,9 @@ Relative =
 
         specifier = do ->
 
-          if Specifier.isAlias dependency
-            dependency.import.specifier
+          if ( Specifier.isAlias dependency ) || 
+            !( Specifier.isRelative dependency )
+              dependency.import.specifier
           else
             XRL.Path.join [ 
               XRL.pop scope
