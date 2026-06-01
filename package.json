@@ -46,7 +46,7 @@
   "dependencies": {
     "@dashkite/drn-sky": "^0.8.22",
     "@dashkite/joy": "^0.7.0",
-    "@dashkite/polaris": "^0.10.41",
+    "@dashkite/polaris": "^0.10.42",
     "@dashkite/zephyr": "^0.9.0",
     "esbuild": "^0.19.12",
     "js-yaml": "^4.2.0",
@@ -59,6 +59,6 @@
     "@dashkite/genie": "^0.20.18",
     "@dashkite/genie-clean": "^0.9.0",
     "@dashkite/genie-coffee": "^0.9.0",
-    "@dashkite/genie-release": "^0.5.5"
+    "@dashkite/genie-release": "^0.5.6"
   }
 }
