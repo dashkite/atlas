@@ -1,6 +1,6 @@
 {
   "name": "@dashkite/atlas",
-  "version": "0.12.44",
+  "version": "0.12.45",
   "description": "Generate import maps",
   "keywords": [
     "import maps"
