@@ -49,7 +49,7 @@
     "@dashkite/polaris": "^0.10.37",
     "@dashkite/zephyr": "^0.9.0",
     "esbuild": "^0.19.12",
-    "js-yaml": "^4.1.0",
+    "js-yaml": "^4.2.0",
     "micromatch": "^4.0.8"
   },
   "devDependencies": {
