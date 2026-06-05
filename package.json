@@ -1,6 +1,6 @@
 {
   "name": "@dashkite/atlas",
-  "version": "0.12.40",
+  "version": "0.12.54",
   "description": "Generate import maps",
   "keywords": [
     "import maps"
@@ -47,6 +47,7 @@
     "release": "genie release"
   },
   "dependencies": {
+
     "@dashkite/drn-sky": "0.8.17",
     "@dashkite/joy": "0.7.0",
     "@dashkite/polaris": "0.10.37",
@@ -64,5 +65,6 @@
     "@dashkite/genie-coffee": "0.9.0",
     "@dashkite/genie-release": "0.5.0",
     "@dashkite/genie-yaml": "0.11.13"
+
   }
 }
