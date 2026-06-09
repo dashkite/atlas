@@ -47,7 +47,6 @@
     "release": "genie release"
   },
   "dependencies": {
-    "@dashkite/drn-sky": "0.8.31",
     "@dashkite/joy": "0.12.40",
     "@dashkite/polaris": "0.10.37",
     "@dashkite/zephyr": "0.9.0",
@@ -59,6 +58,7 @@
     "@dashkite/amen": "0.9.30",
     "@dashkite/amen-console": "0.4.0",
     "@dashkite/assert": "0.3.0",
+    "@dashkite/drn-sky": "link:../drn-sky",
     "@dashkite/genie": "0.20.14",
     "@dashkite/genie-clean": "0.9.0",
     "@dashkite/genie-coffee": "0.9.0",
