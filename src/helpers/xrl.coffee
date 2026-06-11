@@ -1,6 +1,7 @@
 import $Path from "node:path"
 import { generic } from "@dashkite/joy/generic"
 import * as Type from "@dashkite/joy/type"
+import mime from "mime-types"
 
 
 reduce = ( acc, initial, items ) ->
@@ -74,7 +75,12 @@ XRL =
 
     pop
 
-  hasExtension: ( url ) -> /\.\w+$/.test url
+  hasExtension: ( url ) ->
+    ext = $Path.posix.extname url
+    if ext
+      ( mime.lookup ext ) != false
+    else
+      false
 
   directory: ( url ) ->
     if !( XRL.isDirectory url ) && !( XRL.hasExtension url )
