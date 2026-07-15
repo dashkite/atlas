@@ -8,7 +8,7 @@ Atlas is a robust library that analyzes module dependencies and generates compac
 
 ## Features
 
-- Dependency analysis using `esbuild` to accurately determine the module graph.
+- Extremely fast dependency analysis using `esbuild` to accurately resolve the version-specific dependency tree.
 - Generates mappings for CDN dependencies, relative dependencies, and Sky module conventions.
 - Top-Down Verified Compaction algorithm to minimize import map size without causing shadowing conflicts.
 - Extensible generator architecture allows creators to register custom mapping strategies.

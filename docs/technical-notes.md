@@ -11,6 +11,12 @@ For more detailed reading on import maps as a technology, consult the following 
 - [HTML Specification: Import maps](https://html.spec.whatwg.org/multipage/webappapis.html#import-map)
 - [Web.dev: Import maps in all modern browsers](https://web.dev/blog/import-maps-in-all-modern-browsers)
 
+### Dependency Analysis with esbuild
+
+Before Atlas can generate mappings, it needs a complete picture of the module graph. Atlas delegates this dependency analysis to [esbuild](https://esbuild.github.io/).
+
+The amazing performance of esbuild makes it extremely efficient at resolving the version-specific dependency tree needed to assemble an import map. Rather than emitting a bundled file, Atlas runs a mock build (targeting `/dev/null`) and leverages esbuild's `metafile` API. By inspecting the `inputs` and `imports` within the `metafile`, Atlas rapidly and accurately discovers all modules, their import specifiers, and their exact file paths.
+
 ### The Algorithm
 
 The high-level algorithm is expressed in the `generate` function itself:
