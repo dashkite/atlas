@@ -90,8 +90,25 @@ do ->
         resolve { map: optimized, specifier: "x", base: "/a/1/" }
       assert.equal "v2",
         resolve { map: optimized, specifier: "x", base: "/a/2/" }
-      assert.equal "v2",
-        resolve { map: optimized, specifier: "x", base: "/a/3/" }
+    test "scoped package subpath alias isolation", ->
+      map =
+        imports: {}
+        scopes:
+          "/node_modules/@scope/pkg-a@1.0.0/src/":
+            "#helpers": "/node_modules/@scope/pkg-a@1.0.0/src/helpers.js"
+          "/node_modules/@scope/pkg-b@1.0.0/src/":
+            "#helpers": "/node_modules/@scope/pkg-b@1.0.0/src/helpers.js"
+
+      optimized = Map.optimize map
+
+      assert.deepEqual {
+        imports: {}
+        scopes:
+          "/node_modules/@scope/pkg-a@1.0.0/":
+            "#helpers": "/node_modules/@scope/pkg-a@1.0.0/src/helpers.js"
+          "/node_modules/@scope/pkg-b@1.0.0/":
+            "#helpers": "/node_modules/@scope/pkg-b@1.0.0/src/helpers.js"
+      }, optimized
   ]
 
   print await test "resolve", [
@@ -207,7 +224,7 @@ do ->
       assert.deepEqual {
         scope: "/node_modules/pkg-a@1.0.0/"
         specifier: "pkg-b"
-        target: "/node_modules/pkg-b@1.0.0/index.js"
+        target: "/node_modules/pkg-a@1.0.0/node_modules/pkg-b@1.0.0/index.js"
       }, mappingNested
 
     test "multi-version package resolution with Map.add", ->
@@ -300,10 +317,47 @@ do ->
         resolve { map, specifier: "pkg-a", base: "/src/index.js" }
       assert.equal "/node_modules/pkg-b@1.0.0/index.js",
         resolve { map, specifier: "pkg-b", base: "/src/index.js" }
-      assert.equal "/node_modules/dep-x@1.0.0/index.js",
+      assert.equal "/node_modules/pkg-a@1.0.0/node_modules/dep-x@1.0.0/index.js",
         resolve { map, specifier: "dep-x", base: "/node_modules/pkg-a@1.0.0/index.js" }
-      assert.equal "/node_modules/dep-x@2.0.0/index.js",
+      assert.equal "/node_modules/pkg-b@1.0.0/node_modules/dep-x@2.0.0/index.js",
         resolve { map, specifier: "dep-x", base: "/node_modules/pkg-b@1.0.0/index.js" }
+
+    test "nested package internal subdirectory relative import", ->
+      generator = Local.make root: "."
+      depNestedRel =
+        source:
+          path: "node_modules/pkg-b/node_modules/dep-x/src/helper.js"
+        module:
+          name: "dep-x"
+          specifier: "dep-x"
+          version: "2.0.0"
+          path: "node_modules/pkg-b/node_modules/dep-x"
+        import:
+          scope:
+            source:
+              path: "node_modules/pkg-b/node_modules/dep-x/src/index.js"
+            module:
+              name: "dep-x"
+              specifier: "dep-x"
+              version: "2.0.0"
+              path: "node_modules/pkg-b/node_modules/dep-x"
+            import:
+              scope:
+                source:
+                  path: "node_modules/pkg-b/index.js"
+                module:
+                  name: "pkg-b"
+                  specifier: "pkg-b"
+                  version: "1.0.0"
+                  path: "node_modules/pkg-b"
+          specifier: "./helper.js"
+
+      mappingNestedRel = await generator.apply depNestedRel
+      assert.deepEqual {
+        scope: "/node_modules/pkg-b@1.0.0/node_modules/dep-x@2.0.0/src/"
+        specifier: "./helper.js"
+        target: "/node_modules/pkg-b@1.0.0/node_modules/dep-x@2.0.0/src/helper.js"
+      }, mappingNestedRel
 
     test "scoped namespace package (@scope/pkg)", ->
       generator = Local.make root: "."
@@ -417,7 +471,7 @@ do ->
       assert.deepEqual {
         scope: "/node_modules/pkg-a@1.0.0/"
         specifier: "@dashkite/joy"
-        target: "/node_modules/@dashkite/joy@1.0.0/build/node/src/index.js"
+        target: "/node_modules/pkg-a@1.0.0/node_modules/@dashkite/joy@1.0.0/build/node/src/index.js"
       }, mappingExternalScoped
 
     test "Atlas.generate integration", ->

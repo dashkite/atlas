@@ -29,7 +29,15 @@ Local =
         "/"
       else
         pkgSegment = getPkgSegment scope.module
-        "/node_modules/#{ pkgSegment }/"
+        if scope.import?.scope? && !isRoot( scope.import.scope )
+          parentScope = await getScope scope.import.scope
+          importerPkgSegment = getPkgSegment scope.import.scope.module
+          if importerPkgSegment != pkgSegment
+            "#{ parentScope }node_modules/#{ pkgSegment }/"
+          else
+            parentScope
+        else
+          "/node_modules/#{ pkgSegment }/"
 
     initialize: ->
 
