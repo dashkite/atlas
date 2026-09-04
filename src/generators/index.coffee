@@ -1,6 +1,7 @@
 import { generic } from "@dashkite/joy/generic"
 import * as Type from "@dashkite/joy/type"
 import XRL from "#helpers/xrl"
+import Local from "./local"
 
 generators = []
 
@@ -28,6 +29,10 @@ Generators =
     for generator in generators
       generator.initialize?()
 
+  clear: ->
+    generators = []
+    register Generators.default
+
   match: ( dependency ) ->
     ( generator ) -> generator.matches dependency
 
@@ -46,5 +51,5 @@ Generators =
 
 register Generators.default
 
-export { Generators }
+export { Generators, Local }
 export default Generators

@@ -19,9 +19,7 @@ Relative =
 
       do ({ scope, specifier, target } = {}) ->
 
-        scope = XRL.Path.root do ->
-          Path.relative build, 
-            dependency.import.scope.source.path
+        scope = "/"
 
         specifier = do ->
 
@@ -29,8 +27,11 @@ Relative =
             !( Specifier.isRelative dependency )
               dependency.import.specifier
           else
+            sourceScope = XRL.Path.root do ->
+              Path.relative build, 
+                dependency.import.scope.source.path
             XRL.Path.join [ 
-              XRL.pop scope
+              XRL.pop sourceScope
               dependency.import.specifier
             ]
 

@@ -16,6 +16,9 @@
     "./generators": {
       "node": "./build/node/src/generators/index.js"
     },
+    "./generators/*": {
+      "node": "./build/node/src/generators/*.js"
+    },
     "./generators/*.js": {
       "node": "./build/node/src/generators/*.js"
     },

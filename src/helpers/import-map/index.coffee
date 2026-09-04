@@ -37,11 +37,8 @@ Map =
     generic add, Type.isObject, isMapping,
       ( map, { scope, specifier, target }) ->
         unless specifier == target
-          _scope = if scope?
-            if scope.startsWith "/"
-              map.imports
-            else
-              map.scopes[ XRL.directory scope ] ?= {}
+          _scope = if scope? && scope != "/"
+            map.scopes[ XRL.directory scope ] ?= {}
           else
             map.imports
           _scope[ specifier ] = target

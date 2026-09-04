@@ -13,12 +13,13 @@ normalize = ({ name, version, path }) ->
       { scope, name, specifier, version, path }
     else { name, specifier, version, path }
 
-_read = ( path ) ->
+_read = ( path, cwd = "." ) ->
   current = path
   until current == "."
     current = Path.dirname current
     module = Path.join current, "package.json"
-    if ( data = await Zephyr.read module )?
+    diskPath = if cwd != "." then Path.join( cwd, module ) else module
+    if ( data = await Zephyr.read diskPath )?
       return normalize { data..., path: Path.dirname module }
   throw new Error "No module path found for #{ path }"
 
@@ -28,8 +29,9 @@ Module =
     Zephyr.clear()
     cache = {}
 
-  read: ( path ) ->
-    cache[ path ] ?= _read path 
+  read: ( path, cwd = "." ) ->
+    cacheKey = if cwd != "." then "#{ cwd }:#{ path }" else path
+    cache[ cacheKey ] ?= _read path, cwd
 
 export { Module }
 export default Module
