@@ -2,7 +2,6 @@ import Path from "node:path"
 import Directory from "#helpers/directory"
 import XRL from "#helpers/xrl"
 import { Specifier, Source } from "#helpers/dependency"
-import Module from "#helpers/module"
 import Generators from "#generators"
 
 Local =
@@ -20,73 +19,69 @@ Local =
         name
 
     isRoot = ( scope ) ->
-      ( scope.module?.path == "." ) ||
-        ( scope.module?.path == root ) ||
+      ( scope?.module?.path == "." ) ||
+        ( scope?.module?.path == root ) ||
         ! (( Source.isPublished scope ) || ( Source.isExternal scope ))
 
-    getScope = ( scope ) ->
+    isPhysicallyNested = ( dependency ) ->
+      return false unless dependency?.import?.scope?
+      importerPath = dependency.import.scope.module?.path
+      sourcePath = dependency.source?.path
+      return false unless importerPath? && sourcePath?
+      sourcePath.startsWith( "#{ importerPath }/node_modules/" ) ||
+        ( sourcePath.includes( "node_modules/" ) && sourcePath.split(/\/node_modules\/|node_modules\//).length > 2 )
+
+    getPackagePrefix = ( scope ) ->
       if isRoot scope
         "/"
       else
-        pkgSegment = getPkgSegment scope.module
-        if scope.import?.scope? && !isRoot( scope.import.scope )
-          parentScope = await getScope scope.import.scope
-          importerPkgSegment = getPkgSegment scope.import.scope.module
+        pkgSegment = getPkgSegment scope?.module
+        if isPhysicallyNested scope
+          parentPrefix = getPackagePrefix scope.import.scope
+          importerPkgSegment = getPkgSegment scope.import.scope?.module
           if importerPkgSegment != pkgSegment
-            "#{ parentScope }node_modules/#{ pkgSegment }/"
+            "#{ parentPrefix }node_modules/#{ pkgSegment }/"
           else
-            parentScope
+            parentPrefix
         else
           "/node_modules/#{ pkgSegment }/"
+
+    getURL = ( dependency ) ->
+      if isRoot dependency
+        XRL.Path.root dependency.source.path
+      else
+        pkgPrefix = getPackagePrefix dependency
+        relPath = Source.relative dependency
+        "#{ pkgPrefix }#{ relPath }"
 
     initialize: ->
 
     matches: ( dependency ) -> true
 
     scope: ( scope ) ->
-      await getScope scope
+      getPackagePrefix scope
 
     apply: ( dependency ) ->
       do ({ scope, specifier, target } = {}) ->
-        parentScope = await getScope dependency.import.scope
+        target = getURL dependency
 
-        # Case 1: Dependency is within root application (and not in node_modules or external)
-        isLocal = ( dependency.module?.path == "." ) ||
-           ( dependency.module?.path == root ) ||
-           ! (( Source.isPublished dependency ) || ( Source.isExternal dependency ))
-
-        if isLocal
-
+        if isRoot dependency.import.scope
           scope = "/"
-          specifier = dependency.import.specifier
-          target = XRL.Path.root dependency.source.path
-
-        # Case 2: Dependency is in a package (node_modules or external)
         else
-          relPath = Source.relative dependency
-          pkgSegment = getPkgSegment dependency.module
           isSamePackage = ( dependency.module?.path? && dependency.module?.path == dependency.import.scope.module?.path ) ||
             ( Specifier.isRelative dependency ) || ( Specifier.isAlias dependency )
 
-          if isSamePackage
-            if ( Specifier.isRelative dependency ) && dependency.import.scope?.source?.path?
-              importerRelPath = Source.relative dependency.import.scope
-              importerDir = Path.dirname importerRelPath
-              scope = if importerDir != "." && importerDir != ""
-                "#{ parentScope }#{ importerDir }/"
-              else
-                parentScope
+          if isSamePackage && ( Specifier.isRelative dependency ) && dependency.import.scope?.source?.path?
+            importerURL = getURL dependency.import.scope
+            importerDir = Path.dirname importerURL
+            scope = if importerDir != "." && importerDir != "/"
+              "#{ importerDir }/"
             else
-              scope = parentScope
-
-            specifier = dependency.import.specifier
-            target = "#{ parentScope }#{ relPath }"
+              getPackagePrefix dependency.import.scope
           else
-            targetScope = await getScope dependency
+            scope = getPackagePrefix dependency.import.scope
 
-            scope = parentScope
-            specifier = dependency.import.specifier
-            target = "#{ targetScope }#{ relPath }"
+        specifier = dependency.import.specifier
 
         { scope, specifier, target }
 

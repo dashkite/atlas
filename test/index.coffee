@@ -471,7 +471,7 @@ do ->
       assert.deepEqual {
         scope: "/node_modules/pkg-a@1.0.0/"
         specifier: "@dashkite/joy"
-        target: "/node_modules/pkg-a@1.0.0/node_modules/@dashkite/joy@1.0.0/build/node/src/index.js"
+        target: "/node_modules/@dashkite/joy@1.0.0/build/node/src/index.js"
       }, mappingExternalScoped
 
     test "Atlas.generate integration", ->
