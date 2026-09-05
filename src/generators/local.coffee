@@ -28,6 +28,7 @@ Local =
       importerPath = dependency.import.scope.module?.path
       sourcePath = dependency.source?.path
       return false unless importerPath? && sourcePath?
+      return false if sourcePath.includes ".pnpm/"
       sourcePath.startsWith( "#{ importerPath }/node_modules/" ) ||
         ( sourcePath.includes( "node_modules/" ) && sourcePath.split(/\/node_modules\/|node_modules\//).length > 2 )
 
