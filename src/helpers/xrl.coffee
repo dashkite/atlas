@@ -18,7 +18,11 @@ isAbsolute = ( value ) ->
 
 Path =
 
-  root: ( path ) -> "/#{ path }"
+  root: ( path ) ->
+    if path.startsWith "/"
+      path
+    else
+      "/#{ path }"
 
   relative: ( base, path ) ->
     $Path.posix.relative base, path

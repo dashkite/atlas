@@ -1,4 +1,4 @@
-import Path from "node:path"
+import XRL from "#helpers/xrl"
 import { Specifier, Source } from "#helpers/dependency"
 
 Local =
@@ -8,7 +8,7 @@ Local =
     root = cwd ? root
 
     getPkgSegment = ( module ) ->
-      name = module?.specifier ? module?.name
+      name = module?.specifier ? module?.name ? ""
       version = module?.version
       if version? && version != ""
         "#{ name }@#{ version }"
@@ -46,12 +46,11 @@ Local =
 
     getURL = ( dependency ) ->
       if isRoot dependency
-        cleanPath = dependency.source.path.replace /^\//, ""
-        "/#{ cleanPath }"
+        XRL.Path.root dependency.source.path
       else
         pkgPrefix = getPackagePrefix dependency
-        relPath = ( Source.relative dependency ).replace /^\//, ""
-        "#{ pkgPrefix }#{ relPath }"
+        relPath = Source.relative dependency
+        XRL.join [ pkgPrefix, relPath ]
 
     initialize: ->
 
@@ -72,9 +71,9 @@ Local =
 
           if isSamePackage && ( Specifier.isRelative dependency ) && dependency.import.scope?.source?.path?
             importerURL = getURL dependency.import.scope
-            importerDir = Path.posix.dirname importerURL
+            importerDir = XRL.pop importerURL
             scope = if importerDir != "." && importerDir != "/"
-              "#{ importerDir }/"
+              XRL.directory importerDir
             else
               getPackagePrefix dependency.import.scope
           else
