@@ -1,8 +1,6 @@
 import Path from "node:path"
-import Directory from "#helpers/directory"
 import XRL from "#helpers/xrl"
 import { Specifier, Source } from "#helpers/dependency"
-import Generators from "#generators"
 
 Local =
   name: "local"
