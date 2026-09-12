@@ -52,9 +52,11 @@
   "dependencies": {
     "@dashkite/joy": "0.12.40",
     "@dashkite/polaris": "0.10.37",
+    "@dashkite/url-codex": "^0.9.30",
     "@dashkite/zephyr": "0.9.0",
     "esbuild": "0.19.12",
     "js-yaml": "4.1.0",
+    "jszip": "^3.10.2",
     "micromatch": "4.0.8",
     "mime-types": "^3.0.2"
   },

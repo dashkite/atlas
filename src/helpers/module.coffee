@@ -1,32 +1,36 @@
 import Path from "node:path"
-
-import * as Fn from "@dashkite/joy/function"
 import Zephyr from "@dashkite/zephyr"
 
 cache = {}
 
 normalize = ({ name, version, path }) ->
-  do ({ specifier } = {}) ->
-    specifier = name
-    if name.startsWith "@"
-      [ scope, name ] = name[1..].split "/"
-      { scope, name, specifier, version, path }
-    else { name, specifier, version, path }
+  specifier = name
+  if name.startsWith "@"
+    [ scope, pkgName ] = name[1..].split "/"
+    { scope, name: pkgName, specifier, version, path }
+  else 
+    { name, specifier, version, path }
 
 _read = ( path, cwd = "." ) ->
   current = path
-  until current == "."
+  
+  # Traverse up the directory tree to find the nearest package.json
+  until current == "." || current == "/" || current == ""
     current = Path.dirname current
-    module = Path.join current, "package.json"
-    diskPath = if cwd != "." then Path.join( cwd, module ) else module
-    if ( data = await Zephyr.read diskPath )?
-      return normalize { data..., path: Path.dirname module }
+    modulePath = Path.join current, "package.json"
+    diskPath = if cwd != "." then Path.join( cwd, modulePath ) else modulePath
+    
+    try
+      data = await Zephyr.read diskPath
+      if data? && data.name?
+        return normalize { data..., path: Path.dirname modulePath }
+    catch
+      # ignore missing or invalid package.json
+      
   throw new Error "No module path found for #{ path }"
 
 Module =
-
   initialize: ->
-    Zephyr.clear()
     cache = {}
 
   read: ( path, cwd = "." ) ->
