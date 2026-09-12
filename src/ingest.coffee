@@ -57,6 +57,14 @@ ingest = ( dependencies, options = {} ) ->
     ModuleGraph.addVertex graph, sourceUrl
     ModuleGraph.addVertex graph, targetUrl
 
+    sourceParsed = AtlasURL.parse sourceUrl
+    sourcePackageId = AtlasURL.format { type: sourceParsed.type, specifier: sourceParsed.specifier, subpath: "" }
+    ModuleGraph.setAttribute graph, sourceUrl, "packageId", sourcePackageId
+
+    targetParsed = AtlasURL.parse targetUrl
+    targetPackageId = AtlasURL.format { type: targetParsed.type, specifier: targetParsed.specifier, subpath: "" }
+    ModuleGraph.setAttribute graph, targetUrl, "packageId", targetPackageId
+
     # Save physical locations on disk
     if item.source?.path?
       absPath = Path.resolve cwd, item.source.path

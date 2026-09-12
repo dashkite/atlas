@@ -2,6 +2,7 @@ ModuleGraph =
   make: ->
     vertices: new Set()
     edges: []
+    attributes: new Map()
 
   getVertices: ( graph ) ->
     graph.vertices
@@ -22,5 +23,14 @@ ModuleGraph =
 
   getInterEdges: ( graph ) ->
     graph.edges.filter ( edge ) -> edge.type == "inter"
+
+  setAttribute: ( graph, vertex, key, value ) ->
+    unless graph.attributes.has vertex
+      graph.attributes.set vertex, new Map()
+    graph.attributes.get(vertex).set key, value
+    graph
+
+  getAttribute: ( graph, vertex, key ) ->
+    graph.attributes.get(vertex)?.get key
 
 export default ModuleGraph

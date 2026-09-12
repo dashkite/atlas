@@ -14,8 +14,14 @@ make = ( config = {} ) ->
     path = if isDependency target then target.source.path else target
     return false if path.includes "node_modules"
 
+    root = context.cwd ? process.cwd()
+    relPath = if Path.isAbsolute path
+      Path.relative root, path
+    else
+      path
+
     return false unless patterns.length > 0
-    micromatch.isMatch path, patterns, { contains: true }
+    micromatch.isMatch relPath, patterns, { contains: true }
 
   encode: ( target, context = {} ) ->
     unless @match target, context

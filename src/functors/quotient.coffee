@@ -8,42 +8,26 @@ Quotient =
     intraEdges = ModuleGraph.getIntraEdges moduleGraph
     interEdges = ModuleGraph.getInterEdges moduleGraph
 
-    # Build undirected adjacency list for E_intra
-    adj = new Map()
+    # 1. Edge Contraction: Equivalence Classes via packageId
+    packageGroups = new Map()
     for v from vertices
-      adj.set v, []
+      # Fallback to the vertex URL itself if no packageId attribute is present
+      pkgId = (ModuleGraph.getAttribute moduleGraph, v, "packageId") ? v
+      
+      unless packageGroups.has pkgId
+        packageGroups.set pkgId, []
+      packageGroups.get(pkgId).push v
 
-    for edge in intraEdges
-      adj.get(edge.source).push edge.target
-      adj.get(edge.target).push edge.source
-
-    visited = new Set()
     moduleToComponent = new Map()
-
-    # 1. Edge Contraction: Identify Connected Components
-    for startNode from vertices
-      unless visited.has startNode
-        componentModules = []
-        queue = [ startNode ]
-        visited.add startNode
-
-        while queue.length > 0
-          curr = queue.shift()
-          componentModules.push curr
-          
-          for neighbor in adj.get curr
-            unless visited.has neighbor
-              visited.add neighbor
-              queue.push neighbor
-
-        # Deterministic component ID based on lexicographically first module
-        componentModules.sort()
-        componentId = "pkg:#{componentModules[0]}"
+    for [pkgId, modules] from packageGroups
+      modules.sort()
+      # Deterministic component ID based on lexicographically first module
+      componentId = "pkg:#{modules[0]}"
+      
+      for mod in modules
+        moduleToComponent.set mod, componentId
         
-        for mod in componentModules
-          moduleToComponent.set mod, componentId
-
-        ComponentGraph.addComponent componentGraph, componentId, componentModules
+      ComponentGraph.addComponent componentGraph, componentId, modules
 
     # 2. Map Inter-Component Edges
     seenEdges = new Set()

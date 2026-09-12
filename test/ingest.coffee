@@ -46,7 +46,7 @@ export default ->
       # To strictly test inode caching, we can inject a mock resolver.
       mockResolver =
         match: -> true
-        encode: (item) -> "atlas://mock/" + Path.basename(item.source.path)
+        encode: (item) -> "atlas://npm/mock@1.0.0/" + Path.basename(item.source.path)
 
       graph = await ingest dependencies, { cwd: tempDir, resolvers: [ mockResolver ] }
       
@@ -56,8 +56,8 @@ export default ->
       
       urls = Array.from graph.sources.keys()
       
-      assert urls.includes "atlas://mock/original.js"
-      assert !(urls.includes "atlas://mock/linked.js")
+      assert urls.includes "atlas://npm/mock@1.0.0/original.js"
+      assert !(urls.includes "atlas://npm/mock@1.0.0/linked.js")
       
       # Clean up
       await FS.rm tempDir, { recursive: true, force: true }

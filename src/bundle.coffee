@@ -76,12 +76,11 @@ bundle = ( entries, options = {} ) ->
   moduleGraph = await ingest deps, { options..., cwd, root: cwd }
   componentGraph = Quotient.apply moduleGraph
   treeIndex = Compiler.apply componentGraph, options
-  bundleMap = Resolver.apply componentGraph, treeIndex
-
+  
   diagDir = undefined
-  console.log DEBUG: process.env.DEBUG
   if process.env.DEBUG
-    diagDir = Path.join process.cwd(), ".atlas"
+    entryBasename = Path.basename entries[0], Path.extname entries[0]
+    diagDir = Path.join process.cwd(), ".atlas", entryBasename
     try
       await FS.mkdir diagDir, recursive: true
       replacer = (key, value) ->
@@ -92,9 +91,16 @@ bundle = ( entries, options = {} ) ->
       await FS.writeFile Path.join(diagDir, "module-graph.json"), JSON.stringify(moduleGraph, replacer, 2)
       await FS.writeFile Path.join(diagDir, "component-graph.json"), JSON.stringify(componentGraph, replacer, 2)
       await FS.writeFile Path.join(diagDir, "tree-index.json"), JSON.stringify(treeIndex, replacer, 2)
-      await FS.writeFile Path.join(diagDir, "bundle-map.json"), JSON.stringify(bundleMap, replacer, 2)
     catch err
       console.warn "Atlas Diagnostics: Failed to emit state to .atlas -", err.message
+
+  bundleMap = Resolver.apply componentGraph, treeIndex
+
+  if process.env.DEBUG
+    try
+      await FS.writeFile Path.join(diagDir, "bundle-map.json"), JSON.stringify(bundleMap, replacer, 2)
+    catch err
+      null
 
   zip = new JSZip()
   visitedDestinations = new Set()
