@@ -65,25 +65,25 @@ export default ->
       moduleGraph = ModuleGraph.make()
 
       # Assume these were marked by `ingest` with a shared package attribute
-      ModuleGraph.addVertex moduleGraph, "atlas://npm/@dashkite/maeve@1.0.0/build/node/src/common.js"
-      ModuleGraph.addVertex moduleGraph, "atlas://npm/@dashkite/maeve@1.0.0/build/node/src/sublime/index.js"
+      ModuleGraph.addVertex moduleGraph, "atlas://node/@dashkite/maeve@1.0.0/build/node/src/common.js"
+      ModuleGraph.addVertex moduleGraph, "atlas://node/@dashkite/maeve@1.0.0/build/node/src/sublime/index.js"
       ModuleGraph.addVertex moduleGraph, "atlas://local/@dashkite/enchant@2.0.0/build/node/src/index.js"
 
       # Explicitly set the subgraph (package) identities
-      ModuleGraph.setAttribute moduleGraph, "atlas://npm/@dashkite/maeve@1.0.0/build/node/src/common.js", "packageId", "atlas://npm/@dashkite/maeve@1.0.0"
-      ModuleGraph.setAttribute moduleGraph, "atlas://npm/@dashkite/maeve@1.0.0/build/node/src/sublime/index.js", "packageId", "atlas://npm/@dashkite/maeve@1.0.0"
+      ModuleGraph.setAttribute moduleGraph, "atlas://node/@dashkite/maeve@1.0.0/build/node/src/common.js", "packageId", "atlas://node/@dashkite/maeve@1.0.0"
+      ModuleGraph.setAttribute moduleGraph, "atlas://node/@dashkite/maeve@1.0.0/build/node/src/sublime/index.js", "packageId", "atlas://node/@dashkite/maeve@1.0.0"
       ModuleGraph.setAttribute moduleGraph, "atlas://local/@dashkite/enchant@2.0.0/build/node/src/index.js", "packageId", "atlas://local/@dashkite/enchant@2.0.0"
 
       # Enchant imports both independent entry points of Maeve
       ModuleGraph.addEdge moduleGraph,
         source: "atlas://local/@dashkite/enchant@2.0.0/build/node/src/index.js"
-        target: "atlas://npm/@dashkite/maeve@1.0.0/build/node/src/common.js"
+        target: "atlas://node/@dashkite/maeve@1.0.0/build/node/src/common.js"
         label: "@dashkite/maeve/common"
         type: "inter"
 
       ModuleGraph.addEdge moduleGraph,
         source: "atlas://local/@dashkite/enchant@2.0.0/build/node/src/index.js"
-        target: "atlas://npm/@dashkite/maeve@1.0.0/build/node/src/sublime/index.js"
+        target: "atlas://node/@dashkite/maeve@1.0.0/build/node/src/sublime/index.js"
         label: "@dashkite/maeve/sublime"
         type: "inter"
 

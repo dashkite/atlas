@@ -1,40 +1,38 @@
 import { test } from "@dashkite/amen"
 import print from "@dashkite/amen-console"
+import FS from "node:fs/promises"
+import Path from "node:path"
 
-import testModuleGraph from "./categories/module-graph"
-import testComponentGraph from "./categories/component-graph"
-import testPath from "./categories/path"
-import testTreeIndex from "./categories/tree-index"
-
-import testQuotient from "./functors/quotient"
-import testCompiler from "./functors/compiler"
-import testResolver from "./functors/resolver"
-
-import testUrl from "./url"
-import testResolvers from "./resolvers"
-import testIngest from "./ingest"
-import testInspector from "./inspector"
-import testBundle from "./bundle"
+tests = ( path, parameters... ) ->
+  module = await import( "./#{path}" )
+  module.default parameters...
 
 do ->
-  print await test "AtlasURL", testUrl()
-  print await test "Ingest", testIngest()
-  print await test "BundleInspector", testInspector()
-  print await test "Bundle", testBundle()
+  if process.env.DEBUG
+    try
+      await FS.rm Path.join(process.cwd(), ".atlas"), recursive: true, force: true
+    catch
+      null
 
-  print await test "ModuleGraph", testModuleGraph()
-  print await test "ComponentGraph", testComponentGraph()
-  print await test "Path", testPath()
-  print await test "TreeIndex", testTreeIndex()
+  print await test "Atlas", [
+    test "AtlasURL", await tests "url"
+    test "Ingest", await tests "ingest"
+    test "BundleInspector", await tests "inspector"
+    test "Bundle", await tests "bundle"
+    test "Generate", await tests "generate"
 
-  success10 = await test "Quotient Functor", testQuotient()
-  print success10
-  success11 = await test "Compiler Functor", testCompiler()
-  print success11
-  success12 = await test "Resolver Functor", testResolver()
-  print success12
-  success13 = await test "Resolvers", testResolvers()
-  print success13
+    test "ModuleGraph", await tests "categories/module-graph"
+    test "ComponentGraph", await tests "categories/component-graph"
+    test "Path", await tests "categories/path"
+    test "TreeIndex", await tests "categories/tree-index"
 
-  allSuccess = success10 && success11 && success12 && success13
-  process.exit if allSuccess then 0 else 1
+    test "Quotient Functor", await tests "functors/quotient"
+    test "Compiler Functor", await tests "functors/compiler"
+    test "Resolver Functor", await tests "functors/resolver"
+    test "Resolvers", await tests "resolvers"
+    test "Baseline Functor", await tests "functors/baseline"
+    test "Compaction Functor", await tests "functors/compaction"
+    test "Compression Functor", await tests "functors/compression"
+    test "Resolution Functor", await tests "functors/resolution"
+    test "Serialization", await tests "functors/serialization"
+  ]

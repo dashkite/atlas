@@ -1,9 +1,13 @@
 import TreeIndex from "../categories/tree-index"
 import ComponentGraph from "../categories/component-graph"
-import AtlasURL from "../url"
+import Resolvers from "../resolvers"
 
 Resolver =
-  apply: ( componentGraph, treeIndex ) ->
+  apply: ( componentGraph, treeIndex, keys ) ->
+    # Default to node preset keys for bundle command if not provided
+    keys ?= ["application", "local@default", "node"]
+    metaResolver = Resolvers.Registry.make keys
+    
     bundle = new Map()
     paths = TreeIndex.getPaths treeIndex
     
@@ -14,8 +18,14 @@ Resolver =
       modules = ComponentGraph.getModules componentGraph, component
       return "" if !modules? or modules.size == 0
       firstModule = Array.from(modules)[0]
-      parsed = AtlasURL.parse firstModule
-      parsed.package ? ""
+      descriptor = metaResolver.decode firstModule
+      if descriptor.module?.name
+        if descriptor.module.scope
+          "#{descriptor.module.scope}/#{descriptor.module.name}"
+        else
+          descriptor.module.name
+      else
+        ""
 
     resolveDir = ( path, component ) ->
       cacheKey = "#{component}::#{JSON.stringify(path)}"
@@ -68,13 +78,15 @@ Resolver =
         
         modules = ComponentGraph.getModules componentGraph, component
         for moduleUrl from modules
-          parsed = AtlasURL.parse moduleUrl
+          descriptor = metaResolver.decode moduleUrl
+          relPath = descriptor.path ? ""
+          relPath = relPath.slice(1) if relPath.startsWith("/")
           
           # Compute file path within the bundle
           outputFile = if physicalDir == ""
-            parsed.subpath
+            relPath
           else
-            "#{physicalDir}/#{parsed.subpath}"
+            "#{physicalDir}/#{relPath}"
             
           bundle.set outputFile, moduleUrl
 

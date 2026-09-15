@@ -1,7 +1,8 @@
 import Application from "./application"
-import NPM from "./npm"
+import Node from "./node"
 import CDN from "./cdn"
 import Local from "./local"
+import Registry from "./registry"
 
-export default { Application, NPM, CDN, Local }
-export { Application, NPM, CDN, Local }
+export default { Application, Node, CDN, Local, Registry }
+export { Application, Node, CDN, Local, Registry }

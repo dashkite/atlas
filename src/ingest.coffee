@@ -7,10 +7,12 @@ import FS from "node:fs"
 
 import nodePreset from "./presets/node"
 
+export ENTRY_POINT = Symbol "atlas:entry-point"
+
 ingest = ( dependencies, options = {} ) ->
   graph = ModuleGraph.make()
   cwd = options.cwd ? options.root ? process.cwd()
-  resolvers = options.resolvers ? nodePreset options
+  resolvers = options.resolvers ? nodePreset
   
   # A map to store physical file paths for bundler consumption later
   graph.sources = new Map()
@@ -20,12 +22,30 @@ ingest = ( dependencies, options = {} ) ->
   for await dep from dependencies
     rawDeps.push dep if dep?
     
+  metaResolver = options.metaResolver ? Resolvers.Registry.make resolvers
+  
   encode = (target) ->
-    resolver = resolvers.find (r) -> r.match target, options
-    unless resolver?
+    resolverKey = metaResolver.match { source: target.source.path, cwd }
+    unless resolverKey?
       throw new Error "No resolver found to encode target: #{ JSON.stringify target }"
-    resolver.encode target, options
+      
+    descriptor = { resolver: resolverKey }
     
+    if target.module?
+      descriptor.module = {
+        scope: target.module.scope
+        name: target.module.name
+        version: target.module.version
+      }
+      subpath = Path.relative target.module.path, target.source.path
+      descriptor.path = "/" + subpath
+    else
+      descriptor.path = if Path.isAbsolute target.source.path
+        "/" + Path.relative cwd, target.source.path
+      else
+        "/" + target.source.path
+      
+    metaResolver.encode descriptor
   encodeCached = (target) ->
     stat = null
     if target.source?.path?
@@ -45,11 +65,10 @@ ingest = ( dependencies, options = {} ) ->
     url
 
   for item in rawDeps
-    # Encode URLs using configured resolvers
     sourceUrl = if item.import?.scope?
       encodeCached item.import.scope
     else
-      "atlas://virtual-root"
+      ENTRY_POINT
       
     targetUrl = encodeCached item
     specifier = item.import.specifier
@@ -57,12 +76,20 @@ ingest = ( dependencies, options = {} ) ->
     ModuleGraph.addVertex graph, sourceUrl
     ModuleGraph.addVertex graph, targetUrl
 
-    sourceParsed = AtlasURL.parse sourceUrl
-    sourcePackageId = AtlasURL.format { type: sourceParsed.type, specifier: sourceParsed.specifier, subpath: "" }
+    if sourceUrl == ENTRY_POINT
+      sourcePackageId = ENTRY_POINT
+    else
+      sourceParsed = metaResolver.decode sourceUrl
+      sourceParsed.path = ""
+      sourcePackageId = metaResolver.encode sourceParsed
     ModuleGraph.setAttribute graph, sourceUrl, "packageId", sourcePackageId
 
-    targetParsed = AtlasURL.parse targetUrl
-    targetPackageId = AtlasURL.format { type: targetParsed.type, specifier: targetParsed.specifier, subpath: "" }
+    if targetUrl == ENTRY_POINT
+      targetPackageId = ENTRY_POINT
+    else
+      targetParsed = metaResolver.decode targetUrl
+      targetParsed.path = ""
+      targetPackageId = metaResolver.encode targetParsed
     ModuleGraph.setAttribute graph, targetUrl, "packageId", targetPackageId
 
     # Save physical locations on disk

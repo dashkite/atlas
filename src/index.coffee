@@ -11,17 +11,7 @@ import Resolver from "./functors/resolver"
 import AtlasURL from "./url"
 import Resolvers, { App, NPM, Metarepo } from "./resolvers"
 
-# For ImportMaps, generate could be used. Right now it just returns the tree logic.
-generate = ( entries, map, options = {} ) ->
-  # Placeholder for import map generation which is simpler and relies on the TreeIndex directly
-  deps = analyze entries, options
-  moduleGraph = await ingest deps, options
-  componentGraph = Quotient.apply moduleGraph
-  treeIndex = Compiler.apply componentGraph, options
-  
-  # Wait, the legacy generator returned an object with imports and scopes.
-  # If we need the legacy format right now, we can adapt it or just leave it for the next phase.
-  {}
+import generate from "./generate"
 
 export default {
   generate

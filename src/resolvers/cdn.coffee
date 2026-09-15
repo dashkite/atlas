@@ -1,55 +1,84 @@
-import Path from "node:path"
 import AtlasURL from "../url"
-import { encode } from "@dashkite/url-codex"
+import { decode as urlDecode } from "@dashkite/url-codex"
 
-isDependency = ( target ) -> target?.source?.path?
+scopedTemplate = "/{scope}/{versioned}/{path*}"
+unscopedTemplate = "/{versioned}/{path*}"
 
-unpkg = "https://unpkg.com/:package@:version/*subpath"
-esm = "https://esm.sh/:package@:version/*subpath"
+encodeTemplate = ( templateString, data ) ->
+  # Simple regex replacement for string templates
+  templateString.replace /\{(\w+)(\*|\?)?\}/g, (match, key, modifier) ->
+    val = data[key]
+    if Array.isArray(val)
+      val.join("/")
+    else if val?
+      val
+    else
+      ""
 
 make = ( config = {} ) ->
-  template = config.template
-  unless template?
-    throw new Error "CDN resolver requires a template configuration"
+  unless config.template?
+    throw new Error "CDN resolver requires a URL Codex template string in configuration"
+    
+  match: ( context = {} ) ->
+    return false unless typeof context.source == "string"
+    return context.source.includes "node_modules"
 
-  match: ( target, context = {} ) ->
-    unless isDependency( target ) || ( typeof target == "string" )
-      return false
-    path = if isDependency target then target.source.path else target
-    path.includes "node_modules/"
-
-  encode: ( target, context = {} ) ->
-    unless @match target, context
-      throw new Error "Target does not match CDN resolver"
-
-    if isDependency target
-      module = target.module
-      unless module?.specifier?
-        throw new Error "CDN resolver requires populated module metadata"
-        
-      specifier = module.specifier
-      version = module.version ? ""
+  encode: ( descriptor ) ->
+    AtlasURL.format descriptor
+    
+  decode: ( atlasUrl ) ->
+    parsed = AtlasURL.parse atlasUrl
+    
+    res = try
+      match = urlDecode scopedTemplate, parsed.pathname
+      if match.scope?.startsWith("@") then match else throw new Error()
+    catch
+      urlDecode unscopedTemplate, parsed.pathname
       
-      rawSubpath = if module.path?
-        Path.relative module.path, target.source.path
-      else
-        throw new Error "CDN resolver requires populated module metadata"
-        
-      subpath = rawSubpath.replace( /^\.\//, "" ).replace /^\//, ""
-      subpathArray = subpath.split("/").filter Boolean
-      
-      urlParams =
-        package: specifier
+    parts = res.versioned.split("@")
+    name = parts[0]
+    version = parts[1]
+    
+    {
+      resolver: parsed.resolver
+      module:
+        scope: res.scope
+        name: name
         version: version
-        subpath: subpathArray
-      
-      interpolatedUrl = encode template, urlParams
-      
-      AtlasURL.format
-        type: "cdn"
-        subpath: interpolatedUrl
-    else
-      throw new Error "CDN resolver encode requires full dependency object"
+      path: "/" + (res.path ? []).join("/")
+    }
 
-export default { make, unpkg, esm }
-export { make, unpkg, esm }
+  parse: ( atlasUrl ) ->
+    @decode atlasUrl
+
+  resolve: ( atlasUrl ) ->
+    descriptor = @decode atlasUrl
+    
+    specifier = if descriptor.module.scope
+      "#{descriptor.module.scope}/#{descriptor.module.name}"
+    else
+      descriptor.module.name
+      
+    release = if descriptor.module.version
+      "#{specifier}@#{descriptor.module.version}"
+    else
+      specifier
+      
+    versioned = if descriptor.module.version
+      "#{descriptor.module.name}@#{descriptor.module.version}"
+    else
+      descriptor.module.name
+      
+    # Convert string path to array for wildcard path expansion
+    pathSegments = (descriptor.path ? "").split("/").filter Boolean
+      
+    encodeTemplate config.template, {
+      scope: descriptor.module.scope
+      specifier
+      release
+      versioned
+      path: pathSegments
+    }
+
+export default { make }
+export { make }

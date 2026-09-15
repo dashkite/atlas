@@ -1,6 +1,5 @@
 import AtlasURL from "../url"
 import Path from "node:path"
-import micromatch from "micromatch"
 import { pathToFileURL } from "node:url"
 import { decode as urlDecode } from "@dashkite/url-codex"
 
@@ -8,26 +7,9 @@ scopedTemplate = "/{scope}/{versioned}/{path*}"
 unscopedTemplate = "/{versioned}/{path*}"
 
 make = ( config = {} ) ->
-  unless config.root?
-    throw new Error "Local resolver requires 'root' in configuration"
-    
-  patterns = config.patterns ? [ "../**/*", "packages/**/*" ]
-  root = config.root
-  
   match: ( context = {} ) ->
     return false unless typeof context.source == "string"
-    path = context.source
-    
-    return false if path.includes "node_modules"
-
-    cwd = config.cwd ? process.cwd()
-    relPath = if Path.isAbsolute path
-      Path.relative cwd, path
-    else
-      path
-
-    return false unless patterns.length > 0
-    micromatch.isMatch relPath, patterns, { contains: true }
+    return context.source.includes "node_modules"
 
   encode: ( descriptor ) ->
     AtlasURL.format descriptor
@@ -59,10 +41,14 @@ make = ( config = {} ) ->
 
   resolve: ( atlasUrl ) ->
     descriptor = @decode atlasUrl
+    root = config.root ? config.cwd ? process.cwd()
+    pkgName = if descriptor.module.scope then "#{descriptor.module.scope}/#{descriptor.module.name}" else descriptor.module.name
     relativePath = if descriptor.path != "" then descriptor.path else ""
     relativePath = relativePath.slice(1) if relativePath.startsWith("/")
     
-    absPath = Path.resolve root, relativePath
+    # We resolve to node_modules in the root. If it's a monorepo, Node resolution handles it.
+    # But for a physical URL, we just point to node_modules/pkgName/relativePath
+    absPath = Path.resolve root, "node_modules", pkgName, relativePath
     pathToFileURL(absPath).href
 
 export default { make }

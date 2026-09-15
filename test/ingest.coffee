@@ -5,6 +5,7 @@ import ModuleGraph from "../src/categories/module-graph"
 import FS from "node:fs/promises"
 import Path from "node:path"
 import OS from "node:os"
+import { Registry } from "../src/resolvers/index"
 
 export default ->
   [
@@ -46,9 +47,13 @@ export default ->
       # To strictly test inode caching, we can inject a mock resolver.
       mockResolver =
         match: -> true
-        encode: (item) -> "atlas://npm/mock@1.0.0/" + Path.basename(item.source.path)
+        encode: (descriptor) -> "atlas://mock/mock@1.0.0/" + Path.basename(descriptor.path)
+        decode: (atlasUrl) -> 
+          { resolver: "mock", module: { name: "mock", version: "1.0.0" } }
+        
+      Registry.register "mock", mockResolver
 
-      graph = await ingest dependencies, { cwd: tempDir, resolvers: [ mockResolver ] }
+      graph = await ingest dependencies, { cwd: tempDir, resolvers: [ "mock" ] }
       
       # Since originalPath and hardLinkPath have the SAME inode, ingest should cache the first one
       # and reuse its URL ("atlas://mock/original.js") for the second one, NEVER calling the 
@@ -56,8 +61,8 @@ export default ->
       
       urls = Array.from graph.sources.keys()
       
-      assert urls.includes "atlas://npm/mock@1.0.0/original.js"
-      assert !(urls.includes "atlas://npm/mock@1.0.0/linked.js")
+      assert urls.includes "atlas://mock/mock@1.0.0/original.js"
+      assert !(urls.includes "atlas://mock/mock@1.0.0/linked.js")
       
       # Clean up
       await FS.rm tempDir, { recursive: true, force: true }

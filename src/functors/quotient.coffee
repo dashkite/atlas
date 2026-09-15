@@ -21,8 +21,8 @@ Quotient =
     moduleToComponent = new Map()
     for [pkgId, modules] from packageGroups
       modules.sort()
-      # Deterministic component ID based on lexicographically first module
-      componentId = "pkg:#{modules[0]}"
+      # Deterministic component ID based on packageId
+      componentId = pkgId
       
       for mod in modules
         moduleToComponent.set mod, componentId

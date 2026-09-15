@@ -80,7 +80,7 @@ bundle = ( entries, options = {} ) ->
   diagDir = undefined
   if process.env.DEBUG
     entryBasename = Path.basename entries[0], Path.extname entries[0]
-    diagDir = Path.join process.cwd(), ".atlas", entryBasename
+    diagDir = Path.join process.cwd(), ".atlas", "bundle", entryBasename
     try
       await FS.mkdir diagDir, recursive: true
       replacer = (key, value) ->

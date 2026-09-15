@@ -4,44 +4,32 @@ import AtlasURL from "../src/url"
 
 export default ->
   [
-    test "parses application urls", ->
+    test "parses basic resolver key", ->
       parsed = AtlasURL.parse "atlas://application/src/index.js"
-      assert.equal parsed.type, "application"
-      assert.equal parsed.specifier, undefined
-      assert.equal parsed.subpath, "src/index.js"
+      assert.equal parsed.resolver, "application"
+      assert.equal parsed.pathname, "/src/index.js"
 
-    test "parses npm urls (unscoped)", ->
-      parsed = AtlasURL.parse "atlas://npm/maeve/lib/index.js"
-      assert.equal parsed.type, "npm"
-      assert.equal parsed.specifier, "maeve"
-      assert.equal parsed.subpath, "lib/index.js"
-
-    test "parses npm urls (scoped)", ->
-      parsed = AtlasURL.parse "atlas://npm/@dashkite/cerulean/index.js"
-      assert.equal parsed.type, "npm"
-      assert.equal parsed.specifier, "@dashkite/cerulean"
-      assert.equal parsed.subpath, "index.js"
-
-    test "parses local urls", ->
-      parsed = AtlasURL.parse "atlas://local/@dashkite/cerulean/index.js"
-      assert.equal parsed.type, "local"
-      assert.equal parsed.specifier, "@dashkite/cerulean"
-      assert.equal parsed.subpath, "index.js"
+    test "parses parameterized resolver key", ->
+      parsed = AtlasURL.parse "atlas://cdn@unpkg/@dashkite/joy@0.7.0/src/index.js"
+      assert.equal parsed.resolver, "cdn@unpkg"
+      assert.equal parsed.pathname, "/@dashkite/joy@0.7.0/src/index.js"
 
     test "fails fast on malformed URLs", ->
       assert.throws -> AtlasURL.parse "file:///app/src/index.js"
-      assert.throws -> AtlasURL.parse "atlas://npm/" # Missing specifier
 
-    test "formats application urls", ->
+    test "formats descriptor with module", ->
       url = AtlasURL.format
-        type: "application"
-        subpath: "src/index.js"
+        resolver: "cdn@unpkg"
+        module:
+          scope: "@dashkite"
+          name: "joy"
+          version: "0.7.0"
+        path: "/src/index.js"
+      assert.equal url, "atlas://cdn@unpkg/@dashkite/joy@0.7.0/src/index.js"
+
+    test "formats descriptor without module", ->
+      url = AtlasURL.format
+        resolver: "application"
+        path: "/src/index.js"
       assert.equal url, "atlas://application/src/index.js"
-
-    test "formats scoped npm urls", ->
-      url = AtlasURL.format
-        type: "npm"
-        specifier: "@dashkite/cerulean"
-        subpath: "index.js"
-      assert.equal url, "atlas://npm/@dashkite/cerulean/index.js"
   ]

@@ -1,35 +1,34 @@
-import Path from "node:path"
 import AtlasURL from "../url"
-
-isDependency = ( target ) -> target?.source?.path?
+import Path from "node:path"
+import { pathToFileURL } from "node:url"
 
 make = ( config = {} ) ->
-  match: ( target, context = {} ) ->
-    unless isDependency( target ) || ( typeof target == "string" )
-      return false
-      
-    path = if isDependency target then target.source.path else target
-
-    return false if path.includes "node_modules"
-    return false if path.startsWith ".."
+  match: ( context = {} ) ->
+    return false unless typeof context.source == "string"
+    return false if context.source.includes "node_modules"
+    return false if context.source.startsWith ".."
     true
 
-  encode: ( target, context = {} ) ->
-    unless @match target, context
-      throw new Error "Target does not match Application resolver"
+  encode: ( descriptor ) ->
+    AtlasURL.format descriptor
+    
+  decode: ( atlasUrl ) ->
+    parsed = AtlasURL.parse atlasUrl
+    {
+      resolver: parsed.resolver
+      path: parsed.pathname
+    }
 
-    rawPath = if isDependency target then target.source.path else target
-      
-    root = context.root ? context.cwd ? process.cwd()
+  parse: ( atlasUrl ) ->
+    @decode atlasUrl
 
-    subpath = if Path.isAbsolute rawPath
-      Path.relative root, rawPath
-    else
-      rawPath.replace( /^\.\//, "" ).replace( /^\//, "" )
-
-    AtlasURL.format
-      type: "application"
-      subpath: subpath
+  resolve: ( atlasUrl ) ->
+    descriptor = @decode atlasUrl
+    root = config.root ? config.cwd ? process.cwd()
+    relativePath = if descriptor.path != "" then descriptor.path else ""
+    relativePath = relativePath.slice(1) if relativePath.startsWith("/")
+    absPath = Path.resolve root, relativePath
+    pathToFileURL(absPath).href
 
 export default { make }
 export { make }
