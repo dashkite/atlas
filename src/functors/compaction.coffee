@@ -11,9 +11,8 @@ Compaction =
       Compaction.compact childNode, node
 
     # Attempt to lift bindings to parent
-    # We must not hoist bindings out of a package boundary,
-    # as that would render the URL meaningless (e.g. hoisting to resolver root)
-    if parent? and not node.isPackage
+    # Attempt to lift bindings to parent
+    if parent?
       for [label, target] from Array.from(node.bindings.entries())
         if not parent.bindings.has label
           # Parent doesn't have it, lift it
