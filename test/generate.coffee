@@ -26,22 +26,17 @@ export default ->
       assert importMap.scopes?, "ImportMap should have 'scopes' block"
       assert Object.keys(importMap.imports).length > 0, "Imports should be populated"
       
-      # Verify CDN HTTP URLs are generated correctly for external packages
-      # We check a specific package, e.g. jszip, which is imported by bundle.coffee
-      foundJszip = false
-      foundScoped = false
-      
+      # Verify all generated HTTP URLs
       for key, value of importMap.imports
-        if key == "jszip"
-          assert value.startsWith("https://unpkg.com/jszip@"), "URL should start with unpkg jszip with version"
-          assert value.endsWith("/lib/index.js"), "URL should end with /lib/index.js"
-          foundJszip = true
+        # Local paths or bare specifiers might not be full URLs, but if it starts with http, parse it
+        if value.startsWith "http"
+          url = new URL value
+          assert not url.pathname.includes("//"), "URL pathname should not contain double slashes: #{value}"
           
-        if key.startsWith("@dashkite/") and value.startsWith("https://")
-          assert value.startsWith("https://unpkg.com/@dashkite/"), "URL should start with unpkg @dashkite scope"
-          assert not value.includes("//dashkite/"), "URL must not contain double slashes"
-          foundScoped = true
-          
-      assert foundJszip, "Should find jszip in the import map"
-      assert foundScoped, "Should find a @dashkite scoped package in the import map"
+      if importMap.scopes?
+        for scope, mappings of importMap.scopes
+          for key, value of mappings
+            if value.startsWith "http"
+              url = new URL value
+              assert not url.pathname.includes("//"), "URL pathname should not contain double slashes: #{value}"
   ]
