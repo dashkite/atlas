@@ -28,14 +28,20 @@ export default ->
       
       # Verify CDN HTTP URLs are generated correctly for external packages
       # We check a specific package, e.g. jszip, which is imported by bundle.coffee
-      found = false
+      foundJszip = false
+      foundScoped = false
+      
       for key, value of importMap.imports
         if key == "jszip"
-          # It should resolve to the exact formatted URL structure
           assert value.startsWith("https://unpkg.com/jszip@"), "URL should start with unpkg jszip with version"
           assert value.endsWith("/lib/index.js"), "URL should end with /lib/index.js"
-          found = true
-          break
+          foundJszip = true
           
-      assert found, "Should find jszip in the import map"
+        if key.startsWith("@dashkite/") and value.startsWith("https://")
+          assert value.startsWith("https://unpkg.com/@dashkite/"), "URL should start with unpkg @dashkite scope"
+          assert not value.includes("//dashkite/"), "URL must not contain double slashes"
+          foundScoped = true
+          
+      assert foundJszip, "Should find jszip in the import map"
+      assert foundScoped, "Should find a @dashkite scoped package in the import map"
   ]
