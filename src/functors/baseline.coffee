@@ -29,7 +29,7 @@ Baseline =
       
       # Mark package roots so Compaction doesn't hoist past them
       sourcePkgId = ModuleGraph.getAttribute moduleGraph, edge.source, "packageId"
-      if sourcePkgId and sourcePkgId != ENTRY_POINT
+      if sourcePkgId and sourcePkgId != ENTRY_POINT and not sourcePkgId.startsWith("atlas://application")
         pkgNode = Trie.upsertPath root, parseSegments(sourcePkgId)
         pkgNode.isPackage = true
         

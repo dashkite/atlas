@@ -17,7 +17,7 @@ encodeTemplate = ( templateString, data ) ->
 
 make = ( config = {} ) ->
   unless config.template?
-    throw new Error "CDN resolver requires a URL Codex template string in configuration"
+    throw new Error "CDN resolver requires a URL Codex template string or function in configuration"
     
   match: ( context = {} ) ->
     return false unless typeof context.source == "string"
@@ -72,7 +72,12 @@ make = ( config = {} ) ->
     # Convert string path to array for wildcard path expansion
     pathSegments = (descriptor.path ? "").split("/").filter Boolean
       
-    encodeTemplate config.template, {
+    templateString = if typeof config.template == "function"
+      config.template descriptor
+    else
+      config.template
+
+    encodeTemplate templateString, {
       scope: descriptor.module.scope
       specifier
       release

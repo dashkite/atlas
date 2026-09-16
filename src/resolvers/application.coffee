@@ -1,7 +1,10 @@
 import AtlasURL from "../url"
 import Path from "node:path"
 import { pathToFileURL } from "node:url"
+import { decode as urlDecode } from "@dashkite/url-codex"
 
+scopedTemplate = "/{scope}/{versioned}/{path*}"
+unscopedTemplate = "/{versioned}/{path*}"
 make = ( config = {} ) ->
   match: ( context = {} ) ->
     return false unless typeof context.source == "string"
@@ -10,7 +13,7 @@ make = ( config = {} ) ->
     true
 
   encode: ( descriptor ) ->
-    AtlasURL.format descriptor
+    AtlasURL.format { descriptor..., module: undefined }
     
   decode: ( atlasUrl ) ->
     parsed = AtlasURL.parse atlasUrl

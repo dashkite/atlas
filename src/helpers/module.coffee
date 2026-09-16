@@ -6,7 +6,7 @@ cache = {}
 normalize = ({ name, version, path }) ->
   specifier = name
   if name.startsWith "@"
-    [ scope, pkgName ] = name[1..].split "/"
+    [ scope, pkgName ] = name.split "/"
     { scope, name: pkgName, specifier, version, path }
   else 
     { name, specifier, version, path }

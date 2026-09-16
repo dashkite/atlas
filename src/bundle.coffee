@@ -94,7 +94,7 @@ bundle = ( entries, options = {} ) ->
     catch err
       console.warn "Atlas Diagnostics: Failed to emit state to .atlas -", err.message
 
-  bundleMap = Resolver.apply componentGraph, treeIndex
+  bundleMap = Resolver.apply componentGraph, treeIndex, options.resolvers
 
   if process.env.DEBUG
     try

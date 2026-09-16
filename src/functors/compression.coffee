@@ -31,7 +31,10 @@ Compression =
           suffixSegments = suffix.split("/").filter (s) -> s.length > 0
           
           current = target
-          for i in [0...suffixSegments.length] by 1
+          for i in [suffixSegments.length - 1 .. 0] by -1
+            if current?.segment != suffixSegments[i]
+              contradiction = true
+              break
             current = current?.parent
             
           if not current?
