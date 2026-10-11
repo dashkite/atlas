@@ -2,7 +2,7 @@ ComponentGraph =
   make: ->
     vertices: new Set()
     edges: []
-    componentModules: new Map()
+    modules: new Map()
 
   getVertices: ( graph ) ->
     graph.vertices
@@ -10,13 +10,13 @@ ComponentGraph =
   getEdges: ( graph ) ->
     graph.edges
 
-  addComponent: ( graph, componentId, modules ) ->
-    graph.vertices.add componentId
-    graph.componentModules.set componentId, new Set modules
+  addComponent: ( graph, identifier, modules ) ->
+    graph.vertices.add identifier
+    graph.modules.set identifier, new Set modules
     graph
 
-  getModules: ( graph, componentId ) ->
-    graph.componentModules.get componentId
+  getModules: ( graph, identifier ) ->
+    graph.modules.get identifier
 
   addEdge: ( graph, edge ) ->
     graph.edges.push edge

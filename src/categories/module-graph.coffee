@@ -24,13 +24,17 @@ ModuleGraph =
   getInterEdges: ( graph ) ->
     graph.edges.filter ( edge ) -> edge.type == "inter"
 
-  setAttribute: ( graph, vertex, key, value ) ->
-    unless graph.attributes.has vertex
+  setAttribute: ( graph, vertex, attribute... ) ->
+    [ key, value ] = if Array.isArray attribute[ 0 ]
+      attribute[ 0 ]
+    else
+      attribute
+    if !graph.attributes.has vertex
       graph.attributes.set vertex, new Map()
-    graph.attributes.get(vertex).set key, value
+    ( graph.attributes.get vertex ).set key, value
     graph
 
   getAttribute: ( graph, vertex, key ) ->
-    graph.attributes.get(vertex)?.get key
+    ( graph.attributes.get vertex )?.get key
 
 export default ModuleGraph

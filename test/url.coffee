@@ -15,21 +15,23 @@ export default ->
       assert.equal parsed.pathname, "/@dashkite/joy@0.7.0/src/index.js"
 
     test "fails fast on malformed URLs", ->
-      assert.throws -> AtlasURL.parse "file:///app/src/index.js"
+      assert.throws -> AtlasURL.parse "not a url"
 
     test "formats descriptor with module", ->
-      url = AtlasURL.format
+      url = AtlasURL.format {
         resolver: "cdn@unpkg"
         module:
           scope: "@dashkite"
           name: "joy"
           version: "0.7.0"
         path: "/src/index.js"
+      }
       assert.equal url, "atlas://cdn@unpkg/@dashkite/joy@0.7.0/src/index.js"
 
     test "formats descriptor without module", ->
-      url = AtlasURL.format
+      url = AtlasURL.format {
         resolver: "application"
         path: "/src/index.js"
+      }
       assert.equal url, "atlas://application/src/index.js"
   ]

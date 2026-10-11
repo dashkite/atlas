@@ -6,17 +6,20 @@ export default ->
   [
     test "creates an empty component graph", ->
       graph = ComponentGraph.make()
-      assert ComponentGraph.getVertices(graph).size == 0
-      assert ComponentGraph.getEdges(graph).length == 0
+      assert ( ComponentGraph.getVertices graph ).size == 0
+      assert ( ComponentGraph.getEdges graph ).length == 0
 
     test "adds component vertices with constituent modules", ->
       graph = ComponentGraph.make()
-      ComponentGraph.addComponent graph, "pkg-A", [ "file:///app/index.js", "file:///app/helper.js" ]
-      
+      ComponentGraph.addComponent graph, "pkg-A", [
+        "file:///app/index.js"
+        "file:///app/helper.js"
+      ]
+
       vertices = ComponentGraph.getVertices graph
       assert.equal vertices.size, 1
       assert vertices.has "pkg-A"
-      
+
       modules = ComponentGraph.getModules graph, "pkg-A"
       assert.equal modules.size, 2
       assert modules.has "file:///app/index.js"

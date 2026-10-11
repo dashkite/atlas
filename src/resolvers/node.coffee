@@ -3,53 +3,56 @@ import Path from "node:path"
 import { pathToFileURL } from "node:url"
 import { decode as urlDecode } from "@dashkite/url-codex"
 
-scopedTemplate = "/{scope}/{versioned}/{path*}"
-unscopedTemplate = "/{versioned}/{path*}"
+template =
+  scoped: "/{scope}/{versioned}/{path*}"
+  unscoped: "/{versioned}/{path*}"
 
 make = ( config = {} ) ->
-  match: ( context = {} ) ->
-    return false unless typeof context.source == "string"
-    return context.source.includes "node_modules"
+  match: ( context ) ->
+    context.source.includes "node_modules"
 
   encode: ( descriptor ) ->
     AtlasURL.format descriptor
-    
-  decode: ( atlasUrl ) ->
-    parsed = AtlasURL.parse atlasUrl
-    
-    res = try
-      match = urlDecode scopedTemplate, parsed.pathname
-      if match.scope?.startsWith("@") then match else throw new Error()
+
+  decode: ( url ) ->
+    parsed = AtlasURL.parse url
+
+    decoded = try
+      match = urlDecode template.scoped, parsed.pathname
+      if match.scope?.startsWith "@" then match else throw new Error
     catch
-      urlDecode unscopedTemplate, parsed.pathname
-      
-    parts = res.versioned.split("@")
-    name = parts[0]
-    version = parts[1]
-    
+      urlDecode template.unscoped, parsed.pathname
+
+    parts = decoded.versioned.split "@"
+    name = parts[ 0 ]
+    version = parts[ 1 ]
+
     {
       resolver: parsed.resolver
       module:
-        scope: res.scope
+        scope: decoded.scope
         name: name
         version: version
-      path: "/" + (res.path ? []).join("/")
+      path: "/" + ( decoded.path ? [] ).join "/"
     }
 
-  parse: ( atlasUrl ) ->
-    @decode atlasUrl
+  parse: ( url ) ->
+    @decode url
 
-  resolve: ( atlasUrl ) ->
-    descriptor = @decode atlasUrl
+  resolve: ( url ) ->
+    descriptor = @decode url
     root = config.root ? config.cwd ? process.cwd()
-    pkgName = if descriptor.module.scope then "#{descriptor.module.scope}/#{descriptor.module.name}" else descriptor.module.name
-    relativePath = if descriptor.path != "" then descriptor.path else ""
-    relativePath = relativePath.slice(1) if relativePath.startsWith("/")
-    
+    name = if descriptor.module.scope
+      "#{descriptor.module.scope}/#{descriptor.module.name}"
+    else
+      descriptor.module.name
+    path = if descriptor.path != "" then descriptor.path else ""
+    path = path.slice 1 if path.startsWith "/"
+
     # We resolve to node_modules in the root. If it's a monorepo, Node resolution handles it.
-    # But for a physical URL, we just point to node_modules/pkgName/relativePath
-    absPath = Path.resolve root, "node_modules", pkgName, relativePath
-    pathToFileURL(absPath).href
+    # But for a physical URL, we just point to node_modules/name/path
+    path = Path.resolve root, "node_modules", name, path
+    ( pathToFileURL path ).href
 
 export default { make }
 export { make }

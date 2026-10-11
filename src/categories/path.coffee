@@ -5,9 +5,11 @@ Path =
     [ path..., segment ]
 
   isPrefix: ( prefix, path ) ->
-    return false if prefix.length > path.length
-    for segment, i in prefix
-      return false if path[ i ] != segment
+    if prefix.length > path.length
+      return false
+    for segment, index in prefix
+      if path[ index ] != segment
+        return false
     true
 
 export default Path

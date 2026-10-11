@@ -10,23 +10,23 @@ export default ->
 
     test "concatenates paths", ->
       root = Path.root
-      p1 = Path.concat root, "pkg-A"
-      p2 = Path.concat p1, "pkg-B"
-      
-      assert.equal p1.length, 1
-      assert.equal p1[ 0 ], "pkg-A"
+      firstPath = Path.concat root, "pkg-A"
+      secondPath = Path.concat firstPath, "pkg-B"
 
-      assert.equal p2.length, 2
-      assert.equal p2[ 0 ], "pkg-A"
-      assert.equal p2[ 1 ], "pkg-B"
+      assert.equal firstPath.length, 1
+      assert.equal firstPath[ 0 ], "pkg-A"
+
+      assert.equal secondPath.length, 2
+      assert.equal secondPath[ 0 ], "pkg-A"
+      assert.equal secondPath[ 1 ], "pkg-B"
 
     test "determines prefix relationships", ->
-      p1 = [ "pkg-A" ]
-      p2 = [ "pkg-A", "pkg-B" ]
-      p3 = [ "pkg-C" ]
+      firstPath = [ "pkg-A" ]
+      secondPath = [ "pkg-A", "pkg-B" ]
+      thirdPath = [ "pkg-C" ]
 
-      assert Path.isPrefix p1, p2
-      assert !(Path.isPrefix p2, p1)
-      assert !(Path.isPrefix p1, p3)
-      assert Path.isPrefix Path.root, p1
+      assert Path.isPrefix firstPath, secondPath
+      assert !(Path.isPrefix secondPath, firstPath)
+      assert !(Path.isPrefix firstPath, thirdPath)
+      assert Path.isPrefix Path.root, firstPath
   ]

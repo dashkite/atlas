@@ -1,36 +1,41 @@
-import Trie from "../categories/trie"
 import Resolvers from "../resolvers"
+
+getNodeSegments = (node) ->
+  segments = []
+  current = node
+  while current.parent?
+    segments.unshift current.segment
+    current = current.parent
+  segments
+
+formatAtlasUrl = (segments) ->
+  host = segments[0]
+  path = segments[1..].join "/"
+  if path.length > 0
+    "atlas://#{host}/#{path}"
+  else
+    "atlas://#{host}"
+
+getFullUrl = (node) ->
+  formatAtlasUrl getNodeSegments node
+
+resolveBindings = (node, metaResolver) ->
+  for [label, target] from node.bindings
+    targetUrl = getFullUrl target
+    mappedString = metaResolver.resolve targetUrl
+    node.bindings.set label, mappedString
+  return
+
+traverse = (node, metaResolver) ->
+  resolveBindings node, metaResolver
+  for childNode from node.children.values()
+    traverse childNode, metaResolver
+  return
 
 Resolution =
   apply: (trie, keys) ->
     metaResolver = Resolvers.Registry.make keys
-    
-    getFullUrl = (node) ->
-      segments = []
-      current = node
-      while current?.parent?
-        segments.unshift current.segment
-        current = current.parent
-      return "" if segments.length == 0
-      
-      host = segments[0]
-      path = segments[1..].join("/")
-      
-      if path.length > 0
-        "atlas://#{host}/#{path}"
-      else
-        "atlas://#{host}"
-
-    traverse = (node) ->
-      for [label, target] from node.bindings
-        targetUrl = getFullUrl target
-        mappedString = metaResolver.resolve targetUrl
-        node.bindings.set label, mappedString
-        
-      for [segment, childNode] from node.children
-        traverse childNode
-        
-    traverse trie
+    traverse trie, metaResolver
     trie
 
 export default Resolution

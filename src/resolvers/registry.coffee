@@ -11,39 +11,37 @@ class MetaResolver
     null
 
   encode: (descriptor) ->
-    unless descriptor.resolver in @keys
+    if !descriptor.resolver in @keys
       throw new Error "Resolver #{descriptor.resolver} not in configured keys"
     resolver = Registry.get descriptor.resolver
-    unless resolver?
+    if !resolver?
       throw new Error "Resolver #{descriptor.resolver} not found in registry"
     resolver.encode descriptor
-    
-  decode: (atlasUrl) ->
-    parsed = AtlasURL.parse atlasUrl
+
+  decode: (url) ->
+    parsed = AtlasURL.parse url
     key = parsed.resolver
-    unless key in @keys
+    if !key in @keys
       throw new Error "Resolver #{key} not in configured keys"
     resolver = Registry.get key
-    unless resolver?
+    if !resolver?
       throw new Error "Resolver #{key} not found in registry"
-    resolver.decode atlasUrl
+    resolver.decode url
 
-  parse: (atlasUrl) ->
-    @decode atlasUrl
+  parse: (url) ->
+    @decode url
 
-  resolve: (atlasUrl) ->
-    parsed = AtlasURL.parse atlasUrl
+  resolve: (url) ->
+    parsed = AtlasURL.parse url
     key = parsed.resolver
-    unless key in @keys
+    if !key in @keys
       throw new Error "Resolver #{key} not in configured keys"
     resolver = Registry.get key
-    unless resolver?
+    if !resolver?
       throw new Error "Resolver #{key} not found in registry"
-    resolver.resolve atlasUrl
+    resolver.resolve url
 
 class Registry
-  @resolvers: {}
-
   @register: (key, resolver) ->
     @resolvers[key] = resolver
 
@@ -52,5 +50,7 @@ class Registry
 
   @make: (keys) ->
     new MetaResolver keys
+
+Registry.resolvers = {}
 
 export default Registry

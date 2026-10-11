@@ -10,7 +10,7 @@ tests = ( path, parameters... ) ->
 do ->
   if process.env.DEBUG
     try
-      await FS.rm Path.join(process.cwd(), ".atlas"), recursive: true, force: true
+      await FS.rm ( Path.join process.cwd(), ".atlas" ), recursive: true, force: true
     catch
       null
 

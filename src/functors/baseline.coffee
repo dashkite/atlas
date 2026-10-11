@@ -3,54 +3,61 @@ import Trie from "../categories/trie"
 import ModuleGraph from "../categories/module-graph"
 import { ENTRY_POINT } from "../ingest"
 
-parseSegments = (urlString, packageId) ->
-  return [] if urlString == ENTRY_POINT
-  
-  url = new URL(urlString)
-  pathSegments = if url.pathname.length > 1
-    url.pathname[1..].split "/"
+getAuthority = ( url ) ->
+  if url.username then "#{url.username}@#{url.hostname}" else url.hostname
+
+getPathSegments = ( url ) ->
+  if url.pathname.length > 1 then url.pathname[1..].split "/" else []
+
+isExternalPackage = ( packageId ) ->
+  packageId? &&
+    packageId != ENTRY_POINT &&
+    !packageId.startsWith "atlas://application"
+
+parsePackageSegments = ( pathSegments, packageId ) ->
+  packageUrl = new URL packageId
+  packageAuthority = getAuthority packageUrl
+  packagePathSegments = getPathSegments packageUrl
+  packageSegment = [ packageAuthority, packagePathSegments... ].join "/"
+  remainingSegments = pathSegments.slice packagePathSegments.length
+  [ packageSegment, remainingSegments... ]
+
+parseUrlSegments = ( url, packageId ) ->
+  pathSegments = getPathSegments url
+  if isExternalPackage packageId
+    parsePackageSegments pathSegments, packageId
   else
+    authority = getAuthority url
+    [ authority, pathSegments... ]
+
+parseSegments = ( urlString, packageId ) ->
+  if urlString == ENTRY_POINT
     []
-  auth = if url.username then "#{url.username}@#{url.hostname}" else url.hostname
-  
-  if packageId and packageId != ENTRY_POINT and not packageId.startsWith("atlas://application")
-    pkgUrl = new URL(packageId)
-    pkgPathSegments = if pkgUrl.pathname.length > 1 then pkgUrl.pathname[1..].split "/" else []
-    pkgAuth = if pkgUrl.username then "#{pkgUrl.username}@#{pkgUrl.hostname}" else pkgUrl.hostname
-    
-    # The atomic package segment is the auth + all package path segments joined by /
-    pkgSegment = [pkgAuth].concat(pkgPathSegments).join("/")
-    
-    # The remaining segments are whatever comes after the package segments
-    # Since urlString is a descendant of packageId, it has the same auth and prefix path
-    remainingSegments = pathSegments.slice(pkgPathSegments.length)
-    return [pkgSegment].concat(remainingSegments)
-    
-  [auth].concat(pathSegments)
+  else
+    url = new URL urlString
+    parseUrlSegments url, packageId
+
+markPackageRoot = ( root, packageId ) ->
+  if isExternalPackage packageId
+    packageNode = Trie.upsertPath root, ( parseSegments packageId, packageId )
+    packageNode.isPackage = true
+
+bindEdge = ( root, moduleGraph, edge ) ->
+  { source, target, label } = edge
+  sourcePackageId = ModuleGraph.getAttribute moduleGraph, source, "packageId"
+  targetPackageId = ModuleGraph.getAttribute moduleGraph, target, "packageId"
+  sourceSegments = parseSegments source, sourcePackageId
+  targetSegments = parseSegments target, targetPackageId
+  sourceNode = Trie.upsertPath root, sourceSegments
+  targetNode = Trie.upsertPath root, targetSegments
+  markPackageRoot root, sourcePackageId
+  sourceNode.bindings.set label, targetNode
 
 Baseline =
-  apply: (moduleGraph) ->
+  apply: ( moduleGraph ) ->
     root = Trie.make()
-    
-    interEdges = ModuleGraph.getInterEdges moduleGraph
-    
-    for edge in interEdges
-      sourcePkgId = ModuleGraph.getAttribute moduleGraph, edge.source, "packageId"
-      targetPkgId = ModuleGraph.getAttribute moduleGraph, edge.target, "packageId"
-      
-      sourceSegments = parseSegments edge.source, sourcePkgId
-      targetSegments = parseSegments edge.target, targetPkgId
-      
-      sourceNode = Trie.upsertPath root, sourceSegments
-      targetNode = Trie.upsertPath root, targetSegments
-      
-      # Mark package roots so Compaction knows where they are
-      if sourcePkgId and sourcePkgId != ENTRY_POINT and not sourcePkgId.startsWith("atlas://application")
-        pkgNode = Trie.upsertPath root, parseSegments(sourcePkgId, sourcePkgId)
-        pkgNode.isPackage = true
-        
-      sourceNode.bindings.set edge.label, targetNode
-      
+    for edge in ModuleGraph.getInterEdges moduleGraph
+      bindEdge root, moduleGraph, edge
     root
 
 export default Baseline

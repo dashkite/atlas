@@ -9,31 +9,33 @@ import JSZip from "jszip"
 export default ->
   [
     test "creates a bundle zip with entry and package.json", ->
-      tempDir = await FS.mkdtemp Path.join(OS.tmpdir(), "atlas-bundle-")
-      
-      entryPath = Path.join tempDir, "index.js"
-      await FS.writeFile entryPath, "import { foo } from './foo.js';\nexport const main = () => { console.log(foo); };"
-      
-      fooPath = Path.join tempDir, "foo.js"
+      temporaryDirectory = await FS.mkdtemp Path.join OS.tmpdir(), "atlas-bundle-"
+
+      entryPath = Path.join temporaryDirectory, "index.js"
+      await FS.writeFile entryPath,
+        "import { foo } from './foo.js';\nexport const main = () => { console.log(foo); };"
+
+      fooPath = Path.join temporaryDirectory, "foo.js"
       await FS.writeFile fooPath, "export const foo = 'hello';"
-      
-      pkgPath = Path.join tempDir, "package.json"
-      await FS.writeFile pkgPath, JSON.stringify({ name: "test-pkg", version: "1.0.0" })
-      
+
+      packagePath = Path.join temporaryDirectory, "package.json"
+      await FS.writeFile packagePath, JSON.stringify { name: "test-pkg", version: "1.0.0" }
+
       try
-        zipBuffer = await bundle entryPath, { cwd: tempDir, root: tempDir }
+        zipBuffer = await bundle entryPath, { cwd: temporaryDirectory, root: temporaryDirectory }
         assert Buffer.isBuffer zipBuffer
-        
+
         zip = await JSZip.loadAsync zipBuffer
-        
+
         # Verify files are in the zip
         files = Object.keys zip.files
-        
+
         assert files.includes "index.js"
         assert files.includes "package.json"
-        
-        content = await zip.file("index.js").async("string")
-        assert content == "import { foo } from './foo.js';\nexport const main = () => { console.log(foo); };"
+
+        content = await ( zip.file "index.js" ).async "string"
+        assert content ==
+          "import { foo } from './foo.js';\nexport const main = () => { console.log(foo); };"
       finally
-        await FS.rm tempDir, { recursive: true, force: true }
+        await FS.rm temporaryDirectory, { recursive: true, force: true }
   ]

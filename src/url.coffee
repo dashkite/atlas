@@ -1,45 +1,51 @@
 import { URL } from "node:url"
 
+extractResolver = ( parsed ) ->
+  if parsed.username
+    "#{decodeURIComponent parsed.username}@#{decodeURIComponent parsed.hostname}"
+  else
+    decodeURIComponent parsed.hostname
+
+formatAuthority = ( resolver ) ->
+  parts = resolver.split "@"
+  authority = if parts.length > 1
+    "#{encodeURIComponent parts[ 0 ]}@#{encodeURIComponent ( parts.slice 1 ).join "@"}"
+  else
+    encodeURIComponent parts[ 0 ]
+  authority
+
+formatModuleIdentifier = ( module ) ->
+  if !module?.name?
+    return null
+  packageSpecifier = if module.scope then "#{module.scope}/#{module.name}" else module.name
+  if module.version? then "#{packageSpecifier}@#{module.version}" else packageSpecifier
+
+normalizePath = ( path ) ->
+  if !path? || path == ""
+    return null
+  normalizedPath = if path.startsWith "/" then path.slice 1 else path
+  if normalizedPath != "" then normalizedPath else null
+
+formatPathname = ( descriptor ) ->
+  pathSegments = []
+  moduleIdentifier = formatModuleIdentifier descriptor.module
+  pathSegments.push moduleIdentifier if moduleIdentifier?
+  normalizedPath = normalizePath descriptor.path
+  pathSegments.push normalizedPath if normalizedPath?
+  if pathSegments.length > 0 then "/" + pathSegments.join "/" else ""
+
 AtlasURL =
-  parse: ( urlString ) ->
-    unless urlString.startsWith "atlas://"
-      throw new TypeError "Invalid Protocol: URL must start with atlas://. Received: #{urlString}"
-      
-    parsed = new URL urlString
-    resolverKey = if parsed.username then "#{decodeURIComponent(parsed.username)}@#{decodeURIComponent(parsed.hostname)}" else decodeURIComponent(parsed.hostname)
-    
+  parse: ( url ) ->
+    parsed = new URL url
     {
-      resolver: resolverKey
+      resolver: extractResolver parsed
       pathname: parsed.pathname
     }
 
   format: ( descriptor ) ->
-    unless descriptor.resolver?
-      throw new TypeError "Cannot format Atlas URL without a resolver key"
-      
-    parts = descriptor.resolver.split "@"
-    auth = if parts.length > 1
-      "#{encodeURIComponent parts[0]}@#{encodeURIComponent parts.slice(1).join('@')}"
-    else
-      encodeURIComponent parts[0]
-      
-    pathSegments = []
-    if descriptor.module?.name?
-      pkgString = if descriptor.module.scope then "#{descriptor.module.scope}/#{descriptor.module.name}" else descriptor.module.name
-      pkgString += "@#{descriptor.module.version}" if descriptor.module.version?
-      pathSegments.push pkgString
-      
-    if descriptor.path? && descriptor.path != ""
-      p = descriptor.path
-      p = p.slice(1) if p.startsWith("/")
-      pathSegments.push p if p != ""
-      
-    pathname = if pathSegments.length > 0
-      "/" + pathSegments.join "/"
-    else
-      ""
-      
-    "atlas://#{auth}#{pathname}"
+    authority = formatAuthority descriptor.resolver
+    pathname = formatPathname descriptor
+    "atlas://#{authority}#{pathname}"
 
 export default AtlasURL
 export { AtlasURL }

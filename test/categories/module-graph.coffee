@@ -6,13 +6,13 @@ export default ->
   [
     test "creates an empty graph", ->
       graph = ModuleGraph.make()
-      assert ModuleGraph.getVertices(graph).size == 0
-      assert ModuleGraph.getEdges(graph).length == 0
+      assert ( ModuleGraph.getVertices graph ).size == 0
+      assert ( ModuleGraph.getEdges graph ).length == 0
 
     test "adds vertices", ->
       graph = ModuleGraph.make()
       ModuleGraph.addVertex graph, "file:///app/index.js"
-      
+
       vertices = ModuleGraph.getVertices graph
       assert.equal vertices.size, 1
       assert vertices.has "file:///app/index.js"
@@ -52,4 +52,3 @@ export default ->
       assert.equal inter[ 0 ].source, "file:///app/index.js"
       assert.equal inter[ 0 ].target, "file:///node_modules/maeve/index.js"
   ]
-

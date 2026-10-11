@@ -9,53 +9,98 @@ import Resolution from "./functors/resolution"
 import Serialization from "./functors/serialization"
 import nodePreset from "./presets/node"
 
-generate = ( entries, options = {} ) ->
-  entries = [ entries ] if typeof entries == "string"
+DIAGNOSTIC_FILES = [
+  [ "module-graph.json", "moduleGraph" ]
+  [ "baseline-trie.json", "baselineTrie" ]
+  [ "compacted-trie.json", "compactedTrie" ]
+  [ "compressed-trie.json", "compressedTrie" ]
+  [ "resolved-trie.json", "resolvedTrie" ]
+  [ "importmap.json", "importMap" ]
+]
+
+diagnosticReplacer = ( key, value ) ->
+  if key == "parent" then return undefined
+  if value instanceof Set then return Array.from value
+  if value instanceof Map then return Object.fromEntries value
+  if typeof value == "symbol" then return value.toString()
+  value
+
+serializeDiagnostics = ( value ) ->
+  JSON.stringify value, diagnosticReplacer, 2
+
+writeDiagnosticFile = ( directory, filename, data ) ->
+  filePath = Path.join directory, filename
+  content = serializeDiagnostics data
+  FS.writeFile filePath, content
+
+deriveDiagnosticsDirectory = ( entries ) ->
+  entryBasename = Path.basename entries[ 0 ], Path.extname entries[ 0 ]
+  Path.join process.cwd(), ".atlas", "generate", entryBasename
+
+writePipelineDiagnostics = ( directory, pipeline ) ->
+  try
+    await FS.mkdir directory, recursive: true
+    for [ filename, key ] from DIAGNOSTIC_FILES
+      await writeDiagnosticFile directory, filename, pipeline[ key ]
+  catch error
+    warningMessage = "Atlas Diagnostics: Failed to emit state to .atlas -"
+    console.warn warningMessage, error.message
+  return
+
+dumpDiagnostics = ( entries, pipeline ) ->
+  if process.env.DEBUG
+    diagnosticsDirectory = deriveDiagnosticsDirectory entries
+    await writePipelineDiagnostics diagnosticsDirectory, pipeline
+  return
+
+normalizeEntries = ( entries ) ->
+  if typeof entries == "string"
+    [ entries ]
+  else
+    entries
+
+normalizeOptions = ( options ) ->
   cwd = options.cwd ? options.root ? process.cwd()
-
   external = [ "@aws-sdk/*", ( options.external ? [] )... ]
+  resolvers = options.resolvers ? nodePreset
+  { options..., cwd, root: cwd, external, resolvers }
 
-  deps = analyze entries, {
+analyzeDependencies = ( entries, options ) ->
+  analyze entries, {
     options...
-    cwd
+    cwd: options.cwd
     platform: "node"
     conditions: [ "node" ]
-    external
+    external: options.external
   }
 
-  resolvers = options.resolvers ? nodePreset
-
-  # The Categorical Pipeline
-  moduleGraph = await ingest deps, { options..., cwd, root: cwd, resolvers }
-  
+buildTries = ( moduleGraph ) ->
   baselineTrie = Baseline.apply moduleGraph
   compactedTrie = Compaction.apply baselineTrie
   compressedTrie = Compression.apply compactedTrie
+  { baselineTrie, compactedTrie, compressedTrie }
+
+resolveAndSerialize = ( compressedTrie, resolvers ) ->
   resolvedTrie = Resolution.apply compressedTrie, resolvers
   importMap = Serialization.apply resolvedTrie, resolvers
+  { resolvedTrie, importMap }
 
-  if process.env.DEBUG
-    entryBasename = Path.basename entries[0], Path.extname entries[0]
-    diagDir = Path.join process.cwd(), ".atlas", "generate", entryBasename
-    try
-      await FS.mkdir diagDir, recursive: true
-      replacer = (key, value) ->
-        if key == "parent" then return undefined
-        if value instanceof Set then Array.from(value)
-        else if value instanceof Map then Object.fromEntries(value)
-        else if typeof value == "symbol" then value.toString()
-        else value
+applyFunctors = ( moduleGraph, resolvers ) ->
+  tries = buildTries moduleGraph
+  resolution = resolveAndSerialize tries.compressedTrie, resolvers
+  { moduleGraph, tries..., resolution... }
 
-      await FS.writeFile Path.join(diagDir, "module-graph.json"), JSON.stringify(moduleGraph, replacer, 2)
-      await FS.writeFile Path.join(diagDir, "baseline-trie.json"), JSON.stringify(baselineTrie, replacer, 2)
-      await FS.writeFile Path.join(diagDir, "compacted-trie.json"), JSON.stringify(compactedTrie, replacer, 2)
-      await FS.writeFile Path.join(diagDir, "compressed-trie.json"), JSON.stringify(compressedTrie, replacer, 2)
-      await FS.writeFile Path.join(diagDir, "resolved-trie.json"), JSON.stringify(resolvedTrie, replacer, 2)
-      await FS.writeFile Path.join(diagDir, "importmap.json"), JSON.stringify(importMap, null, 2)
-    catch err
-      console.warn "Atlas Diagnostics: Failed to emit state to .atlas -", err.message
+executePipeline = ( dependencies, options ) ->
+  moduleGraph = await ingest dependencies, options
+  applyFunctors moduleGraph, options.resolvers
 
-  importMap
+generate = ( entries, options = {} ) ->
+  normalizedEntries = normalizeEntries entries
+  normalizedOptions = normalizeOptions options
+  dependencies = analyzeDependencies normalizedEntries, normalizedOptions
+  pipeline = await executePipeline dependencies, normalizedOptions
+  await dumpDiagnostics normalizedEntries, pipeline
+  pipeline.importMap
 
 export default generate
 export { generate }

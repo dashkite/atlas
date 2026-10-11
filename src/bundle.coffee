@@ -6,151 +6,246 @@ import ingest from "./ingest"
 import Quotient from "./functors/quotient"
 import Compiler from "./functors/compiler"
 import Resolver from "./functors/resolver"
+import nodePreset from "./presets/node"
 
-stripVersion = ( str ) ->
-  atIndex = str.lastIndexOf "@"
-  if atIndex > 0
-    str.slice 0, atIndex
-  else
-    str
+ZIP_OPTIONS =
+  type: "nodebuffer"
+  compression: "DEFLATE"
+  compressionOptions:
+    level: 9
+
+checkManifest = ( directory ) ->
+  manifestPath = Path.join directory, "package.json"
+  try
+    await FS.access manifestPath
+    manifestPath
+  catch error
+    if error.code != "ENOENT"
+      throw error
+    null
+
+scanManifest = ( directory ) ->
+  current = directory
+  while current && ( current != Path.dirname current )
+    manifest = await checkManifest current
+    if manifest?
+      return manifest
+    current = Path.dirname current
+  null
 
 findPackageManifest = ( filePath ) ->
-  try
-    realPath = await FS.realpath filePath
-    directory = Path.dirname realPath
-    while directory && directory != Path.dirname( directory )
-      manifestPath = Path.join directory, "package.json"
-      try
-        await FS.access manifestPath
-        return manifestPath
-      catch
-        directory = Path.dirname directory
-  catch
-    null
+  realPath = await FS.realpath filePath
+  scanManifest Path.dirname realPath
+
+extractPackageName = ( remainder ) ->
+  parts = remainder.split "/"
+  if remainder.startsWith "@"
+    ( parts.slice 0, 2 ).join "/"
+  else
+    parts[ 0 ]
 
 derivePackageBundleDirectory = ( filePath ) ->
   marker = "node_modules/"
   index = filePath.lastIndexOf marker
-  return "" if index == -1
-
-  prefix = filePath.slice 0, index + marker.length
-  remainder = filePath.slice index + marker.length
-  parts = remainder.split "/"
-
-  packageName = if remainder.startsWith "@"
-    parts.slice( 0, 2 ).join "/"
+  if index == -1
+    ""
   else
-    parts[ 0 ]
+    prefix = filePath.slice 0, index + marker.length
+    remainder = filePath.slice index + marker.length
+    Path.join prefix, extractPackageName remainder
 
-  Path.join prefix, packageName
-
-resolveSourceDiskPath = ( root, sourceUrl, destination, moduleGraph ) ->
-  # A strict O(1) lookup against the ingested ESBuild path map. No guessing!
-  unless moduleGraph.sources.has sourceUrl
-    throw new Error "Source URL not found in graph sources: #{sourceUrl}"
-
+resolveSourceDiskPath = ( sourceUrl, moduleGraph ) ->
   fileUrl = moduleGraph.sources.get sourceUrl
-  candidate = new URL(fileUrl).pathname
+  ( new URL fileUrl ).pathname
 
-  try
-    await FS.access candidate
-    return candidate
-  catch error
-    throw new Error "Resolved source path is inaccessible on disk: #{candidate}. Reason: #{error.message}"
-
-bundle = ( entries, options = {} ) ->
-  entries = [ entries ] if typeof entries == "string"
-  cwd = options.cwd ? options.root ? process.cwd()
-
-  external = [ "@aws-sdk/*", ( options.external ? [] )... ]
-
-  deps = analyze entries, {
-    options...
-    cwd
-    platform: "node"
-    conditions: [ "node" ]
-    external
-  }
-
-  # The Categorical Pipeline
-  moduleGraph = await ingest deps, { options..., cwd, root: cwd }
-  componentGraph = Quotient.apply moduleGraph
-  treeIndex = Compiler.apply componentGraph, options
-  
-  diagDir = undefined
-  if process.env.DEBUG
-    entryBasename = Path.basename entries[0], Path.extname entries[0]
-    diagDir = Path.join process.cwd(), ".atlas", "bundle", entryBasename
-    try
-      await FS.mkdir diagDir, recursive: true
-      replacer = (key, value) ->
-        if value instanceof Set then Array.from(value)
-        else if value instanceof Map then Object.fromEntries(value)
-        else value
-
-      await FS.writeFile Path.join(diagDir, "module-graph.json"), JSON.stringify(moduleGraph, replacer, 2)
-      await FS.writeFile Path.join(diagDir, "component-graph.json"), JSON.stringify(componentGraph, replacer, 2)
-      await FS.writeFile Path.join(diagDir, "tree-index.json"), JSON.stringify(treeIndex, replacer, 2)
-    catch err
-      console.warn "Atlas Diagnostics: Failed to emit state to .atlas -", err.message
-
-  bundleMap = Resolver.apply componentGraph, treeIndex, options.resolvers
-
-  if process.env.DEBUG
-    try
-      await FS.writeFile Path.join(diagDir, "bundle-map.json"), JSON.stringify(bundleMap, replacer, 2)
-    catch err
-      null
-
-  zip = new JSZip()
-  visitedDestinations = new Set()
-  visitedPackages = new Set()
-
-  # Entry points
-  for entry in entries
-    relEntry = if Path.isAbsolute entry
-      Path.relative cwd, entry
+serializeDiagnostics = ( value ) ->
+  replacer = ( key, item ) ->
+    if item instanceof Set
+      Array.from item
+    else if item instanceof Map
+      Object.fromEntries item
     else
-      entry
-    absEntry = Path.resolve cwd, relEntry
-    unless visitedDestinations.has relEntry
-      visitedDestinations.add relEntry
-      content = await FS.readFile absEntry
-      zip.file relEntry, content
+      item
+  JSON.stringify value, replacer, 2
 
-  # Root package.json if present
-  rootPkgJson = Path.resolve cwd, "package.json"
+writeDiagnosticFile = ( directory, filename, data ) ->
+  filePath = Path.join directory, filename
+  content = serializeDiagnostics data
+  FS.writeFile filePath, content
+
+deriveDiagnosticsDirectory = ( entries ) ->
+  entryBasename = Path.basename entries[ 0 ], Path.extname entries[ 0 ]
+  Path.join process.cwd(), ".atlas", "bundle", entryBasename
+
+warnDiagnostics = ( error ) ->
+  message = "Atlas Diagnostics: Failed to emit state to .atlas -"
+  console.warn message, error.message
+  return
+
+writePipelineDiagnostics = ( directory, pipeline ) ->
+  { moduleGraph, componentGraph, treeIndex } = pipeline
   try
-    content = await FS.readFile rootPkgJson
-    zip.file "package.json", content
-    visitedDestinations.add "package.json"
-  catch
+    await FS.mkdir directory, recursive: true
+    await writeDiagnosticFile directory, "module-graph.json", moduleGraph
+    await writeDiagnosticFile directory, "component-graph.json", componentGraph
+    await writeDiagnosticFile directory, "tree-index.json", treeIndex
+  catch error
+    warnDiagnostics error
+  return
+
+writeBundleDiagnostics = ( directory, bundleMap ) ->
+  try
+    await writeDiagnosticFile directory, "bundle-map.json", bundleMap
+  catch error
+    warnDiagnostics error
+  return
+
+dumpDiagnostics = ( entries, pipeline ) ->
+  if process.env.DEBUG
+    directory = deriveDiagnosticsDirectory entries
+    await writePipelineDiagnostics directory, pipeline
+    await writeBundleDiagnostics directory, pipeline.bundleMap
+  return
+
+resolveEntryPaths = ( cwd, entry ) ->
+  relative = if Path.isAbsolute entry
+    Path.relative cwd, entry
+  else
+    entry
+  absolute = Path.resolve cwd, relative
+  { relative, absolute }
+
+archiveEntry = ( context, entry ) ->
+  { relative, absolute } = resolveEntryPaths context.cwd, entry
+  await archiveFile context, relative, absolute
+  return
+
+archiveEntries = ( context, entries ) ->
+  for entry in entries
+    await archiveEntry context, entry
+  return
+
+resolveRootManifestPath = ( cwd ) ->
+  Path.resolve cwd, "package.json"
+
+readOptionalFile = ( filePath ) ->
+  try
+    FS.readFile filePath
+  catch error
+    if error.code != "ENOENT"
+      throw error
     null
 
+readRootManifest = ( cwd ) ->
+  manifestPath = resolveRootManifestPath cwd
+  readOptionalFile manifestPath
+
+archiveRootManifest = ( context ) ->
+  { zip, cwd, visitedDestinations } = context
+  content = await readRootManifest cwd
+  if content?
+    zip.file "package.json", content
+    visitedDestinations.add "package.json"
+  return
+
+archiveFile = ( context, destination, diskPath ) ->
+  { zip, visitedDestinations } = context
+  if !visitedDestinations.has destination
+    visitedDestinations.add destination
+    content = await FS.readFile diskPath
+    zip.file destination, content
+  return
+
+archivePackageManifest = ( context, packageBundleDirectory, diskPath ) ->
+  manifestSource = await findPackageManifest diskPath
+  if !manifestSource?
+    throw new Error "Package manifest not found for #{ diskPath }"
+  manifestDestinationPath = Path.join packageBundleDirectory, "package.json"
+  await archiveFile context, manifestDestinationPath, manifestSource
+  return
+
+archiveDependencyManifest = ( context, destination, diskPath ) ->
+  { visitedPackages } = context
+  packageBundleDirectory = derivePackageBundleDirectory destination
+  if packageBundleDirectory != ""
+    if !visitedPackages.has packageBundleDirectory
+      visitedPackages.add packageBundleDirectory
+      await archivePackageManifest context, packageBundleDirectory, diskPath
+  return
+
+archiveBundleEntry = ( context, destination, sourceUrl ) ->
+  diskPath = resolveSourceDiskPath sourceUrl, context.moduleGraph
+  await archiveDependencyManifest context, destination, diskPath
+  await archiveFile context, destination, diskPath
+  return
+
+archiveBundleMap = ( context, bundleMap ) ->
   for [ destination, sourceUrl ] from bundleMap
-    diskPath = await resolveSourceDiskPath cwd, sourceUrl, destination, moduleGraph
+    await archiveBundleEntry context, destination, sourceUrl
+  return
 
-    pkgBundleDir = derivePackageBundleDirectory destination
-    if pkgBundleDir != "" && !visitedPackages.has( pkgBundleDir )
-      visitedPackages.add pkgBundleDir
-      manifestSource = await findPackageManifest diskPath
-      if manifestSource?
-        manifestDest = Path.join pkgBundleDir, "package.json"
-        unless visitedDestinations.has manifestDest
-          visitedDestinations.add manifestDest
-          manifestContent = await FS.readFile manifestSource
-          zip.file manifestDest, manifestContent
+createArchiveContext = ( cwd, moduleGraph ) ->
+  zip: JSZip()
+  cwd: cwd
+  moduleGraph: moduleGraph
+  visitedDestinations: new Set()
+  visitedPackages: new Set()
 
-    unless visitedDestinations.has destination
-      visitedDestinations.add destination
-      fileContent = await FS.readFile diskPath
-      zip.file destination, fileContent
+constructArchive = ( entries, cwd, { bundleMap, moduleGraph } ) ->
+  context = createArchiveContext cwd, moduleGraph
+  await archiveEntries context, entries
+  await archiveRootManifest context
+  await archiveBundleMap context, bundleMap
+  context.zip.generateAsync ZIP_OPTIONS
 
-  await zip.generateAsync
-    type: "nodebuffer"
-    compression: "DEFLATE"
-    compressionOptions:
-      level: 9
+validatePreconditions = ( entries, options ) ->
+  if !entries?
+    throw new Error "Entries argument is required"
+  if ( typeof entries != "string" ) && !( Array.isArray entries )
+    throw new Error "Entries must be a string or an Array"
+  if ( typeof options != "object" ) || ( !options? )
+    throw new Error "Options must be an object"
+
+normalizeEntries = ( entries ) ->
+  if typeof entries == "string"
+    [ entries ]
+  else
+    entries
+
+normalizeOptions = ( options ) ->
+  cwd = options.cwd ? options.root ? process.cwd()
+  external = [ "@aws-sdk/*", ( options.external ? [] )... ]
+  resolvers = options.resolvers ? nodePreset
+  { options..., cwd, external, resolvers }
+
+analyzeDependencies = ( entries, options ) ->
+  analyze entries, {
+    options...
+    cwd: options.cwd
+    platform: "node"
+    conditions: [ "node" ]
+    external: options.external
+  }
+
+executeFunctors = ( dependencies, options ) ->
+  moduleGraph = await ingest dependencies, {
+    options...
+    cwd: options.cwd
+    root: options.cwd
+  }
+  componentGraph = Quotient.apply moduleGraph
+  treeIndex = Compiler.apply componentGraph, options
+  bundleMap = Resolver.apply componentGraph, treeIndex, options.resolvers
+  { moduleGraph, componentGraph, treeIndex, bundleMap }
+
+bundle = ( entries, options = {} ) ->
+  validatePreconditions entries, options
+  normalizedEntries = normalizeEntries entries
+  normalizedOptions = normalizeOptions options
+  dependencies = analyzeDependencies normalizedEntries, normalizedOptions
+  pipeline = await executeFunctors dependencies, normalizedOptions
+  await dumpDiagnostics normalizedEntries, pipeline
+  constructArchive normalizedEntries, normalizedOptions.cwd, pipeline
 
 export default bundle
 export { bundle }
