@@ -2,26 +2,36 @@ import { URL } from "node:url"
 
 extractResolver = ( parsed ) ->
   if parsed.username
-    "#{decodeURIComponent parsed.username}@#{decodeURIComponent parsed.hostname}"
+    "#{decodeURIComponent parsed.username}@" +
+      decodeURIComponent parsed.hostname
   else
     decodeURIComponent parsed.hostname
 
 formatAuthority = ( resolver ) ->
   parts = resolver.split "@"
-  authority = if parts.length > 1
-    "#{encodeURIComponent parts[ 0 ]}@#{encodeURIComponent ( parts.slice 1 ).join "@"}"
-  else
-    encodeURIComponent parts[ 0 ]
+  authority =
+    if parts.length > 1
+      "#{encodeURIComponent parts[ 0 ]}@" +
+        encodeURIComponent ( parts.slice 1 ).join "@"
+    else
+      encodeURIComponent parts[ 0 ]
   authority
 
 formatModuleIdentifier = ( module ) ->
   if !module?.name?
     return null
-  packageSpecifier = if module.scope then "#{module.scope}/#{module.name}" else module.name
-  if module.version? then "#{packageSpecifier}@#{module.version}" else packageSpecifier
+  packageSpecifier =
+    if module.scope
+      "#{module.scope}/#{module.name}"
+    else
+      module.name
+  if module.version?
+    "#{packageSpecifier}@#{module.version}"
+  else
+    packageSpecifier
 
 normalizePath = ( path ) ->
-  if !path? || path == ""
+  if ( !path? ) || ( path == "" )
     return null
   normalizedPath = if path.startsWith "/" then path.slice 1 else path
   if normalizedPath != "" then normalizedPath else null

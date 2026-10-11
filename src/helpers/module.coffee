@@ -32,7 +32,7 @@ _read = ( path, cwd = "." ) ->
   current = path
 
   # Traverse up the directory tree to find the nearest package.json
-  until current == "." || current == "/" || current == ""
+  until ( current == "." ) || ( current == "/" ) || ( current == "" )
     current = Path.dirname current
     manifest = await loadPackage current, cwd
     if manifest?

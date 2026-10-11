@@ -2,6 +2,7 @@ coffee:
   targets:
     - node
 
-# audit:
-  # max:
-    # duration: 14400000 # 4 hours
+audit:
+  advance: true
+  max:
+    duration: 14400000 # 4 hours

@@ -77,11 +77,6 @@ deriveDiagnosticsDirectory = ( entries ) ->
   entryBasename = Path.basename entries[ 0 ], Path.extname entries[ 0 ]
   Path.join process.cwd(), ".atlas", "bundle", entryBasename
 
-warnDiagnostics = ( error ) ->
-  message = "Atlas Diagnostics: Failed to emit state to .atlas -"
-  console.warn message, error.message
-  return
-
 writePipelineDiagnostics = ( directory, pipeline ) ->
   { moduleGraph, componentGraph, treeIndex } = pipeline
   try
@@ -90,14 +85,14 @@ writePipelineDiagnostics = ( directory, pipeline ) ->
     await writeDiagnosticFile directory, "component-graph.json", componentGraph
     await writeDiagnosticFile directory, "tree-index.json", treeIndex
   catch error
-    warnDiagnostics error
+    null
   return
 
 writeBundleDiagnostics = ( directory, bundleMap ) ->
   try
     await writeDiagnosticFile directory, "bundle-map.json", bundleMap
   catch error
-    warnDiagnostics error
+    null
   return
 
 dumpDiagnostics = ( entries, pipeline ) ->

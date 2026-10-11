@@ -27,7 +27,8 @@ buildMetafile = ( entry, options ) ->
 
 # Skip external dependencies explicitly marked by esbuild, or disabled ones
 isIncluded = ( dependency ) ->
-  dependency.external != true && !(dependency.path.startsWith "(disabled):")
+  ( dependency.external != true ) &&
+    ( !( dependency.path.startsWith "(disabled):" ) )
 
 createDependency = ( dependency, path, workingDirectory ) ->
   source: path: Path.normalize dependency.path

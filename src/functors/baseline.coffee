@@ -10,9 +10,9 @@ getPathSegments = ( url ) ->
   if url.pathname.length > 1 then url.pathname[1..].split "/" else []
 
 isExternalPackage = ( packageId ) ->
-  packageId? &&
-    packageId != ENTRY_POINT &&
-    !packageId.startsWith "atlas://application"
+  ( packageId? ) &&
+    ( packageId != ENTRY_POINT ) &&
+    ( !( packageId.startsWith "atlas://application" ) )
 
 parsePackageSegments = ( pathSegments, packageId ) ->
   packageUrl = new URL packageId

@@ -42,9 +42,8 @@ writePipelineDiagnostics = ( directory, pipeline ) ->
     await FS.mkdir directory, recursive: true
     for [ filename, key ] from DIAGNOSTIC_FILES
       await writeDiagnosticFile directory, filename, pipeline[ key ]
-  catch error
-    warningMessage = "Atlas Diagnostics: Failed to emit state to .atlas -"
-    console.warn warningMessage, error.message
+  catch
+    return
   return
 
 dumpDiagnostics = ( entries, pipeline ) ->

@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "command(pnpm test)",
+      "command(git status)",
+      "command(git diff)",
+      "command(git grep)",
+      "mcp(safe_fs/*)",
+      "read_file(*)",
+      "read_file(**)"
+    ]
+  }
+}

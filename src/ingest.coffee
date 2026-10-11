@@ -4,7 +4,7 @@ import Path from "node:path"
 import FS from "node:fs"
 import nodePreset from "./presets/node"
 
-export ENTRY_POINT = Symbol "atlas:entry-point"
+ENTRY_POINT = Symbol "atlas:entry-point"
 
 validatePreconditions = ( dependencies, options ) ->
   if !dependencies?
@@ -170,4 +170,4 @@ ingest = ( dependencies, options = {} ) ->
   context.graph
 
 export default ingest
-export { ingest }
+export { ingest, ENTRY_POINT }
