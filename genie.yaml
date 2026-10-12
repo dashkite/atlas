@@ -5,4 +5,4 @@ coffee:
 audit:
   advance: true
   max:
-    duration: 14400000 # 4 hours
+    duration: 28800000 # 8 hours
