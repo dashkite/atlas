@@ -51,4 +51,4 @@ executeTestSuite = ->
 
 do ->
   await cleanEnvironment()
-  executeTestSuite()
+  await executeTestSuite()
