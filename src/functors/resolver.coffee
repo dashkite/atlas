@@ -10,8 +10,8 @@ formatPackageName = ( descriptor ) ->
 
 getComponentPackageName = ( context, component ) ->
   modules = ComponentGraph.getModules context.componentGraph, component
-  firstModule = ( Array.from modules )[ 0 ]
-  descriptor = context.metaResolver.decode firstModule
+  module = ( Array.from modules )[ 0 ]
+  descriptor = context.metaResolver.decode module
   formatPackageName descriptor
 
 isRootComponent = ( treeIndex, component ) ->
@@ -25,68 +25,62 @@ resolveRootDirectory = ( context, component ) ->
   if isRootComponent context.treeIndex, component
     ""
   else
-    packageName = getComponentPackageName context, component
-    "node_modules/#{packageName}"
-
-validatePackageName = ( component, packageName ) ->
-  if packageName == ""
-    throw new Error "Nested dependency [#{component}] is missing a
-      package specifier."
+    name = getComponentPackageName context, component
+    "node_modules/#{name}"
 
 resolveParentDirectory = ( context, path ) ->
-  parentComponent = path[ path.length - 1 ]
-  parentPath = path.slice 0, -1
-  resolveDirectory context, parentPath, parentComponent
+  component = path[ path.length - 1 ]
+  path = path.slice 0, -1
+  resolveDirectory context, path, component
 
-formatNestedDirectory = ( parentDirectory, packageName ) ->
-  if parentDirectory == ""
-    "node_modules/#{packageName}"
+formatNestedDirectory = ( directory, name ) ->
+  if directory == ""
+    "node_modules/#{name}"
   else
-    "#{parentDirectory}/node_modules/#{packageName}"
+    "#{directory}/node_modules/#{name}"
 
-resolveNestedDirectory = ( context, path, component, packageName ) ->
-  validatePackageName component, packageName
-  parentDirectory = resolveParentDirectory context, path
-  formatNestedDirectory parentDirectory, packageName
+resolveNestedDirectory = ( context, path, name ) ->
+  directory = resolveParentDirectory context, path
+  formatNestedDirectory directory, name
 
 computeDirectory = ( context, path, component ) ->
   if path.length == 0
     resolveRootDirectory context, component
   else
-    packageName = getComponentPackageName context, component
-    resolveNestedDirectory context, path, component, packageName
+    name = getComponentPackageName context, component
+    resolveNestedDirectory context, path, name
 
 resolveDirectory = ( context, path, component ) ->
-  cacheKey = "#{component}::#{JSON.stringify path}"
-  if context.directoryCache.has cacheKey
-    return context.directoryCache.get cacheKey
+  key = "#{component}::#{JSON.stringify path}"
+  if context.directoryCache.has key
+    return context.directoryCache.get key
   directory = computeDirectory context, path, component
-  context.directoryCache.set cacheKey, directory
+  context.directoryCache.set key, directory
   directory
 
-formatOutputFile = ( physicalDirectory, relativePath ) ->
-  normalizedPath =
-    if relativePath.startsWith "/"
-      relativePath.slice 1
+formatOutputFile = ( directory, path ) ->
+  path =
+    if path.startsWith "/"
+      path.slice 1
     else
-      relativePath
-  if physicalDirectory == ""
-    normalizedPath
+      path
+  if directory == ""
+    path
   else
-    "#{physicalDirectory}/#{normalizedPath}"
+    "#{directory}/#{path}"
 
-processModule = ( context, physicalDirectory, moduleUrl ) ->
-  descriptor = context.metaResolver.decode moduleUrl
-  relativePath = descriptor.path
-  outputFile = formatOutputFile physicalDirectory, relativePath
-  context.bundle.set outputFile, moduleUrl
+processModule = ( context, directory, url ) ->
+  descriptor = context.metaResolver.decode url
+  path = descriptor.path
+  file = formatOutputFile directory, path
+  context.bundle.set file, url
   return
 
 processComponent = ( context, path, component ) ->
-  physicalDirectory = resolveDirectory context, path, component
+  directory = resolveDirectory context, path, component
   modules = ComponentGraph.getModules context.componentGraph, component
-  for moduleUrl from modules
-    processModule context, physicalDirectory, moduleUrl
+  for url from modules
+    processModule context, directory, url
   return
 
 processPath = ( context, path ) ->

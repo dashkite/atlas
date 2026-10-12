@@ -58,11 +58,11 @@ normalizeEntries = ( entries ) ->
   else
     entries
 
-normalizeOptions = ( options = {} ) ->
-  cwd = options.cwd ? options.root ? process.cwd()
+normalizeOptions = ( options ) ->
+  cwd = options.cwd ? process.cwd()
   external = [ "@aws-sdk/*", ( options.external ? [] )... ]
   resolvers = options.resolvers ? nodePreset
-  { options..., cwd, root: cwd, external, resolvers }
+  { options..., cwd, external, resolvers }
 
 createContext = ( entries, options = {} ) ->
   entries: normalizeEntries entries
@@ -78,12 +78,6 @@ analyzeDependencies = ( context ) ->
   }
   { context..., dependencies }
 
-createTrieContext = ( moduleGraph ) ->
-  if ( typeof moduleGraph == "object" ) && ( moduleGraph.moduleGraph? )
-    moduleGraph
-  else
-    { moduleGraph }
-
 applyBaseline = ( state ) ->
   { state..., baselineTrie: Baseline.apply state.moduleGraph }
 
@@ -94,17 +88,10 @@ applyCompression = ( state ) ->
   { state..., compressedTrie: Compression.apply state.compactedTrie }
 
 buildTries = pipe [
-  createTrieContext
   applyBaseline
   applyCompaction
   applyCompression
 ]
-
-createResolutionContext = ( trie, resolvers ) ->
-  if ( typeof trie == "object" ) && ( !resolvers? )
-    trie
-  else
-    { compressedTrie: trie, resolvers }
 
 applyResolution = ( state ) ->
   {
@@ -119,16 +106,12 @@ applySerialization = ( state ) ->
   }
 
 resolveAndSerialize = pipe [
-  createResolutionContext
   applyResolution
   applySerialization
 ]
 
 createFunctorContext = ( moduleGraph, resolvers ) ->
-  if ( typeof moduleGraph == "object" ) && ( !resolvers? )
-    moduleGraph
-  else
-    { moduleGraph, resolvers }
+  { moduleGraph, resolvers }
 
 applyFunctors = pipe [
   createFunctorContext

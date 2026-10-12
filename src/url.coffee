@@ -46,7 +46,7 @@ formatPathname = ( descriptor ) ->
   segments.push path if path?
   if segments.length > 0 then "/" + segments.join "/" else ""
 
-AtlasURL =
+export default
   parse: ( url ) ->
     parsed = new URL url
     {
@@ -56,6 +56,3 @@ AtlasURL =
 
   format: ( descriptor ) ->
     "atlas://#{formatAuthority descriptor.resolver}#{formatPathname descriptor}"
-
-export default AtlasURL
-export { AtlasURL }

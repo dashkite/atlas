@@ -6,43 +6,44 @@ import Path from "node:path"
 import OS from "node:os"
 import JSZip from "jszip"
 
+ENTRY_SOURCE =
+  "import { foo } from './foo.js';\n" +
+  "export const main = () => { console.log(foo); };"
+
+writeFixtures = ( directory ) ->
+  await FS.writeFile ( Path.join directory, "index.js" ), ENTRY_SOURCE
+  await FS.writeFile ( Path.join directory, "foo.js" ),
+    "export const foo = 'hello';"
+  FS.writeFile ( Path.join directory, "package.json" ),
+    JSON.stringify { name: "test-pkg", version: "1.0.0" }
+
+createFixtures = ->
+  directory = await FS.mkdtemp Path.join OS.tmpdir(), "atlas-bundle-"
+  await writeFixtures directory
+  directory
+
+verifyZip = ( buffer ) ->
+  assert Buffer.isBuffer buffer
+  zip = await JSZip.loadAsync buffer
+  files = Object.keys zip.files
+  assert files.includes "index.js"
+  assert files.includes "package.json"
+  content = await ( zip.file "index.js" ).async "string"
+  assert content == ENTRY_SOURCE
+
+cleanup = ( directory ) ->
+  FS.rm directory, { recursive: true, force: true }
+
+testBundle = ->
+  directory = await createFixtures()
+  try
+    entry = Path.join directory, "index.js"
+    buffer = await bundle entry, { cwd: directory }
+    await verifyZip buffer
+  finally
+    await cleanup directory
+
 export default ->
   [
-    test "creates a bundle zip with entry and package.json", ->
-      temporaryDirectory =
-        await FS.mkdtemp Path.join OS.tmpdir(), "atlas-bundle-"
-
-      entryPath = Path.join temporaryDirectory, "index.js"
-      await FS.writeFile entryPath,
-        "import { foo } from './foo.js';\n" +
-        "export const main = () => { console.log(foo); };"
-
-      fooPath = Path.join temporaryDirectory, "foo.js"
-      await FS.writeFile fooPath, "export const foo = 'hello';"
-
-      packagePath = Path.join temporaryDirectory, "package.json"
-      await FS.writeFile packagePath,
-        JSON.stringify { name: "test-pkg", version: "1.0.0" }
-
-      try
-        zipBuffer = await bundle entryPath, {
-          cwd: temporaryDirectory
-          root: temporaryDirectory
-        }
-        assert Buffer.isBuffer zipBuffer
-
-        zip = await JSZip.loadAsync zipBuffer
-
-        # Verify files are in the zip
-        files = Object.keys zip.files
-
-        assert files.includes "index.js"
-        assert files.includes "package.json"
-
-        content = await ( zip.file "index.js" ).async "string"
-        assert content ==
-          "import { foo } from './foo.js';\n" +
-          "export const main = () => { console.log(foo); };"
-      finally
-        await FS.rm temporaryDirectory, { recursive: true, force: true }
+    test "creates a bundle zip with entry and package.json", testBundle
   ]

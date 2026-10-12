@@ -5,7 +5,9 @@ tools:
   - view_file
   - write_to_file
   - replace_file_content
+  - multi_replace_file_content
   - run_command
+  - finish
 mainAgent: true
 subagent: true
 inheritMcp: true
@@ -31,7 +33,7 @@ a false positive, do NOT explore repository directories (`ls`) or inspect
 linter rule definitions. Immediately halt and report a false positive detailing
 why the code conforms and developer review is required.
 All needed rule details and coordinates are supplied in the prompt.
-Apply edits directly using `replace_file_content` or `write_to_file` and run
+Apply edits directly using `replace_file_content`, `multi_replace_file_content`, or `write_to_file` and run
 `pnpm test` once to verify.
 
 Sandbox & Tool Boundaries:
@@ -48,7 +50,7 @@ Mandatory Alternatives Matrix:
      ad-hoc scripts or commands (`node -e`, `python3 -c`, `coffee -e`, `cat`, `head`, `tail`)
      for testing, syntax verification, or character counting.
 2. Editing & refactoring code:
-   - Use `replace_file_content` or `write_to_file`. NEVER use `sed`, `awk`, or
+   - Use `replace_file_content`, `multi_replace_file_content`, or `write_to_file`. NEVER use `sed`, `awk`, or
      bash scripts to edit files.
 3. Deleting superseded files during decomposition:
    - Use the `safe_fs` MCP tool `safe_rm`. NEVER use `rm`, `rm -rf`, or `unlink`.
@@ -58,7 +60,7 @@ Mandatory Alternatives Matrix:
      NEVER use `find`, `ls`, or recursive `grep`.
    - Focus strictly on the target repository; do NOT search parent directories.
 5. Checking repository state & diffs:
-   - When `replace_file_content` succeeds, your edit is applied. DO NOT run
+   - When `replace_file_content` or `multi_replace_file_content` succeeds, your edit is applied. DO NOT run
      `git diff` or `git status` solely to re-verify successful edits.
 6. Verifying fixes & regressions:
    - Run tests via `pnpm test` EXACTLY ONCE after completing your edits to confirm
@@ -72,14 +74,9 @@ Mandatory Alternatives Matrix:
      `schedule`, and DO NOT repeatedly inspect log files. Cease calling tools
      immediately; the messaging system will automatically resume your execution
      when the command finishes.
-8. Escalation ("Punt") to Developer:
-   - If resolving the violation requires altering public interface contracts,
-     or requires resolving ambiguous domain state or lifecycle semantics, DO NOT
-     guess or make speculative edits. Instead, halt and emit:
-     <escalation line="<line_number_if_applicable>">
-       <message>
-         <Detailed description of why human intervention is needed. If multiple lines are affected, identify them explicitly.>
-       </message>
-     </escalation>
-   - CRITICAL: NEVER output literal placeholder text such as "Explanation of..." or "<Detailed description...>".
-   - State your actual technical findings and the specific line number where the conflict arises.
+8. Task Completion & Finish Gate:
+   - When you have completed your refactoring and verified with `pnpm test`, or if you determine the issue is a false positive or requires escalation, you MUST conclude by calling the `finish` tool with your outcome:
+     - If fixed: `finish({ status: "fixed", summary: "<concise imperative summary for git commit>" })`
+     - If escalation (human intervention required): `finish({ status: "escalation", message: "<detailed description of why intervention is needed>", line: <line_number> })`
+     - If false positive (code conforms to rule): `finish({ status: "false-positive", message: "<detailed explanation why code already conforms>" })`
+   - CRITICAL: Calling `finish` is the ONLY valid way to conclude your task. Do NOT emit placeholder explanations.

@@ -6,65 +6,45 @@ import Path from "node:path"
 import OS from "node:os"
 import { Registry } from "../src/resolvers/index"
 
+setupFileSystem = ->
+  directory = await FS.mkdtemp Path.join OS.tmpdir(), "atlas-ingest-"
+  original = Path.join directory, "original.js"
+  await FS.writeFile original, "export const x = 1;"
+  linked = Path.join directory, "linked.js"
+  await FS.link original, linked
+  { directory, original, linked }
+
+createDependencies = (original, linked) ->
+  [
+    { import: { specifier: "a", scope: null }, source: { path: original } }
+    { import: { specifier: "b", scope: null }, source: { path: linked } }
+  ]
+
+setupMockResolver = ->
+  Registry.register "mock",
+    match: -> true
+    encode: (descriptor) ->
+      "atlas://mock/mock@1.0.0/" + Path.basename descriptor.path
+    decode: (_url) ->
+      { resolver: "mock", module: { name: "mock", version: "1.0.0" } }
+
+assertDeduplicated = (graph) ->
+  urls = Array.from graph.sources.keys()
+  assert urls.includes "atlas://mock/mock@1.0.0/original.js"
+  assert !(urls.includes "atlas://mock/mock@1.0.0/linked.js")
+
+cleanup = (directory) ->
+  FS.rm directory, recursive: true, force: true
+
 export default ->
   [
     test "deduplicates physical paths using inodes", ->
-      # Create a dummy file and a hardlink to it to simulate PNPM virtual store
-      # behavior
-      temporaryDirectory =
-        await FS.mkdtemp Path.join OS.tmpdir(), "atlas-ingest-"
-
-      originalPath = Path.join temporaryDirectory, "original.js"
-      await FS.writeFile originalPath, "export const x = 1;"
-
-      hardLinkPath = Path.join temporaryDirectory, "linked.js"
-      await FS.link originalPath, hardLinkPath
-
-      # Create fake esbuild dependency entries
-      dependencies = [
-        {
-          import:
-            specifier: "a"
-            scope: null
-          source:
-            path: originalPath
-        },
-        {
-          import:
-            specifier: "b"
-            scope: null
-          source:
-            path: hardLinkPath
-        }
-      ]
-
-      # Let's write a mock resolver that just uses the filename to prove they
-      # map differently if not for inodes.
-      # Actually, wait, if we just use a default resolver, it will map to
-      # something based on path. To strictly test inode caching, we can inject
-      # a mock resolver.
-      mockResolver =
-        match: -> true
-        encode: (descriptor) ->
-          "atlas://mock/mock@1.0.0/" + Path.basename descriptor.path
-        decode: (_atlasUrl) ->
-          { resolver: "mock", module: { name: "mock", version: "1.0.0" } }
-
-      Registry.register "mock", mockResolver
-
+      setupMockResolver()
+      { directory, original, linked } = await setupFileSystem()
+      dependencies = createDependencies original, linked
       graph = await ingest dependencies,
-        cwd: temporaryDirectory
+        cwd: directory
         resolvers: [ "mock" ]
-
-      # Since originalPath and hardLinkPath have the SAME inode, ingest should
-      # cache the first one and reuse its URL ("atlas://mock/original.js") for
-      # the second one, NEVER calling the resolver for "linked.js".
-
-      urls = Array.from graph.sources.keys()
-
-      assert urls.includes "atlas://mock/mock@1.0.0/original.js"
-      assert !(urls.includes "atlas://mock/mock@1.0.0/linked.js")
-
-      # Clean up
-      FS.rm temporaryDirectory, { recursive: true, force: true }
+      assertDeduplicated graph
+      cleanup directory
   ]

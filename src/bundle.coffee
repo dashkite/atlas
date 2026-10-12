@@ -7,7 +7,7 @@ import ingest from "./ingest"
 import Quotient from "./functors/quotient"
 import Compiler from "./functors/compiler"
 import Resolver from "./functors/resolver"
-import nodePreset from "./presets/node"
+import preset from "./presets/node"
 
 ZIP_OPTIONS =
   type: "nodebuffer"
@@ -16,10 +16,10 @@ ZIP_OPTIONS =
     level: 9
 
 checkManifest = ( directory ) ->
-  manifestPath = Path.join directory, "package.json"
+  path = Path.join directory, "package.json"
   try
-    await FS.access manifestPath
-    manifestPath
+    await FS.access path
+    path
   catch error
     if error.code != "ENOENT"
       throw error
@@ -34,9 +34,9 @@ scanManifest = ( directory ) ->
     current = Path.dirname current
   null
 
-findPackageManifest = ( filePath ) ->
-  realPath = await FS.realpath filePath
-  scanManifest Path.dirname realPath
+findPackageManifest = ( path ) ->
+  path = await FS.realpath path
+  scanManifest Path.dirname path
 
 extractPackageName = ( remainder ) ->
   parts = remainder.split "/"
@@ -45,54 +45,48 @@ extractPackageName = ( remainder ) ->
   else
     parts[ 0 ]
 
-derivePackageBundleDirectory = ( filePath ) ->
+derivePackageBundleDirectory = ( path ) ->
   marker = "node_modules/"
-  index = filePath.lastIndexOf marker
+  index = path.lastIndexOf marker
   if index == -1
     ""
   else
-    Path.join ( filePath.slice 0, index + marker.length ),
-      extractPackageName ( filePath.slice index + marker.length )
+    Path.join ( path.slice 0, index + marker.length ),
+      extractPackageName ( path.slice index + marker.length )
 
-resolveSourceDiskPath = ( sourceUrl, moduleGraph ) ->
-  fileUrl = moduleGraph.sources.get sourceUrl
-  ( new URL fileUrl ).pathname
+resolveSourceDiskPath = ( source, graph ) ->
+  url = graph.sources.get source
+  ( new URL url ).pathname
 
 serializeDiagnostics = ( value ) ->
   replacer = ( key, item ) ->
-    if item instanceof Set
+    if item?.add?
       Array.from item
-    else if item instanceof Map
+    else if item?.set?
       Object.fromEntries item
     else
       item
   JSON.stringify value, replacer, 2
 
 writeDiagnosticFile = ( directory, filename, data ) ->
-  filePath = Path.join directory, filename
+  path = Path.join directory, filename
   content = serializeDiagnostics data
-  FS.writeFile filePath, content
+  FS.writeFile path, content
 
 deriveDiagnosticsDirectory = ( entries ) ->
-  entryBasename = Path.basename entries[ 0 ], Path.extname entries[ 0 ]
-  Path.join process.cwd(), ".atlas", "bundle", entryBasename
+  basename = Path.basename entries[ 0 ], Path.extname entries[ 0 ]
+  Path.join process.cwd(), ".atlas", "bundle", basename
 
 writePipelineDiagnostics = ( directory, pipeline ) ->
-  { moduleGraph, componentGraph, treeIndex } = pipeline
-  try
-    await FS.mkdir directory, recursive: true
-    await writeDiagnosticFile directory, "module-graph.json", moduleGraph
-    await writeDiagnosticFile directory, "component-graph.json", componentGraph
-    await writeDiagnosticFile directory, "tree-index.json", treeIndex
-  catch error
-    null
+  { graph, components, index } = pipeline
+  await FS.mkdir directory, recursive: true
+  await writeDiagnosticFile directory, "module-graph.json", graph
+  await writeDiagnosticFile directory, "component-graph.json", components
+  await writeDiagnosticFile directory, "tree-index.json", index
   return
 
-writeBundleDiagnostics = ( directory, bundleMap ) ->
-  try
-    await writeDiagnosticFile directory, "bundle-map.json", bundleMap
-  catch error
-    null
+writeBundleDiagnostics = ( directory, map ) ->
+  await writeDiagnosticFile directory, "bundle-map.json", map
   return
 
 dumpDiagnostics = ( context ) ->
@@ -102,16 +96,16 @@ dumpDiagnostics = ( context ) ->
     await writeBundleDiagnostics directory, context.pipeline.bundleMap
   context
 
-resolveEntryPaths = ( cwd, entry ) ->
+resolveEntryPaths = ( directory, entry ) ->
   relative = if Path.isAbsolute entry
-    Path.relative cwd, entry
+    Path.relative directory, entry
   else
     entry
-  absolute = Path.resolve cwd, relative
+  absolute = Path.resolve directory, relative
   { relative, absolute }
 
 archiveEntry = ( context, entry ) ->
-  { relative, absolute } = resolveEntryPaths context.cwd, entry
+  { relative, absolute } = resolveEntryPaths context.directory, entry
   await archiveFile context, relative, absolute
   return
 
@@ -120,102 +114,92 @@ archiveEntries = ( context, entries ) ->
     await archiveEntry context, entry
   return
 
-resolveRootManifestPath = ( cwd ) ->
-  Path.resolve cwd, "package.json"
+resolveRootManifestPath = ( directory ) ->
+  Path.resolve directory, "package.json"
 
-readOptionalFile = ( filePath ) ->
+readOptionalFile = ( path ) ->
   try
-    FS.readFile filePath
+    FS.readFile path
   catch error
     if error.code != "ENOENT"
       throw error
     null
 
-readRootManifest = ( cwd ) ->
-  manifestPath = resolveRootManifestPath cwd
-  readOptionalFile manifestPath
+readRootManifest = ( directory ) ->
+  path = resolveRootManifestPath directory
+  readOptionalFile path
 
 archiveRootManifest = ( context ) ->
-  { zip, cwd, visitedDestinations } = context
-  content = await readRootManifest cwd
+  { zip, directory, destinations } = context
+  content = await readRootManifest directory
   if content?
     zip.file "package.json", content
-    visitedDestinations.add "package.json"
+    destinations.add "package.json"
   return
 
-archiveFile = ( context, destination, diskPath ) ->
-  { zip, visitedDestinations } = context
-  if !visitedDestinations.has destination
-    visitedDestinations.add destination
-    content = await FS.readFile diskPath
+archiveFile = ( context, destination, path ) ->
+  { zip, destinations } = context
+  if !destinations.has destination
+    destinations.add destination
+    content = await FS.readFile path
     zip.file destination, content
   return
 
-archivePackageManifest = ( context, directory, diskPath ) ->
-  manifestSource = await findPackageManifest diskPath
-  if !manifestSource?
-    throw new Error "Package manifest not found for #{ diskPath }"
+archivePackageManifest = ( context, directory, path ) ->
+  manifest = await findPackageManifest path
+  if !manifest?
+    throw new Error "Package manifest not found for #{ path }"
   destination = Path.join directory, "package.json"
-  await archiveFile context, destination, manifestSource
+  await archiveFile context, destination, manifest
   return
 
-archiveDependencyManifest = ( context, destination, diskPath ) ->
-  { visitedPackages } = context
+archiveDependencyManifest = ( context, destination, path ) ->
+  { packages } = context
   directory = derivePackageBundleDirectory destination
   if directory != ""
-    if !visitedPackages.has directory
-      visitedPackages.add directory
-      await archivePackageManifest context, directory, diskPath
+    if !packages.has directory
+      packages.add directory
+      await archivePackageManifest context, directory, path
   return
 
-archiveBundleEntry = ( context, destination, sourceUrl ) ->
-  diskPath = resolveSourceDiskPath sourceUrl, context.moduleGraph
-  await archiveDependencyManifest context, destination, diskPath
-  await archiveFile context, destination, diskPath
+archiveBundleEntry = ( context, destination, source ) ->
+  path = resolveSourceDiskPath source, context.graph
+  await archiveDependencyManifest context, destination, path
+  await archiveFile context, destination, path
   return
 
-archiveBundleMap = ( context, bundleMap ) ->
-  for [ destination, sourceUrl ] from bundleMap
-    await archiveBundleEntry context, destination, sourceUrl
+archiveBundleMap = ( context, map ) ->
+  for [ destination, source ] from map
+    await archiveBundleEntry context, destination, source
   return
 
-createArchiveContext = ( cwd, moduleGraph ) ->
+createArchiveContext = ( directory, graph ) ->
   zip: JSZip()
-  cwd: cwd
-  moduleGraph: moduleGraph
-  visitedDestinations: new Set()
-  visitedPackages: new Set()
+  directory: directory
+  cwd: directory
+  graph: graph
+  moduleGraph: graph
+  destinations: new Set()
+  packages: new Set()
 
 constructArchive = ( context ) ->
-  archiveContext = createArchiveContext context.options.cwd,
-    context.pipeline.moduleGraph
-  await archiveEntries archiveContext, context.entries
-  await archiveRootManifest archiveContext
-  await archiveBundleMap archiveContext, context.pipeline.bundleMap
-  archiveContext.zip.generateAsync ZIP_OPTIONS
-
-validatePreconditions = ( entries, options ) ->
-  if !entries?
-    throw new Error "Entries argument is required"
-  if ( typeof entries != "string" ) && !( Array.isArray entries )
-    throw new Error "Entries must be a string or an Array"
-  if ( typeof options != "object" ) || ( !options? )
-    throw new Error "Options must be an object"
+  archive = createArchiveContext context.options.cwd,
+    context.pipeline.graph
+  await archiveEntries archive, context.entries
+  await archiveRootManifest archive
+  await archiveBundleMap archive, context.pipeline.map
+  archive.zip.generateAsync ZIP_OPTIONS
 
 normalizeEntries = ( entries ) ->
-  if typeof entries == "string"
-    [ entries ]
-  else
-    entries
+  [ entries ].flat()
 
 normalizeOptions = ( options ) ->
-  cwd = options.cwd ? options.root ? process.cwd()
+  cwd = options.cwd ? process.cwd()
   external = [ "@aws-sdk/*", ( options.external ? [] )... ]
-  resolvers = options.resolvers ? nodePreset
+  resolvers = options.resolvers ? preset
   { options..., cwd, external, resolvers }
 
 createContext = ( entries, options = {} ) ->
-  validatePreconditions entries, options
   entries: normalizeEntries entries
   options: normalizeOptions options
 
@@ -233,19 +217,27 @@ ingestDependencies = ( dependencies, options ) ->
   ingest dependencies, {
     options...
     cwd: options.cwd
-    root: options.cwd
   }
 
-applyFunctors = ( moduleGraph, options ) ->
-  componentGraph = Quotient.apply moduleGraph
-  treeIndex = Compiler.apply componentGraph, options
-  bundleMap = Resolver.apply componentGraph, treeIndex, options.resolvers
-  { moduleGraph, componentGraph, treeIndex, bundleMap }
+createPipeline = ( graph, components, index, map ) ->
+  {
+    graph, components, index, map
+    moduleGraph: graph
+    componentGraph: components
+    treeIndex: index
+    bundleMap: map
+  }
+
+applyFunctors = ( graph, options ) ->
+  components = Quotient.apply graph
+  index = Compiler.apply components, options
+  map = Resolver.apply components, index, options.resolvers
+  createPipeline graph, components, index, map
 
 executeFunctors = ( context ) ->
   { dependencies, options } = context
-  moduleGraph = await ingestDependencies dependencies, options
-  pipeline = applyFunctors moduleGraph, options
+  graph = await ingestDependencies dependencies, options
+  pipeline = applyFunctors graph, options
   { context..., pipeline }
 
 bundle = pipe [

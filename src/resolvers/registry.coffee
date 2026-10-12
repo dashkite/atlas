@@ -1,7 +1,8 @@
 import AtlasURL from "../url"
 
 class MetaResolver
-  constructor: (@keys) ->
+  @make: (keys) ->
+    Object.assign ( new @ ), { keys }
 
   match: (context) ->
     for key in @keys
@@ -41,16 +42,17 @@ class MetaResolver
       throw new Error "Resolver #{key} not found in registry"
     resolver.resolve url
 
-class Registry
-  @register: (key, resolver) ->
+Registry =
+  resolvers: {}
+
+  register: (key, resolver) ->
     @resolvers[key] = resolver
 
-  @get: (key) ->
+  get: (key) ->
     @resolvers[key]
 
-  @make: (keys) ->
-    new MetaResolver keys
-
-Registry.resolvers = {}
+  make: (keys) ->
+    MetaResolver.make keys
 
 export default Registry
+export { Registry, MetaResolver }

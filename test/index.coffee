@@ -7,34 +7,48 @@ tests = ( path, parameters... ) ->
   module = await import( "./#{path}" )
   module.default parameters...
 
+SUITES = [
+  [ "AtlasURL", "url" ]
+  [ "Ingest", "ingest" ]
+  [ "Inspector", "inspector" ]
+  [ "Bundle", "bundle" ]
+  [ "Generate", "generate" ]
+
+  [ "ModuleGraph", "categories/module-graph" ]
+  [ "ComponentGraph", "categories/component-graph" ]
+  [ "Path", "categories/path" ]
+  [ "TreeIndex", "categories/tree-index" ]
+
+  [ "Quotient Functor", "functors/quotient" ]
+  [ "Compiler Functor", "functors/compiler" ]
+  [ "Resolver Functor", "functors/resolver" ]
+  [ "Resolvers", "resolvers" ]
+  [ "Baseline Functor", "functors/baseline" ]
+  [ "Compaction Functor", "functors/compaction" ]
+  [ "Compression Functor", "functors/compression" ]
+  [ "Resolution Functor", "functors/resolution" ]
+  [ "Serialization", "functors/serialization" ]
+]
+
+cleanEnvironment = ->
+  if !process.env.DEBUG
+    return
+  try
+    await FS.rm ( Path.join process.cwd(), ".atlas" ),
+      recursive: true
+      force: true
+  catch
+    null
+
+loadSuite = ( [ name, path ] ) ->
+  test name, await tests path
+
+executeTestSuite = ->
+  cases = []
+  for entry in SUITES
+    cases.push ( await loadSuite entry )
+  print await test "Atlas", cases
+
 do ->
-  if process.env.DEBUG
-    try
-      await FS.rm ( Path.join process.cwd(), ".atlas" ),
-        recursive: true
-        force: true
-    catch
-      null
-
-  print await test "Atlas", [
-    test "AtlasURL", await tests "url"
-    test "Ingest", await tests "ingest"
-    test "BundleInspector", await tests "inspector"
-    test "Bundle", await tests "bundle"
-    test "Generate", await tests "generate"
-
-    test "ModuleGraph", await tests "categories/module-graph"
-    test "ComponentGraph", await tests "categories/component-graph"
-    test "Path", await tests "categories/path"
-    test "TreeIndex", await tests "categories/tree-index"
-
-    test "Quotient Functor", await tests "functors/quotient"
-    test "Compiler Functor", await tests "functors/compiler"
-    test "Resolver Functor", await tests "functors/resolver"
-    test "Resolvers", await tests "resolvers"
-    test "Baseline Functor", await tests "functors/baseline"
-    test "Compaction Functor", await tests "functors/compaction"
-    test "Compression Functor", await tests "functors/compression"
-    test "Resolution Functor", await tests "functors/resolution"
-    test "Serialization", await tests "functors/serialization"
-  ]
+  await cleanEnvironment()
+  executeTestSuite()

@@ -2,6 +2,9 @@ import { test } from "@dashkite/amen"
 import assert from "@dashkite/assert"
 import TreeIndex from "../../src/categories/tree-index"
 
+bindingFor = ( index, path, label ) ->
+  ( TreeIndex.getBindings index, path ).get label
+
 export default ->
   [
     test "creates an empty tree index", ->
@@ -31,24 +34,16 @@ export default ->
 
     test "retrieves distinct paths", ->
       index = TreeIndex.make()
-      firstPath = [ "pkg-A" ]
-      secondPath = [ "pkg-A", "pkg-B" ]
-
-      TreeIndex.bind index, firstPath, "maeve", "pkg-maeve"
-      TreeIndex.bind index, secondPath, "cerulean", "pkg-cerulean"
-
+      TreeIndex.bind index, [ "pkg-A" ], "maeve", "pkg-maeve"
+      TreeIndex.bind index, [ "pkg-A", "pkg-B" ], "cerulean", "pkg-cerulean"
       paths = TreeIndex.getPaths index
       assert.equal paths.length, 2
 
-      # The paths array should deeply equal our inputs (or reference them)
-      # We'll assert we can get bindings back for both.
-      assert.equal (
-        ( TreeIndex.getBindings index, firstPath )
-          .get "maeve"
-      ), "pkg-maeve"
-
-      assert.equal (
-        ( TreeIndex.getBindings index, secondPath )
-          .get "cerulean"
-      ), "pkg-cerulean"
+    test "retains bindings across distinct paths", ->
+      index = TreeIndex.make()
+      TreeIndex.bind index, [ "pkg-A" ], "maeve", "pkg-maeve"
+      TreeIndex.bind index, [ "pkg-A", "pkg-B" ], "cerulean", "pkg-cerulean"
+      assert.equal ( bindingFor index, [ "pkg-A" ], "maeve" ), "pkg-maeve"
+      assert.equal ( bindingFor index, [ "pkg-A", "pkg-B" ], "cerulean" ),
+        "pkg-cerulean"
   ]

@@ -3,6 +3,13 @@ import { test } from "@dashkite/amen"
 import { Registry, Application, Node, CDN, Local } from "../src/resolvers/index"
 import presets from "../src/presets/index"
 
+createMetaResolver = ->
+  Registry.register "test1",
+    encode: -> "atlas://test1"
+    decode: -> {}
+    resolve: -> "http://test1"
+  Registry.make ["test1"]
+
 export default -> [
   test "Registry & Meta Resolver", -> [
     test "registers and retrieves resolvers", ->
@@ -14,30 +21,28 @@ export default -> [
       Registry.register "test1", match: -> false
       Registry.register "test2", match: -> true
       Registry.register "test3", match: -> false
-      meta = Registry.make ["test1", "test2", "test3"]
-      assert.equal ( meta.match { source: "foo", cwd: "/root" } ), "test2"
+      resolver = Registry.make ["test1", "test2", "test3"]
+      assert.equal ( resolver.match { source: "foo", cwd: "/root" } ), "test2"
 
-    test "Meta Resolver validates keys on encode/decode/resolve", ->
-      Registry.register "test1",
-        encode: -> "atlas://test1"
-        decode: -> {}
-        resolve: -> "http://test1"
-      meta = Registry.make ["test1"]
-
-      # valid
-      meta.encode { resolver: "test1", module: { name: "foo" }, path: "/" }
-      meta.decode "atlas://test1/foo"
-      meta.resolve "atlas://test1/foo"
-
-      # invalid
+    test "Meta Resolver validates keys on encode", ->
+      resolver = createMetaResolver()
+      resolver.encode { resolver: "test1", module: { name: "foo" }, path: "/" }
       assert.throws ->
-        meta.encode {
+        resolver.encode {
           resolver: "test2"
           module: { name: "foo" }
           path: "/"
         }
-      assert.throws -> meta.decode "atlas://test2/foo"
-      assert.throws -> meta.resolve "atlas://test2/foo"
+
+    test "Meta Resolver validates keys on decode", ->
+      resolver = createMetaResolver()
+      resolver.decode "atlas://test1/foo"
+      assert.throws -> resolver.decode "atlas://test2/foo"
+
+    test "Meta Resolver validates keys on resolve", ->
+      resolver = createMetaResolver()
+      resolver.resolve "atlas://test1/foo"
+      assert.throws -> resolver.resolve "atlas://test2/foo"
   ]
 
   test "Application Resolver", -> [
