@@ -6,35 +6,38 @@ cache = {}
 normalize = ({ name, version, path }) ->
   specifier = name
   if name.startsWith "@"
-    [ scope, packageName ] = name.split "/"
-    { scope, name: packageName, specifier, version, path }
+    [ scope, name ] = name.split "/"
+    { scope, name, specifier, version, path }
   else
     { name, specifier, version, path }
 
-resolvePaths = ( current, cwd ) ->
-  modulePath = Path.join current, "package.json"
-  diskPath = if cwd != "." then Path.join cwd, modulePath else modulePath
-  { modulePath, diskPath }
+resolvePaths = ( current, directory ) ->
+  path = Path.join current, "package.json"
+  disk = if directory != "."
+    Path.join directory, path
+  else
+    path
+  { path, disk }
 
-readPackage = ( diskPath ) ->
-  if await Zephyr.exists diskPath
-    return Zephyr.read diskPath
+readPackage = ( path ) ->
+  if await Zephyr.exists path
+    return Zephyr.read path
   null
 
-loadPackage = ( current, cwd ) ->
-  { modulePath, diskPath } = resolvePaths current, cwd
-  data = await readPackage diskPath
+loadPackage = ( current, directory ) ->
+  { path, disk } = resolvePaths current, directory
+  data = await readPackage disk
   if data?
-    return normalize { data..., path: Path.dirname modulePath }
+    return normalize { data..., path: Path.dirname path }
   null
 
-_read = ( path, cwd = "." ) ->
+_read = ( path, directory = "." ) ->
   current = path
 
   # Traverse up the directory tree to find the nearest package.json
-  until ( current == "." ) || ( current == "/" ) || ( current == "" )
+  until ( ( ( current == "." ) || ( current == "/" ) ) || ( current == "" ) )
     current = Path.dirname current
-    manifest = await loadPackage current, cwd
+    manifest = await loadPackage current, directory
     if manifest?
       return manifest
 
@@ -45,9 +48,12 @@ Module =
     cache = {}
     return
 
-  read: ( path, cwd = "." ) ->
-    cacheKey = if cwd != "." then "#{ cwd }:#{ path }" else path
-    cache[ cacheKey ] ?= _read path, cwd
+  read: ( path, directory = "." ) ->
+    key = if directory != "."
+      "#{ directory }:#{ path }"
+    else
+      path
+    cache[ key ] ?= _read path, directory
 
 export { Module }
 export default Module

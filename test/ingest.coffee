@@ -9,8 +9,10 @@ import { Registry } from "../src/resolvers/index"
 export default ->
   [
     test "deduplicates physical paths using inodes", ->
-      # Create a dummy file and a hardlink to it to simulate PNPM virtual store behavior
-      temporaryDirectory = await FS.mkdtemp Path.join OS.tmpdir(), "atlas-ingest-"
+      # Create a dummy file and a hardlink to it to simulate PNPM virtual store
+      # behavior
+      temporaryDirectory =
+        await FS.mkdtemp Path.join OS.tmpdir(), "atlas-ingest-"
 
       originalPath = Path.join temporaryDirectory, "original.js"
       await FS.writeFile originalPath, "export const x = 1;"
@@ -38,21 +40,25 @@ export default ->
 
       # Let's write a mock resolver that just uses the filename to prove they
       # map differently if not for inodes.
-      # Actually, wait, if we just use a default resolver, it will map to something based on path.
-      # To strictly test inode caching, we can inject a mock resolver.
+      # Actually, wait, if we just use a default resolver, it will map to
+      # something based on path. To strictly test inode caching, we can inject
+      # a mock resolver.
       mockResolver =
         match: -> true
-        encode: (descriptor) -> "atlas://mock/mock@1.0.0/" + Path.basename descriptor.path
+        encode: (descriptor) ->
+          "atlas://mock/mock@1.0.0/" + Path.basename descriptor.path
         decode: (_atlasUrl) ->
           { resolver: "mock", module: { name: "mock", version: "1.0.0" } }
 
       Registry.register "mock", mockResolver
 
-      graph = await ingest dependencies, { cwd: temporaryDirectory, resolvers: [ "mock" ] }
+      graph = await ingest dependencies,
+        cwd: temporaryDirectory
+        resolvers: [ "mock" ]
 
-      # Since originalPath and hardLinkPath have the SAME inode, ingest should cache the first one
-      # and reuse its URL ("atlas://mock/original.js") for the second one, NEVER calling the
-      # resolver for "linked.js".
+      # Since originalPath and hardLinkPath have the SAME inode, ingest should
+      # cache the first one and reuse its URL ("atlas://mock/original.js") for
+      # the second one, NEVER calling the resolver for "linked.js".
 
       urls = Array.from graph.sources.keys()
 

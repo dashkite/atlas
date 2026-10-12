@@ -30,13 +30,13 @@ isIncluded = ( dependency ) ->
   ( dependency.external != true ) &&
     ( !( dependency.path.startsWith "(disabled):" ) )
 
-createDependency = ( dependency, path, workingDirectory ) ->
+createDependency = ( dependency, path, directory ) ->
   source: path: Path.normalize dependency.path
-  module: await Module.read dependency.path, workingDirectory
+  module: await Module.read dependency.path, directory
   import:
     scope:
       source: path: Path.normalize path
-      module: await Module.read path, workingDirectory
+      module: await Module.read path, directory
     specifier: dependency.original
 
 generateDependencies = ( entries, options ) ->

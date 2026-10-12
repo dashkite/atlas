@@ -1,6 +1,7 @@
 import Path from "node:path"
 import FS from "node:fs/promises"
 import JSZip from "jszip"
+import { pipe } from "@dashkite/joy"
 import analyze from "./helpers/analyze"
 import ingest from "./ingest"
 import Quotient from "./functors/quotient"
@@ -50,9 +51,8 @@ derivePackageBundleDirectory = ( filePath ) ->
   if index == -1
     ""
   else
-    prefix = filePath.slice 0, index + marker.length
-    remainder = filePath.slice index + marker.length
-    Path.join prefix, extractPackageName remainder
+    Path.join ( filePath.slice 0, index + marker.length ),
+      extractPackageName ( filePath.slice index + marker.length )
 
 resolveSourceDiskPath = ( sourceUrl, moduleGraph ) ->
   fileUrl = moduleGraph.sources.get sourceUrl
@@ -95,12 +95,12 @@ writeBundleDiagnostics = ( directory, bundleMap ) ->
     null
   return
 
-dumpDiagnostics = ( entries, pipeline ) ->
+dumpDiagnostics = ( context ) ->
   if process.env.DEBUG
-    directory = deriveDiagnosticsDirectory entries
-    await writePipelineDiagnostics directory, pipeline
-    await writeBundleDiagnostics directory, pipeline.bundleMap
-  return
+    directory = deriveDiagnosticsDirectory context.entries
+    await writePipelineDiagnostics directory, context.pipeline
+    await writeBundleDiagnostics directory, context.pipeline.bundleMap
+  context
 
 resolveEntryPaths = ( cwd, entry ) ->
   relative = if Path.isAbsolute entry
@@ -151,21 +151,21 @@ archiveFile = ( context, destination, diskPath ) ->
     zip.file destination, content
   return
 
-archivePackageManifest = ( context, packageBundleDirectory, diskPath ) ->
+archivePackageManifest = ( context, directory, diskPath ) ->
   manifestSource = await findPackageManifest diskPath
   if !manifestSource?
     throw new Error "Package manifest not found for #{ diskPath }"
-  manifestDestinationPath = Path.join packageBundleDirectory, "package.json"
-  await archiveFile context, manifestDestinationPath, manifestSource
+  destination = Path.join directory, "package.json"
+  await archiveFile context, destination, manifestSource
   return
 
 archiveDependencyManifest = ( context, destination, diskPath ) ->
   { visitedPackages } = context
-  packageBundleDirectory = derivePackageBundleDirectory destination
-  if packageBundleDirectory != ""
-    if !visitedPackages.has packageBundleDirectory
-      visitedPackages.add packageBundleDirectory
-      await archivePackageManifest context, packageBundleDirectory, diskPath
+  directory = derivePackageBundleDirectory destination
+  if directory != ""
+    if !visitedPackages.has directory
+      visitedPackages.add directory
+      await archivePackageManifest context, directory, diskPath
   return
 
 archiveBundleEntry = ( context, destination, sourceUrl ) ->
@@ -186,12 +186,13 @@ createArchiveContext = ( cwd, moduleGraph ) ->
   visitedDestinations: new Set()
   visitedPackages: new Set()
 
-constructArchive = ( entries, cwd, { bundleMap, moduleGraph } ) ->
-  context = createArchiveContext cwd, moduleGraph
-  await archiveEntries context, entries
-  await archiveRootManifest context
-  await archiveBundleMap context, bundleMap
-  context.zip.generateAsync ZIP_OPTIONS
+constructArchive = ( context ) ->
+  archiveContext = createArchiveContext context.options.cwd,
+    context.pipeline.moduleGraph
+  await archiveEntries archiveContext, context.entries
+  await archiveRootManifest archiveContext
+  await archiveBundleMap archiveContext, context.pipeline.bundleMap
+  archiveContext.zip.generateAsync ZIP_OPTIONS
 
 validatePreconditions = ( entries, options ) ->
   if !entries?
@@ -213,34 +214,47 @@ normalizeOptions = ( options ) ->
   resolvers = options.resolvers ? nodePreset
   { options..., cwd, external, resolvers }
 
-analyzeDependencies = ( entries, options ) ->
-  analyze entries, {
-    options...
-    cwd: options.cwd
+createContext = ( entries, options = {} ) ->
+  validatePreconditions entries, options
+  entries: normalizeEntries entries
+  options: normalizeOptions options
+
+analyzeDependencies = ( context ) ->
+  dependencies = analyze context.entries, {
+    context.options...
+    cwd: context.options.cwd
     platform: "node"
     conditions: [ "node" ]
-    external: options.external
+    external: context.options.external
   }
+  { context..., dependencies }
 
-executeFunctors = ( dependencies, options ) ->
-  moduleGraph = await ingest dependencies, {
+ingestDependencies = ( dependencies, options ) ->
+  ingest dependencies, {
     options...
     cwd: options.cwd
     root: options.cwd
   }
+
+applyFunctors = ( moduleGraph, options ) ->
   componentGraph = Quotient.apply moduleGraph
   treeIndex = Compiler.apply componentGraph, options
   bundleMap = Resolver.apply componentGraph, treeIndex, options.resolvers
   { moduleGraph, componentGraph, treeIndex, bundleMap }
 
-bundle = ( entries, options = {} ) ->
-  validatePreconditions entries, options
-  normalizedEntries = normalizeEntries entries
-  normalizedOptions = normalizeOptions options
-  dependencies = analyzeDependencies normalizedEntries, normalizedOptions
-  pipeline = await executeFunctors dependencies, normalizedOptions
-  await dumpDiagnostics normalizedEntries, pipeline
-  constructArchive normalizedEntries, normalizedOptions.cwd, pipeline
+executeFunctors = ( context ) ->
+  { dependencies, options } = context
+  moduleGraph = await ingestDependencies dependencies, options
+  pipeline = applyFunctors moduleGraph, options
+  { context..., pipeline }
+
+bundle = pipe [
+  createContext
+  analyzeDependencies
+  executeFunctors
+  dumpDiagnostics
+  constructArchive
+]
 
 export default bundle
 export { bundle }

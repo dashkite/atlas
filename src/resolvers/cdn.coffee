@@ -1,8 +1,8 @@
 import AtlasURL from "../url"
 import { decode as urlDecode } from "@dashkite/url-codex"
 
-scopedTemplate = "/{scope}/{versioned}/{path*}"
-unscopedTemplate = "/{versioned}/{path*}"
+SCOPED_TEMPLATE = "/{scope}/{versioned}/{path*}"
+UNSCOPED_TEMPLATE = "/{versioned}/{path*}"
 
 encodeTemplate = ( template, data ) ->
   # Simple regex replacement for string templates
@@ -22,10 +22,10 @@ validateConfig = ( config ) ->
 
 decodeTemplate = ( pathname ) ->
   try
-    match = urlDecode scopedTemplate, pathname
+    match = urlDecode SCOPED_TEMPLATE, pathname
     if match.scope?.startsWith "@" then match else throw new Error
   catch
-    urlDecode unscopedTemplate, pathname
+    urlDecode UNSCOPED_TEMPLATE, pathname
 
 parseModuleDescriptor = ( parsed, match ) ->
   parts = match.versioned.split "@"

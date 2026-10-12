@@ -10,7 +10,8 @@ export default ->
       assert.equal parsed.pathname, "/src/index.js"
 
     test "parses parameterized resolver key", ->
-      parsed = AtlasURL.parse "atlas://cdn@unpkg/@dashkite/joy@0.7.0/src/index.js"
+      parsed =
+        AtlasURL.parse "atlas://cdn@unpkg/@dashkite/joy@0.7.0/src/index.js"
       assert.equal parsed.resolver, "cdn@unpkg"
       assert.equal parsed.pathname, "/@dashkite/joy@0.7.0/src/index.js"
 

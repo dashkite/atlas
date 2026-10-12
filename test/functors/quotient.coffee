@@ -14,9 +14,12 @@ export default ->
       ModuleGraph.addVertex moduleGraph, "file:///app/helper.js"
       ModuleGraph.addVertex moduleGraph, "file:///app/utils.js"
 
-      ModuleGraph.setAttribute moduleGraph, "file:///app/index.js", "packageId", "app"
-      ModuleGraph.setAttribute moduleGraph, "file:///app/helper.js", "packageId", "app"
-      ModuleGraph.setAttribute moduleGraph, "file:///app/utils.js", "packageId", "app"
+      ModuleGraph.setAttribute moduleGraph, "file:///app/index.js",
+        "packageId", "app"
+      ModuleGraph.setAttribute moduleGraph, "file:///app/helper.js",
+        "packageId", "app"
+      ModuleGraph.setAttribute moduleGraph, "file:///app/utils.js",
+        "packageId", "app"
 
       # Maeve component files
       maeveIndex = "file:///node_modules/maeve/index.js"
@@ -67,7 +70,8 @@ export default ->
       assert.equal edges[0].target, maeveComponentId
       assert.equal edges[0].label, "maeve"
 
-    test "contracts disjoint entry points of the same package into a single component", ->
+    test "contracts disjoint entry points of the same package
+    into a single component", ->
       moduleGraph = ModuleGraph.make()
 
       maevePackage = "atlas://node/@dashkite/maeve@1.0.0"
@@ -83,9 +87,12 @@ export default ->
       ModuleGraph.addVertex moduleGraph, enchantIndex
 
       # Explicitly set the subgraph (package) identities
-      ModuleGraph.setAttribute moduleGraph, maeveCommon, "packageId", maevePackage
-      ModuleGraph.setAttribute moduleGraph, maeveSublime, "packageId", maevePackage
-      ModuleGraph.setAttribute moduleGraph, enchantIndex, "packageId", enchantPackage
+      ModuleGraph.setAttribute moduleGraph, maeveCommon,
+        "packageId", maevePackage
+      ModuleGraph.setAttribute moduleGraph, maeveSublime,
+        "packageId", maevePackage
+      ModuleGraph.setAttribute moduleGraph, enchantIndex,
+        "packageId", enchantPackage
 
       # Enchant imports both independent entry points of Maeve
       ModuleGraph.addEdge moduleGraph,
@@ -108,5 +115,6 @@ export default ->
       vertices = ComponentGraph.getVertices componentGraph
       # Enchant should be 1 component, Maeve should be exactly 1 component!
       assert.equal vertices.size, 2,
-        "Expected disjoint entry points to be collapsed into a single package component vertex"
+        "Expected disjoint entry points to be collapsed
+        into a single package component vertex"
   ]

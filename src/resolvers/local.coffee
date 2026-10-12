@@ -4,16 +4,16 @@ import micromatch from "micromatch"
 import { pathToFileURL } from "node:url"
 import { decode as urlDecode } from "@dashkite/url-codex"
 
-scopedTemplate = "/{scope}/{versioned}/{path*}"
-unscopedTemplate = "/{versioned}/{path*}"
-defaultPatterns = [ "../**/*", "packages/**/*" ]
+SCOPED_TEMPLATE = "/{scope}/{versioned}/{path*}"
+UNSCOPED_TEMPLATE = "/{versioned}/{path*}"
+DEFAULT_PATTERNS = [ "../**/*", "packages/**/*" ]
 
 normalizeConfig = ( config = {} ) ->
   if !config.root?
     throw new Error "Local resolver requires 'root' in configuration"
   root: config.root
   cwd: config.cwd ? process.cwd()
-  patterns: config.patterns ? defaultPatterns
+  patterns: config.patterns ? DEFAULT_PATTERNS
 
 normalizeRelativePath = ( path, cwd ) ->
   if Path.isAbsolute path
@@ -26,15 +26,15 @@ matchPattern = ( path, patterns, cwd ) ->
     return false
   if !patterns.length > 0
     return false
-  relativePath = normalizeRelativePath path, cwd
-  micromatch.isMatch relativePath, patterns, { contains: true }
+  path = normalizeRelativePath path, cwd
+  micromatch.isMatch path, patterns, { contains: true }
 
 decodePathname = ( pathname ) ->
   try
-    match = urlDecode scopedTemplate, pathname
+    match = urlDecode SCOPED_TEMPLATE, pathname
     if match.scope?.startsWith "@" then match else throw new Error
   catch
-    urlDecode unscopedTemplate, pathname
+    urlDecode UNSCOPED_TEMPLATE, pathname
 
 parseModule = ( scope, versioned ) ->
   parts = versioned.split "@"
@@ -45,8 +45,8 @@ parseModule = ( scope, versioned ) ->
 formatPath = ( path ) ->
   "/" + ( path ? [] ).join "/"
 
-decodeUrl = ( atlasUrl ) ->
-  parsed = AtlasURL.parse atlasUrl
+decodeUrl = ( url ) ->
+  parsed = AtlasURL.parse url
   result = decodePathname parsed.pathname
   {
     resolver: parsed.resolver
@@ -55,18 +55,18 @@ decodeUrl = ( atlasUrl ) ->
   }
 
 resolvePath = ( root, descriptor ) ->
-  relativePath = descriptor.path
-  relativePath = relativePath.slice 1 if relativePath.startsWith "/"
-  absolutePath = Path.resolve root, relativePath
-  ( pathToFileURL absolutePath ).href
+  path = descriptor.path
+  path = path.slice 1 if path.startsWith "/"
+  path = Path.resolve root, path
+  ( pathToFileURL path ).href
 
 make = ( config = {} ) ->
   { root, cwd, patterns } = normalizeConfig config
   match: ( context = {} ) -> matchPattern context.source, patterns, cwd
   encode: ( descriptor ) -> AtlasURL.format descriptor
-  decode: ( atlasUrl ) -> decodeUrl atlasUrl
-  parse: ( atlasUrl ) -> @decode atlasUrl
-  resolve: ( atlasUrl ) -> resolvePath root, @decode atlasUrl
+  decode: ( url ) -> decodeUrl url
+  parse: ( url ) -> @decode url
+  resolve: ( url ) -> resolvePath root, @decode url
 
 export default { make }
 export { make }

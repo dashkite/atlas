@@ -3,7 +3,7 @@ import Path from "node:path"
 import { pathToFileURL } from "node:url"
 import { decode as urlDecode } from "@dashkite/url-codex"
 
-template =
+TEMPLATE =
   scoped: "/{scope}/{versioned}/{path*}"
   unscoped: "/{versioned}/{path*}"
 
@@ -18,10 +18,10 @@ make = ( config = {} ) ->
     parsed = AtlasURL.parse url
 
     decoded = try
-      match = urlDecode template.scoped, parsed.pathname
+      match = urlDecode TEMPLATE.scoped, parsed.pathname
       if match.scope?.startsWith "@" then match else throw new Error
     catch
-      urlDecode template.unscoped, parsed.pathname
+      urlDecode TEMPLATE.unscoped, parsed.pathname
 
     parts = decoded.versioned.split "@"
     name = parts[ 0 ]
@@ -49,8 +49,9 @@ make = ( config = {} ) ->
     path = if descriptor.path != "" then descriptor.path else ""
     path = path.slice 1 if path.startsWith "/"
 
-    # We resolve to node_modules in the root. If it's a monorepo, Node resolution handles it.
-    # But for a physical URL, we just point to node_modules/name/path
+    # We resolve to node_modules in the root. If it's a monorepo, Node
+    # resolution handles it. But for a physical URL, we just point to
+    # node_modules/name/path
     path = Path.resolve root, "node_modules", name, path
     ( pathToFileURL path ).href
 

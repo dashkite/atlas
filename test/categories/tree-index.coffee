@@ -42,6 +42,13 @@ export default ->
 
       # The paths array should deeply equal our inputs (or reference them)
       # We'll assert we can get bindings back for both.
-      assert.equal ( ( TreeIndex.getBindings index, firstPath ).get "maeve" ), "pkg-maeve"
-      assert.equal ( ( TreeIndex.getBindings index, secondPath ).get "cerulean" ), "pkg-cerulean"
+      assert.equal (
+        ( TreeIndex.getBindings index, firstPath )
+          .get "maeve"
+      ), "pkg-maeve"
+
+      assert.equal (
+        ( TreeIndex.getBindings index, secondPath )
+          .get "cerulean"
+      ), "pkg-cerulean"
   ]

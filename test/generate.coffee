@@ -22,7 +22,8 @@ export default ->
       assert importMap?, "ImportMap should exist"
       assert importMap.imports?, "ImportMap should have 'imports' block"
       assert importMap.scopes?, "ImportMap should have 'scopes' block"
-      assert ( Object.keys importMap.imports ).length > 0, "Imports should be populated"
+      assert ( Object.keys importMap.imports ).length > 0,
+        "Imports should be populated"
 
       # Verify all generated HTTP URLs
       for key, value of importMap.imports

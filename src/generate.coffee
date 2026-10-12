@@ -1,5 +1,6 @@
 import Path from "node:path"
 import FS from "node:fs/promises"
+import { pipe } from "@dashkite/joy"
 import analyze from "./helpers/analyze"
 import ingest from "./ingest"
 import Baseline from "./functors/baseline"
@@ -29,13 +30,12 @@ serializeDiagnostics = ( value ) ->
   JSON.stringify value, diagnosticReplacer, 2
 
 writeDiagnosticFile = ( directory, filename, data ) ->
-  filePath = Path.join directory, filename
-  content = serializeDiagnostics data
-  FS.writeFile filePath, content
+  FS.writeFile ( Path.join directory, filename ),
+    serializeDiagnostics data
 
 deriveDiagnosticsDirectory = ( entries ) ->
-  entryBasename = Path.basename entries[ 0 ], Path.extname entries[ 0 ]
-  Path.join process.cwd(), ".atlas", "generate", entryBasename
+  basename = Path.basename entries[ 0 ], Path.extname entries[ 0 ]
+  Path.join process.cwd(), ".atlas", "generate", basename
 
 writePipelineDiagnostics = ( directory, pipeline ) ->
   try
@@ -46,11 +46,11 @@ writePipelineDiagnostics = ( directory, pipeline ) ->
     return
   return
 
-dumpDiagnostics = ( entries, pipeline ) ->
+dumpDiagnostics = ( context ) ->
   if process.env.DEBUG
-    diagnosticsDirectory = deriveDiagnosticsDirectory entries
-    await writePipelineDiagnostics diagnosticsDirectory, pipeline
-  return
+    directory = deriveDiagnosticsDirectory context.entries
+    await writePipelineDiagnostics directory, context.pipeline
+  context
 
 normalizeEntries = ( entries ) ->
   if typeof entries == "string"
@@ -58,48 +58,100 @@ normalizeEntries = ( entries ) ->
   else
     entries
 
-normalizeOptions = ( options ) ->
+normalizeOptions = ( options = {} ) ->
   cwd = options.cwd ? options.root ? process.cwd()
   external = [ "@aws-sdk/*", ( options.external ? [] )... ]
   resolvers = options.resolvers ? nodePreset
   { options..., cwd, root: cwd, external, resolvers }
 
-analyzeDependencies = ( entries, options ) ->
-  analyze entries, {
-    options...
-    cwd: options.cwd
+createContext = ( entries, options = {} ) ->
+  entries: normalizeEntries entries
+  options: normalizeOptions options
+
+analyzeDependencies = ( context ) ->
+  dependencies = analyze context.entries, {
+    context.options...
+    cwd: context.options.cwd
     platform: "node"
     conditions: [ "node" ]
-    external: options.external
+    external: context.options.external
+  }
+  { context..., dependencies }
+
+createTrieContext = ( moduleGraph ) ->
+  if ( typeof moduleGraph == "object" ) && ( moduleGraph.moduleGraph? )
+    moduleGraph
+  else
+    { moduleGraph }
+
+applyBaseline = ( state ) ->
+  { state..., baselineTrie: Baseline.apply state.moduleGraph }
+
+applyCompaction = ( state ) ->
+  { state..., compactedTrie: Compaction.apply state.baselineTrie }
+
+applyCompression = ( state ) ->
+  { state..., compressedTrie: Compression.apply state.compactedTrie }
+
+buildTries = pipe [
+  createTrieContext
+  applyBaseline
+  applyCompaction
+  applyCompression
+]
+
+createResolutionContext = ( trie, resolvers ) ->
+  if ( typeof trie == "object" ) && ( !resolvers? )
+    trie
+  else
+    { compressedTrie: trie, resolvers }
+
+applyResolution = ( state ) ->
+  {
+    state...
+    resolvedTrie: Resolution.apply state.compressedTrie, state.resolvers
   }
 
-buildTries = ( moduleGraph ) ->
-  baselineTrie = Baseline.apply moduleGraph
-  compactedTrie = Compaction.apply baselineTrie
-  compressedTrie = Compression.apply compactedTrie
-  { baselineTrie, compactedTrie, compressedTrie }
+applySerialization = ( state ) ->
+  {
+    state...
+    importMap: Serialization.apply state.resolvedTrie, state.resolvers
+  }
 
-resolveAndSerialize = ( compressedTrie, resolvers ) ->
-  resolvedTrie = Resolution.apply compressedTrie, resolvers
-  importMap = Serialization.apply resolvedTrie, resolvers
-  { resolvedTrie, importMap }
+resolveAndSerialize = pipe [
+  createResolutionContext
+  applyResolution
+  applySerialization
+]
 
-applyFunctors = ( moduleGraph, resolvers ) ->
-  tries = buildTries moduleGraph
-  resolution = resolveAndSerialize tries.compressedTrie, resolvers
-  { moduleGraph, tries..., resolution... }
+createFunctorContext = ( moduleGraph, resolvers ) ->
+  if ( typeof moduleGraph == "object" ) && ( !resolvers? )
+    moduleGraph
+  else
+    { moduleGraph, resolvers }
 
-executePipeline = ( dependencies, options ) ->
+applyFunctors = pipe [
+  createFunctorContext
+  buildTries
+  resolveAndSerialize
+]
+
+executePipeline = ( context ) ->
+  { dependencies, options } = context
   moduleGraph = await ingest dependencies, options
-  applyFunctors moduleGraph, options.resolvers
+  pipeline = applyFunctors moduleGraph, options.resolvers
+  { context..., pipeline }
 
-generate = ( entries, options = {} ) ->
-  normalizedEntries = normalizeEntries entries
-  normalizedOptions = normalizeOptions options
-  dependencies = analyzeDependencies normalizedEntries, normalizedOptions
-  pipeline = await executePipeline dependencies, normalizedOptions
-  await dumpDiagnostics normalizedEntries, pipeline
-  pipeline.importMap
+extractImportMap = ( context ) ->
+  context.pipeline.importMap
+
+generate = pipe [
+  createContext
+  analyzeDependencies
+  executePipeline
+  dumpDiagnostics
+  extractImportMap
+]
 
 export default generate
 export { generate }

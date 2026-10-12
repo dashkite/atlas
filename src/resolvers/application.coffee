@@ -1,6 +1,7 @@
 import AtlasURL from "../url"
 import Path from "node:path"
 import { pathToFileURL } from "node:url"
+import { pipe } from "@dashkite/joy"
 
 match = ( context = {} ) ->
   if context.source.includes "node_modules"
@@ -12,15 +13,15 @@ match = ( context = {} ) ->
 encode = ( descriptor ) ->
   AtlasURL.format { descriptor..., module: undefined }
 
-decode = ( atlasUrl ) ->
-  parsed = AtlasURL.parse atlasUrl
+decode = ( url ) ->
+  parsed = AtlasURL.parse url
   {
     resolver: parsed.resolver
     path: parsed.pathname
   }
 
-parse = ( atlasUrl ) ->
-  @decode atlasUrl
+parse = ( url ) ->
+  @decode url
 
 normalizePath = ( path ) ->
   if path.startsWith "/"
@@ -28,16 +29,28 @@ normalizePath = ( path ) ->
   else
     path
 
+rootFor = ( config = {} ) ->
+  config.root ? config.cwd ? process.cwd()
+
 resolvePath = ( config, path ) ->
-  root = config.root ? config.cwd ? process.cwd()
-  relativePath = normalizePath path
-  Path.resolve root, relativePath
+  if path?
+    Path.resolve ( rootFor config ), ( normalizePath path )
+  else
+    ( path ) ->
+      Path.resolve ( rootFor config ), ( normalizePath path )
+
+toFileURL = ( path ) ->
+  ( pathToFileURL path ).href
+
+decodePath = ( url ) ->
+  ( ( @decode ? decode ) url ).path
 
 makeResolve = ( config ) ->
-  ( atlasUrl ) ->
-    descriptor = @decode atlasUrl
-    absolutePath = resolvePath config, descriptor.path
-    ( pathToFileURL absolutePath ).href
+  pipe [
+    decodePath
+    resolvePath config
+    toFileURL
+  ]
 
 make = ( config = {} ) ->
   match: match

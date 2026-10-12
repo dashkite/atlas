@@ -1,32 +1,30 @@
-normalizePath = ( rootDirectory, absolutePath ) ->
-  if absolutePath.startsWith rootDirectory
-    "[ROOT]" + absolutePath.slice rootDirectory.length
+normalizePath = ( root, path ) ->
+  if path.startsWith root
+    "[ROOT]" + path.slice root.length
   else
-    absolutePath
+    path
+
+normalizeEdge = ( { source, target, label, type } ) ->
+  { source, target, label, type }
+
+serializeEdge = ( edge ) ->
+  "#{edge.source}->#{edge.label}->#{edge.target}"
 
 compareEdges = ( edgeA, edgeB ) ->
-  serializedEdgeA = "#{edgeA.source}->#{edgeA.label}->#{edgeA.target}"
-  serializedEdgeB = "#{edgeB.source}->#{edgeB.label}->#{edgeB.target}"
-  serializedEdgeA.localeCompare serializedEdgeB
+  ( serializeEdge edgeA ).localeCompare serializeEdge edgeB
 
 normalizeGraph = ( graph ) ->
-  normalizedGraph =
-    vertices: ( Array.from graph.vertices ).sort()
-    edges: graph.edges.map ( { source, target, label, type } ) ->
-      { source, target, label, type }
-  # Sort edges deterministically
-  normalizedGraph.edges.sort compareEdges
-  normalizedGraph
+  vertices: ( Array.from graph.vertices ).sort()
+  edges: ( graph.edges.map normalizeEdge ).sort compareEdges
 
 normalizeTreeIndex = ( index ) ->
-  normalizedTreeIndex = {}
-  for [ pathKey, map ] from index.index
-    # pathKey is a comma separated path, like "pkg-A,pkg-B".
-    normalizedTreeIndex[ pathKey ] = Object.fromEntries map
-  normalizedTreeIndex
+  result = {}
+  for [ path, map ] from index.index
+    # path is a comma separated path, like "pkg-A,pkg-B".
+    result[ path ] = Object.fromEntries map
+  result
 
-export default ( rootDirectory ) ->
-  normalizePath: ( absolutePath ) ->
-    normalizePath rootDirectory, absolutePath
+export default
+  normalizePath: normalizePath
   normalizeGraph: normalizeGraph
   normalizeTreeIndex: normalizeTreeIndex

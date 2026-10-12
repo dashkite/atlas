@@ -1,22 +1,22 @@
 import JSZip from "jszip"
 
 extractPrefix = ( file, marker ) ->
-  markerIndex = file.lastIndexOf marker
-  if markerIndex != -1
-    file.slice 0, markerIndex + marker.length
+  index = file.lastIndexOf marker
+  if index != -1
+    file.slice 0, index + marker.length
 
 class BundleInspector
   constructor: ( @files ) ->
     # @files is an array of physical paths in the bundle
 
-  @fromZip: ( zipBuffer ) ->
-    zip = await JSZip.loadAsync zipBuffer
-    isFile = ( filePath ) -> !zip.files[ filePath ].dir
+  @fromZip: ( buffer ) ->
+    zip = await JSZip.loadAsync buffer
+    isFile = ( path ) -> !zip.files[ path ].dir
     files = ( Object.keys zip.files ).filter isFile
     new BundleInspector files
 
-  @fromMap: ( bundleMap ) ->
-    files = Array.from bundleMap.keys()
+  @fromMap: ( map ) ->
+    files = Array.from map.keys()
     new BundleInspector files
 
   getFiles: ->
@@ -26,18 +26,18 @@ class BundleInspector
   # We look for "node_modules/packageName/..." and group them by the prefix.
   # For example, "node_modules/a/node_modules/pkg/index.js" ->
   # prefix is "node_modules/a/node_modules/pkg"
-  findInstancesOf: ( packageName ) ->
-    marker = "node_modules/#{packageName}"
+  findInstancesOf: ( name ) ->
+    marker = "node_modules/#{name}"
     instances = new Set()
     for file in @files
       prefix = extractPrefix file, marker
       instances.add prefix if prefix
     Array.from instances
 
-  countInstancesOf: ( packageName ) ->
-    ( @findInstancesOf packageName ).length
+  countInstancesOf: ( name ) ->
+    ( @findInstancesOf name ).length
 
-  hasFile: ( exactPath ) ->
-    @files.includes exactPath
+  hasFile: ( path ) ->
+    @files.includes path
 
 export default BundleInspector

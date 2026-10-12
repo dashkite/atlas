@@ -11,7 +11,8 @@ export default ->
       # Add source module
       ModuleGraph.addVertex moduleGraph, "atlas://app/src/index.js"
       # Add target module
-      ModuleGraph.addVertex moduleGraph, "atlas://app/node_modules/maeve/index.js"
+      ModuleGraph.addVertex moduleGraph,
+        "atlas://app/node_modules/maeve/index.js"
 
       # Add inter-module edge (inter edge)
       ModuleGraph.addEdge moduleGraph,

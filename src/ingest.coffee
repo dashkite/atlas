@@ -37,10 +37,10 @@ createIngestContext = ( options ) ->
   }
 
 collectDependencies = ( dependencies ) ->
-  rawDependencies = []
+  items = []
   for await dependency from dependencies
-    rawDependencies.push dependency
-  rawDependencies
+    items.push dependency
+  items
 
 deriveModuleMetadata = ( module ) ->
   {
@@ -57,29 +57,29 @@ deriveDescriptorPath = ( target, cwd ) ->
   else
     "/#{ target.source.path }"
 
-buildDescriptor = ( target, resolverKey, cwd ) ->
+buildDescriptor = ( target, key, cwd ) ->
   descriptor =
-    resolver: resolverKey
+    resolver: key
     path: deriveDescriptorPath target, cwd
   if target.module?
     descriptor.module = deriveModuleMetadata target.module
   descriptor
 
 matchResolverKey = ( metaResolver, target, cwd ) ->
-  resolverKey = metaResolver.match { source: target.source.path, cwd }
-  if !resolverKey?
-    serializedTarget = JSON.stringify target
-    throw new Error "No resolver found to encode target: #{ serializedTarget }"
-  resolverKey
+  key = metaResolver.match { source: target.source.path, cwd }
+  if !key?
+    target = JSON.stringify target
+    throw new Error "No resolver found to encode target: #{ target }"
+  key
 
 encodeTarget = ( target, metaResolver, cwd ) ->
-  resolverKey = matchResolverKey metaResolver, target, cwd
-  descriptor = buildDescriptor target, resolverKey, cwd
+  key = matchResolverKey metaResolver, target, cwd
+  descriptor = buildDescriptor target, key, cwd
   metaResolver.encode descriptor
 
-resolveFileInode = ( cwd, sourcePath ) ->
-  absolutePath = Path.resolve cwd, sourcePath
-  stat = FS.statSync absolutePath
+resolveFileInode = ( cwd, path ) ->
+  path = Path.resolve cwd, path
+  stat = FS.statSync path
   stat.ino
 
 resolveTargetUrl = ( target, context ) ->
@@ -97,9 +97,9 @@ resolveSourceUrl = ( item, context ) ->
     ENTRY_POINT
 
 resolveDependencyUrls = ( item, context ) ->
-  sourceUrl = resolveSourceUrl item, context
-  targetUrl = resolveTargetUrl item, context
-  { sourceUrl, targetUrl }
+  source = resolveSourceUrl item, context
+  target = resolveTargetUrl item, context
+  { source, target }
 
 resolvePackageId = ( metaResolver, url ) ->
   if url == ENTRY_POINT
@@ -110,8 +110,8 @@ resolvePackageId = ( metaResolver, url ) ->
     metaResolver.encode parsed
 
 assignPackageId = ( graph, metaResolver, url ) ->
-  packageId = resolvePackageId metaResolver, url
-  ModuleGraph.setAttribute graph, url, "packageId", packageId
+  id = resolvePackageId metaResolver, url
+  ModuleGraph.setAttribute graph, url, "packageId", id
   return
 
 registerVertex = ( graph, metaResolver, url ) ->
@@ -119,54 +119,58 @@ registerVertex = ( graph, metaResolver, url ) ->
   assignPackageId graph, metaResolver, url
   return
 
-resolveFileUrl = ( cwd, filePath ) ->
-  absolutePath = Path.resolve cwd, filePath
-  ( new URL "file://#{ absolutePath }" ).href
+resolveFileUrl = ( cwd, path ) ->
+  path = Path.resolve cwd, path
+  ( new URL "file://#{ path }" ).href
 
 recordSources = ( context, item, urls ) ->
   { graph, cwd } = context
-  { sourceUrl, targetUrl } = urls
-  graph.sources.set targetUrl, resolveFileUrl cwd, item.source.path
+  { source, target } = urls
+  graph.sources.set target, resolveFileUrl cwd, item.source.path
   if item.import.scope?
-    sourcePath = item.import.scope.source.path
-    graph.sources.set sourceUrl, resolveFileUrl cwd, sourcePath
+    path = item.import.scope.source.path
+    graph.sources.set source, resolveFileUrl cwd, path
   return
 
+isRelative = ( specifier ) ->
+  ( specifier.startsWith "./" ) || ( specifier.startsWith "../" )
+
+isAlias = ( specifier ) ->
+  specifier.startsWith "#"
+
 determineEdgeType = ( specifier ) ->
-  isRelative = ( specifier.startsWith "./" ) || ( specifier.startsWith "../" )
-  isAlias = specifier.startsWith "#"
-  if isRelative || isAlias
+  if ( isRelative specifier ) || ( isAlias specifier )
     "intra"
   else
     "inter"
 
 recordDependencyEdge = ( graph, urls, specifier ) ->
-  edgeType = determineEdgeType specifier
+  type = determineEdgeType specifier
   ModuleGraph.addEdge graph,
-    source: urls.sourceUrl
-    target: urls.targetUrl
+    source: urls.source
+    target: urls.target
     label: specifier
-    type: edgeType
+    type: type
   return
 
 processDependency = ( item, context ) ->
   urls = resolveDependencyUrls item, context
-  registerVertex context.graph, context.metaResolver, urls.sourceUrl
-  registerVertex context.graph, context.metaResolver, urls.targetUrl
+  registerVertex context.graph, context.metaResolver, urls.source
+  registerVertex context.graph, context.metaResolver, urls.target
   recordSources context, item, urls
   recordDependencyEdge context.graph, urls, item.import.specifier
   return
 
-processDependencies = ( rawDependencies, context ) ->
-  for item in rawDependencies
+processDependencies = ( dependencies, context ) ->
+  for item in dependencies
     processDependency item, context
   return
 
 ingest = ( dependencies, options = {} ) ->
   validatePreconditions dependencies, options
   context = createIngestContext options
-  rawDependencies = await collectDependencies dependencies
-  processDependencies rawDependencies, context
+  dependencies = await collectDependencies dependencies
+  processDependencies dependencies, context
   context.graph
 
 export default ingest

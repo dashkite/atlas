@@ -30,7 +30,12 @@ export default -> [
       meta.resolve "atlas://test1/foo"
 
       # invalid
-      assert.throws -> meta.encode { resolver: "test2", module: { name: "foo" }, path: "/" }
+      assert.throws ->
+        meta.encode {
+          resolver: "test2"
+          module: { name: "foo" }
+          path: "/"
+        }
       assert.throws -> meta.decode "atlas://test2/foo"
       assert.throws -> meta.resolve "atlas://test2/foo"
   ]
@@ -42,7 +47,10 @@ export default -> [
 
     test "rejects paths containing node_modules", ->
       resolver = Application.make()
-      assert !resolver.match { source: "node_modules/foo/index.js", cwd: "/root" }
+      assert !resolver.match {
+        source: "node_modules/foo/index.js"
+        cwd: "/root"
+      }
 
     test "rejects paths escaping cwd (..)", ->
       resolver = Application.make()
@@ -72,7 +80,10 @@ export default -> [
   test "Node Resolver", -> [
     test "matches paths containing node_modules", ->
       resolver = Node.make()
-      assert resolver.match { source: "node_modules/foo/index.js", cwd: "/root" }
+      assert resolver.match {
+        source: "node_modules/foo/index.js"
+        cwd: "/root"
+      }
 
     test "rejects paths lacking node_modules", ->
       resolver = Node.make()
@@ -89,7 +100,8 @@ export default -> [
 
     test "decodes atlas URL", ->
       resolver = Node.make()
-      descriptor = resolver.decode "atlas://node/@dashkite/foo@1.0.0/build/index.js"
+      descriptor =
+        resolver.decode "atlas://node/@dashkite/foo@1.0.0/build/index.js"
       assert.equal descriptor.resolver, "node"
       assert.equal descriptor.module.scope, "@dashkite"
       assert.equal descriptor.module.name, "foo"
@@ -104,11 +116,16 @@ export default -> [
 
   test "CDN Resolver", -> [
     test "matches paths containing node_modules", ->
-      resolver = CDN.make template: "https://unpkg.com/{scope?}/{versioned}/{path*}"
-      assert resolver.match { source: "node_modules/foo/index.js", cwd: "/root" }
+      resolver = CDN.make
+        template: "https://unpkg.com/{scope?}/{versioned}/{path*}"
+      assert resolver.match {
+        source: "node_modules/foo/index.js"
+        cwd: "/root"
+      }
 
     test "encodes dependency object", ->
-      resolver = CDN.make template: "https://unpkg.com/{scope?}/{versioned}/{path*}"
+      resolver = CDN.make
+        template: "https://unpkg.com/{scope?}/{versioned}/{path*}"
       url = resolver.encode {
         resolver: "cdn@unpkg"
         module: { scope: "@dashkite", name: "foo", version: "1.0.0" }
@@ -117,18 +134,23 @@ export default -> [
       assert.equal "atlas://cdn@unpkg/@dashkite/foo@1.0.0/build/index.js", url
 
     test "decodes atlas URL", ->
-      resolver = CDN.make template: "https://unpkg.com/{scope?}/{versioned}/{path*}"
-      descriptor = resolver.decode "atlas://cdn@unpkg/@dashkite/foo@1.0.0/build/index.js"
+      resolver = CDN.make
+        template: "https://unpkg.com/{scope?}/{versioned}/{path*}"
+      descriptor =
+        resolver.decode "atlas://cdn@unpkg/@dashkite/foo@1.0.0/build/index.js"
       assert.equal descriptor.resolver, "cdn@unpkg"
       assert.equal descriptor.module.scope, "@dashkite"
 
     test "resolves using URL Codex template", ->
-      resolver = CDN.make template: "https://unpkg.com/{scope?}/{versioned}/{path*}"
-      url = resolver.resolve "atlas://cdn@unpkg/@dashkite/foo@1.0.0/build/index.js"
+      resolver = CDN.make
+        template: "https://unpkg.com/{scope?}/{versioned}/{path*}"
+      url =
+        resolver.resolve "atlas://cdn@unpkg/@dashkite/foo@1.0.0/build/index.js"
       assert.equal "https://unpkg.com/@dashkite/foo@1.0.0/build/index.js", url
 
     test "resolves unscoped using URL Codex template", ->
-      resolver = CDN.make template: "https://unpkg.com/{scope?}/{versioned}/{path*}"
+      resolver = CDN.make
+        template: "https://unpkg.com/{scope?}/{versioned}/{path*}"
       url = resolver.resolve "atlas://cdn@unpkg/foo@1.0.0/build/index.js"
       assert.equal "https://unpkg.com/foo@1.0.0/build/index.js", url
   ]
@@ -149,11 +171,15 @@ export default -> [
         module: { scope: "@scope", name: "foo", version: "1.0.0" }
         path: "/build/node/src/index.js"
       }
-      assert.equal "atlas://local@central-park/@scope/foo@1.0.0/build/node/src/index.js", url
+      expected =
+        "atlas://local@central-park/@scope/foo@1.0.0/build/node/src/index.js"
+      assert.equal expected, url
 
     test "resolves to physical path", ->
       resolver = Local.make root: "/root", patterns: [ "**/.tempo/repos/**/*" ]
-      url = resolver.resolve "atlas://local@central-park/@scope/foo@1.0.0/build/node/src/index.js"
+      target =
+        "atlas://local@central-park/@scope/foo@1.0.0/build/node/src/index.js"
+      url = resolver.resolve target
       assert typeof url == "string"
   ]
 

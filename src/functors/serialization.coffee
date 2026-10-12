@@ -25,30 +25,30 @@ formatUrl = (segments) ->
 getFullUrl = (node) ->
   formatUrl collectSegments node
 
-resolveScopeUrl = (node, metaResolver) ->
-  metaResolver.resolve getFullUrl node
+resolveScopeUrl = (node, resolver) ->
+  resolver.resolve getFullUrl node
 
-recordScope = (node, scopes, metaResolver) ->
+recordScope = (node, scopes, resolver) ->
   if !node.bindings.size > 0
     return
-  url = resolveScopeUrl node, metaResolver
+  url = resolveScopeUrl node, resolver
   scopes[url] = toBindingsMap node.bindings
 
-traverseScopes = (node, scopes, metaResolver) ->
+traverseScopes = (node, scopes, resolver) ->
   for child from node.children.values()
-    recordScope child, scopes, metaResolver
-    traverseScopes child, scopes, metaResolver
+    recordScope child, scopes, resolver
+    traverseScopes child, scopes, resolver
   return
 
-buildScopes = (trie, metaResolver) ->
+buildScopes = (trie, resolver) ->
   scopes = {}
-  traverseScopes trie, scopes, metaResolver
+  traverseScopes trie, scopes, resolver
   scopes
 
 Serialization =
   apply: (trie, keys) ->
-    metaResolver = Resolvers.Registry.make keys
+    resolver = Resolvers.Registry.make keys
     imports: toBindingsMap trie.bindings
-    scopes: buildScopes trie, metaResolver
+    scopes: buildScopes trie, resolver
 
 export default Serialization

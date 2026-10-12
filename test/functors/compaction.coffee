@@ -41,18 +41,24 @@ export default ->
       compactedRoot = Compaction.apply root
 
       # Assertions
-      # The binding for "a -> targetA" should have bubbled all the way up to root
+      # The binding for "a -> targetA" should have bubbled all the way
+      # up to root
       assert.equal ( compactedRoot.bindings.get "a" ), targetA
 
       # The src node and its children should be empty of bindings
       applicationCompacted = compactedRoot.children.get "app"
       assert.equal ( applicationCompacted.bindings.has "a" ), false
-      assert.equal ( ( applicationCompacted.children.get "src" ).bindings.has "a" ), false
+      assert.equal (
+        ( applicationCompacted.children.get "src" ).bindings.has "a"
+      ), false
 
       # The lib node should have the trapped binding "a -> targetB"
       libraryCompacted = applicationCompacted.children.get "lib"
       assert.equal ( libraryCompacted.bindings.get "a" ), targetB
 
-      # The lib/index.js node should be empty of bindings, since it lifted to lib
-      assert.equal ( ( libraryCompacted.children.get "index.js" ).bindings.has "a" ), false
+      # The lib/index.js node should be empty of bindings, since it lifted
+      # to lib
+      assert.equal (
+        ( libraryCompacted.children.get "index.js" ).bindings.has "a"
+      ), false
   ]

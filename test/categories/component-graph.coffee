@@ -28,7 +28,9 @@ export default ->
     test "adds inter-component edges", ->
       graph = ComponentGraph.make()
       ComponentGraph.addComponent graph, "pkg-A", [ "file:///app/index.js" ]
-      ComponentGraph.addComponent graph, "pkg-B", [ "file:///node_modules/maeve/index.js" ]
+      ComponentGraph.addComponent graph, "pkg-B", [
+        "file:///node_modules/maeve/index.js"
+      ]
 
       ComponentGraph.addEdge graph,
         source: "pkg-A"

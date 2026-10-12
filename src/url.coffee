@@ -17,32 +17,34 @@ formatAuthority = ( resolver ) ->
       encodeURIComponent parts[ 0 ]
   authority
 
+formatPackageSpecifier = ( module ) ->
+  if module.scope
+    "#{module.scope}/#{module.name}"
+  else
+    module.name
+
 formatModuleIdentifier = ( module ) ->
   if !module?.name?
     return null
-  packageSpecifier =
-    if module.scope
-      "#{module.scope}/#{module.name}"
-    else
-      module.name
+  specifier = formatPackageSpecifier module
   if module.version?
-    "#{packageSpecifier}@#{module.version}"
+    "#{specifier}@#{module.version}"
   else
-    packageSpecifier
+    specifier
 
 normalizePath = ( path ) ->
   if ( !path? ) || ( path == "" )
     return null
-  normalizedPath = if path.startsWith "/" then path.slice 1 else path
-  if normalizedPath != "" then normalizedPath else null
+  path = if path.startsWith "/" then path.slice 1 else path
+  if path != "" then path else null
 
 formatPathname = ( descriptor ) ->
-  pathSegments = []
-  moduleIdentifier = formatModuleIdentifier descriptor.module
-  pathSegments.push moduleIdentifier if moduleIdentifier?
-  normalizedPath = normalizePath descriptor.path
-  pathSegments.push normalizedPath if normalizedPath?
-  if pathSegments.length > 0 then "/" + pathSegments.join "/" else ""
+  segments = []
+  identifier = formatModuleIdentifier descriptor.module
+  segments.push identifier if identifier?
+  path = normalizePath descriptor.path
+  segments.push path if path?
+  if segments.length > 0 then "/" + segments.join "/" else ""
 
 AtlasURL =
   parse: ( url ) ->
@@ -53,9 +55,7 @@ AtlasURL =
     }
 
   format: ( descriptor ) ->
-    authority = formatAuthority descriptor.resolver
-    pathname = formatPathname descriptor
-    "atlas://#{authority}#{pathname}"
+    "atlas://#{formatAuthority descriptor.resolver}#{formatPathname descriptor}"
 
 export default AtlasURL
 export { AtlasURL }

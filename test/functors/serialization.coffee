@@ -14,10 +14,15 @@ export default ->
 
       # 2. Scoped imports (bindings on descendant node)
       node = Trie.upsertPath root, ["node", "@dashkite", "maeve@1.0.0"]
-      node.bindings.set "./", "https://cdn.example.com/@dashkite/maeve@1.0.0/lib/index.js"
+      node.bindings.set "./",
+        "https://cdn.example.com/@dashkite/maeve@1.0.0/lib/index.js"
 
       Registry.register "node",
-        decode: (_url) -> { module: { scope: "@dashkite", name: "maeve", version: "1.0.0" } }
+        decode: (_url) ->
+          module:
+            scope: "@dashkite"
+            name: "maeve"
+            version: "1.0.0"
         resolve: (_url) -> "https://cdn.example.com/@dashkite/maeve@1.0.0/"
 
       # Serialize

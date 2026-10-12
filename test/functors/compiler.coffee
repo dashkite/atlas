@@ -9,11 +9,21 @@ export default ->
     test "baseline tree embedding (uncompacted)", ->
       graph = ComponentGraph.make()
       ComponentGraph.addComponent graph, "pkg-root", ["file:///index.js"]
-      ComponentGraph.addComponent graph, "pkg-A", ["file:///node_modules/a/index.js"]
-      ComponentGraph.addComponent graph, "pkg-B", ["file:///node_modules/b/index.js"]
+      ComponentGraph.addComponent graph, "pkg-A", [
+        "file:///node_modules/a/index.js"
+      ]
+      ComponentGraph.addComponent graph, "pkg-B", [
+        "file:///node_modules/b/index.js"
+      ]
 
-      ComponentGraph.addEdge graph, { source: "pkg-root", target: "pkg-A", label: "a" }
-      ComponentGraph.addEdge graph, { source: "pkg-A", target: "pkg-B", label: "b" }
+      ComponentGraph.addEdge graph,
+        source: "pkg-root"
+        target: "pkg-A"
+        label: "a"
+      ComponentGraph.addEdge graph,
+        source: "pkg-A"
+        target: "pkg-B"
+        label: "b"
 
       index = Compiler.apply graph, { compact: false }
 
@@ -29,11 +39,21 @@ export default ->
     test "topological compaction (unconflicted rebasing)", ->
       graph = ComponentGraph.make()
       ComponentGraph.addComponent graph, "pkg-root", ["file:///index.js"]
-      ComponentGraph.addComponent graph, "pkg-A", ["file:///node_modules/a/index.js"]
-      ComponentGraph.addComponent graph, "pkg-B", ["file:///node_modules/b/index.js"]
+      ComponentGraph.addComponent graph, "pkg-A", [
+        "file:///node_modules/a/index.js"
+      ]
+      ComponentGraph.addComponent graph, "pkg-B", [
+        "file:///node_modules/b/index.js"
+      ]
 
-      ComponentGraph.addEdge graph, { source: "pkg-root", target: "pkg-A", label: "a" }
-      ComponentGraph.addEdge graph, { source: "pkg-A", target: "pkg-B", label: "b" }
+      ComponentGraph.addEdge graph,
+        source: "pkg-root"
+        target: "pkg-A"
+        label: "a"
+      ComponentGraph.addEdge graph,
+        source: "pkg-A"
+        target: "pkg-B"
+        label: "b"
 
       index = Compiler.apply graph, { compact: true }
 
@@ -42,11 +62,16 @@ export default ->
       assert.equal ( rootBindings.get "a" ), "pkg-A"
       assert.equal ( rootBindings.get "b" ), "pkg-B"
 
-    test "topological isolation (allows parent hoisting with nested children)", ->
+    test "topological isolation
+      (allows parent hoisting with nested children)", ->
       graph = ComponentGraph.make()
       ComponentGraph.addComponent graph, "pkg-root", ["file:///index.js"]
-      ComponentGraph.addComponent graph, "pkg-A", ["file:///node_modules/a/index.js"]
-      ComponentGraph.addComponent graph, "pkg-C", ["file:///node_modules/c/index.js"]
+      ComponentGraph.addComponent graph, "pkg-A", [
+        "file:///node_modules/a/index.js"
+      ]
+      ComponentGraph.addComponent graph, "pkg-C", [
+        "file:///node_modules/c/index.js"
+      ]
       ComponentGraph.addComponent graph, "pkg-B-v1", [
         "file:///node_modules/a/node_modules/b/index.js"
       ]
@@ -54,16 +79,30 @@ export default ->
         "file:///node_modules/c/node_modules/b/index.js"
       ]
 
-      ComponentGraph.addEdge graph, { source: "pkg-root", target: "pkg-A", label: "a" }
-      ComponentGraph.addEdge graph, { source: "pkg-root", target: "pkg-C", label: "c" }
-      ComponentGraph.addEdge graph, { source: "pkg-A", target: "pkg-B-v1", label: "b" }
-      ComponentGraph.addEdge graph, { source: "pkg-C", target: "pkg-B-v2", label: "b" }
+      ComponentGraph.addEdge graph,
+        source: "pkg-root"
+        target: "pkg-A"
+        label: "a"
+      ComponentGraph.addEdge graph,
+        source: "pkg-root"
+        target: "pkg-C"
+        label: "c"
+      ComponentGraph.addEdge graph,
+        source: "pkg-A"
+        target: "pkg-B-v1"
+        label: "b"
+      ComponentGraph.addEdge graph,
+        source: "pkg-C"
+        target: "pkg-B-v2"
+        label: "b"
 
       index = Compiler.apply graph, { compact: true }
 
       # Collision on label "b". pkg-B-v1 and pkg-B-v2 cannot hoist.
-      # However, pkg-A and pkg-C have no collisions, so they MUST hoist to root.
-      # The conflicting dependencies (pkg-B-v1, pkg-B-v2) will be hierarchically embedded.
+      # However, pkg-A and pkg-C have no collisions, so they MUST hoist
+      # to root.
+      # The conflicting dependencies (pkg-B-v1, pkg-B-v2) will be
+      # hierarchically embedded.
 
       rootBindings = TreeIndex.getBindings index, []
       assert.equal ( rootBindings.get "pkg-root" ), "pkg-root"
