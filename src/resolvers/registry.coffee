@@ -22,7 +22,7 @@ class MetaResolver
   decode: (url) ->
     parsed = AtlasURL.parse url
     key = parsed.resolver
-    if !key in @keys
+    if !( key in @keys )
       throw new Error "Resolver #{key} not in configured keys"
     resolver = Registry.get key
     if !resolver?
@@ -35,7 +35,7 @@ class MetaResolver
   resolve: (url) ->
     parsed = AtlasURL.parse url
     key = parsed.resolver
-    if !key in @keys
+    if !( key in @keys )
       throw new Error "Resolver #{key} not in configured keys"
     resolver = Registry.get key
     if !resolver?
