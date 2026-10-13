@@ -199,7 +199,7 @@ normalizeEntries = ( entries ) ->
   [ entries ].flat()
 
 normalizeOptions = ( options ) ->
-  cwd = options.cwd ? process.cwd()
+  cwd = options.cwd ? options.root ? process.cwd()
   root = options.root ? cwd
   external = [ "@aws-sdk/*", ( options.external ? [] )... ]
   resolvers = options.resolvers ? preset

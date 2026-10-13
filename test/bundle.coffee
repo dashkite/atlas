@@ -43,7 +43,16 @@ testBundle = ->
   finally
     await cleanup directory
 
+testBundleWithRoot = ->
+  directory = await createFixtures()
+  try
+    buffer = await bundle "index.js", { root: directory }
+    await verifyZip buffer
+  finally
+    await cleanup directory
+
 export default ->
   [
     test "creates a bundle zip with entry and package.json", testBundle
+    test "creates a bundle zip when specifying root without cwd", testBundleWithRoot
   ]
