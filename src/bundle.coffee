@@ -60,9 +60,9 @@ resolveSourceDiskPath = ( source, graph ) ->
 
 serializeDiagnostics = ( value ) ->
   replacer = ( key, item ) ->
-    if item?.add?
+    if item instanceof Set
       Array.from item
-    else if item?.set?
+    else if item instanceof Map
       Object.fromEntries item
     else
       item
@@ -91,9 +91,12 @@ writeBundleDiagnostics = ( directory, map ) ->
 
 dumpDiagnostics = ( context ) ->
   if process.env.DEBUG
-    directory = deriveDiagnosticsDirectory context.entries
-    await writePipelineDiagnostics directory, context.pipeline
-    await writeBundleDiagnostics directory, context.pipeline.bundleMap
+    try
+      directory = deriveDiagnosticsDirectory context.entries
+      await writePipelineDiagnostics directory, context.pipeline
+      await writeBundleDiagnostics directory, context.pipeline.bundleMap
+    catch
+      null
   context
 
 resolveEntryPaths = ( directory, entry ) ->
@@ -191,13 +194,16 @@ constructArchive = ( context ) ->
   archive.zip.generateAsync ZIP_OPTIONS
 
 normalizeEntries = ( entries ) ->
+  if !entries?
+    throw new Error "Entries argument is required"
   [ entries ].flat()
 
 normalizeOptions = ( options ) ->
   cwd = options.cwd ? process.cwd()
+  root = options.root ? cwd
   external = [ "@aws-sdk/*", ( options.external ? [] )... ]
   resolvers = options.resolvers ? preset
-  { options..., cwd, external, resolvers }
+  { options..., cwd, root, external, resolvers }
 
 createContext = ( entries, options = {} ) ->
   entries: normalizeEntries entries

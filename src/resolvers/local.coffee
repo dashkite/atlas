@@ -24,7 +24,7 @@ normalizeRelativePath = ( path, cwd ) ->
 matchPattern = ( path, patterns, cwd ) ->
   if path.includes "node_modules"
     return false
-  if !patterns.length > 0
+  if patterns.length == 0
     return false
   path = normalizeRelativePath path, cwd
   micromatch.isMatch path, patterns, { contains: true }

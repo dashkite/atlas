@@ -12,7 +12,7 @@ class MetaResolver
     null
 
   encode: (descriptor) ->
-    if !descriptor.resolver in @keys
+    if !( descriptor.resolver in @keys )
       throw new Error "Resolver #{descriptor.resolver} not in configured keys"
     resolver = Registry.get descriptor.resolver
     if !resolver?

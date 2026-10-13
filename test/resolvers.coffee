@@ -8,6 +8,10 @@ createMetaResolver = ->
     encode: -> "atlas://test1"
     decode: -> {}
     resolve: -> "http://test1"
+  Registry.register "test2",
+    encode: -> "atlas://test2"
+    decode: -> {}
+    resolve: -> "http://test2"
   Registry.make ["test1"]
 
 export default -> [
@@ -27,22 +31,25 @@ export default -> [
     test "Meta Resolver validates keys on encode", ->
       resolver = createMetaResolver()
       resolver.encode { resolver: "test1", module: { name: "foo" }, path: "/" }
-      assert.throws ->
+      assert.throws ( ->
         resolver.encode {
           resolver: "test2"
           module: { name: "foo" }
           path: "/"
         }
+      ), "Resolver test2 not in configured keys"
 
     test "Meta Resolver validates keys on decode", ->
       resolver = createMetaResolver()
       resolver.decode "atlas://test1/foo"
-      assert.throws -> resolver.decode "atlas://test2/foo"
+      assert.throws ( -> resolver.decode "atlas://test2/foo" ),
+        "Resolver test2 not in configured keys"
 
     test "Meta Resolver validates keys on resolve", ->
       resolver = createMetaResolver()
       resolver.resolve "atlas://test1/foo"
-      assert.throws -> resolver.resolve "atlas://test2/foo"
+      assert.throws ( -> resolver.resolve "atlas://test2/foo" ),
+        "Resolver test2 not in configured keys"
   ]
 
   test "Application Resolver", -> [
