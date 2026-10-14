@@ -54,5 +54,6 @@ testBundleWithRoot = ->
 export default ->
   [
     test "creates a bundle zip with entry and package.json", testBundle
-    test "creates a bundle zip when specifying root without cwd", testBundleWithRoot
+    test "creates a bundle zip when specifying root without cwd",
+      testBundleWithRoot
   ]
