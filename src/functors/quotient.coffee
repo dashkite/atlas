@@ -1,66 +1,63 @@
 import ModuleGraph from "../categories/module-graph"
 import ComponentGraph from "../categories/component-graph"
 
-groupVertex = ( moduleGraph, packageGroups, vertex ) ->
-  packageId = ModuleGraph.getAttribute moduleGraph, vertex, "packageId"
-  if !packageGroups.has packageId
-    packageGroups.set packageId, []
-  ( packageGroups.get packageId ).push vertex
+groupVertex = ( graph, groups, vertex ) ->
+  id = ModuleGraph.getAttribute graph, vertex, "packageId"
+  if !groups.has id
+    groups.set id, []
+  ( groups.get id ).push vertex
   return
 
-groupVertices = ( moduleGraph ) ->
+groupVertices = ( graph ) ->
   # 1. Edge Contraction: Equivalence Classes via packageId
-  packageGroups = new Map()
-  for vertex from ModuleGraph.getVertices moduleGraph
-    groupVertex moduleGraph, packageGroups, vertex
-  packageGroups
+  groups = new Map()
+  for vertex from ModuleGraph.getVertices graph
+    groupVertex graph, groups, vertex
+  groups
 
-registerComponent = ( componentGraph, moduleToComponent, group ) ->
-  [ packageId, modules ] = group
+registerComponent = ( graph, components, group ) ->
+  [ id, modules ] = group
   modules.sort()
   # Deterministic component ID based on packageId
-  componentId = packageId
   for module in modules
-    moduleToComponent.set module, componentId
-  ComponentGraph.addComponent componentGraph, componentId, modules
+    components.set module, id
+  ComponentGraph.addComponent graph, id, modules
   return
 
-registerComponents = ( componentGraph, packageGroups ) ->
-  moduleToComponent = new Map()
-  for group from packageGroups
-    registerComponent componentGraph, moduleToComponent, group
-  moduleToComponent
+registerComponents = ( graph, groups ) ->
+  components = new Map()
+  for group from groups
+    registerComponent graph, components, group
+  components
 
-projectEdge = ( moduleToComponent, edge ) ->
-  sourceComponent = moduleToComponent.get edge.source
-  targetComponent = moduleToComponent.get edge.target
-  source: sourceComponent
-  target: targetComponent
+projectEdge = ( components, edge ) ->
+  source: components.get edge.source
+  target: components.get edge.target
   label: edge.label
 
-addUniqueEdge = ( componentGraph, seenEdges, edge ) ->
+addUniqueEdge = ( graph, seen, edge ) ->
   # Deduplicate edges with the same source, target, and label
-  edgeKey = "#{edge.source}::#{edge.target}::#{edge.label}"
-  if !seenEdges.has edgeKey
-    seenEdges.add edgeKey
-    ComponentGraph.addEdge componentGraph, edge
+  key = "#{edge.source}::#{edge.target}::#{edge.label}"
+  if !seen.has key
+    seen.add key
+    ComponentGraph.addEdge graph, edge
   return
 
-projectEdges = ( componentGraph, moduleToComponent, interEdges ) ->
+projectEdges = ( graph, components, edges ) ->
   # 2. Map Inter-Component Edges
-  seenEdges = new Set()
-  for edge in interEdges
-    componentEdge = projectEdge moduleToComponent, edge
-    addUniqueEdge componentGraph, seenEdges, componentEdge
+  seen = new Set()
+  for edge in edges
+    projected = projectEdge components, edge
+    addUniqueEdge graph, seen, projected
   return
 
 Quotient =
-  apply: ( moduleGraph ) ->
-    componentGraph = ComponentGraph.make()
-    packageGroups = groupVertices moduleGraph
-    moduleToComponent = registerComponents componentGraph, packageGroups
-    interEdges = ModuleGraph.getInterEdges moduleGraph
-    projectEdges componentGraph, moduleToComponent, interEdges
-    componentGraph
+  apply: ( input ) ->
+    output = ComponentGraph.make()
+    groups = groupVertices input
+    components = registerComponents output, groups
+    edges = ModuleGraph.getInterEdges input
+    projectEdges output, components, edges
+    output
 
 export default Quotient
