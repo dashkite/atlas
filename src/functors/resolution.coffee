@@ -19,23 +19,23 @@ formatAtlasUrl = (segments) ->
 getFullUrl = (node) ->
   formatAtlasUrl getNodeSegments node
 
-resolveBindings = (node, metaResolver) ->
+resolveBindings = (node, registry) ->
   for [label, target] from node.bindings
-    targetUrl = getFullUrl target
-    mappedString = metaResolver.resolve targetUrl
-    node.bindings.set label, mappedString
+    url = getFullUrl target
+    value = registry.resolve url
+    node.bindings.set label, value
   return
 
-traverse = (node, metaResolver) ->
-  resolveBindings node, metaResolver
-  for childNode from node.children.values()
-    traverse childNode, metaResolver
+traverse = (node, registry) ->
+  resolveBindings node, registry
+  for child from node.children.values()
+    traverse child, registry
   return
 
 Resolution =
   apply: (trie, keys) ->
-    metaResolver = Resolvers.Registry.make keys
-    traverse trie, metaResolver
+    registry = Resolvers.Registry.make keys
+    traverse trie, registry
     trie
 
 export default Resolution
