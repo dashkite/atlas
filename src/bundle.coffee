@@ -94,7 +94,7 @@ dumpDiagnostics = ( context ) ->
     try
       directory = deriveDiagnosticsDirectory context.entries
       await writePipelineDiagnostics directory, context.pipeline
-      await writeBundleDiagnostics directory, context.pipeline.bundleMap
+      await writeBundleDiagnostics directory, context.pipeline.map
     catch
       null
   context
@@ -179,14 +179,12 @@ archiveBundleMap = ( context, map ) ->
 createArchiveContext = ( directory, graph ) ->
   zip: JSZip()
   directory: directory
-  cwd: directory
   graph: graph
-  moduleGraph: graph
   destinations: new Set()
   packages: new Set()
 
 constructArchive = ( context ) ->
-  archive = createArchiveContext context.options.cwd,
+  archive = createArchiveContext context.options.directory,
     context.pipeline.graph
   await archiveEntries archive, context.entries
   await archiveRootManifest archive
@@ -199,11 +197,11 @@ normalizeEntries = ( entries ) ->
   [ entries ].flat()
 
 normalizeOptions = ( options ) ->
-  cwd = options.cwd ? options.root ? process.cwd()
-  root = options.root ? cwd
+  directory = options.directory ? options.cwd ? options.root ? process.cwd()
+  root = options.root ? directory
   external = [ "@aws-sdk/*", ( options.external ? [] )... ]
   resolvers = options.resolvers ? preset
-  { options..., cwd, root, external, resolvers }
+  { options..., directory, root, external, resolvers }
 
 createContext = ( entries, options = {} ) ->
   entries: normalizeEntries entries
@@ -212,7 +210,7 @@ createContext = ( entries, options = {} ) ->
 analyzeDependencies = ( context ) ->
   dependencies = analyze context.entries, {
     context.options...
-    cwd: context.options.cwd
+    cwd: context.options.directory
     platform: "node"
     conditions: [ "node" ]
     external: context.options.external
@@ -222,17 +220,11 @@ analyzeDependencies = ( context ) ->
 ingestDependencies = ( dependencies, options ) ->
   ingest dependencies, {
     options...
-    cwd: options.cwd
+    cwd: options.directory
   }
 
 createPipeline = ( graph, components, index, map ) ->
-  {
-    graph, components, index, map
-    moduleGraph: graph
-    componentGraph: components
-    treeIndex: index
-    bundleMap: map
-  }
+  { graph, components, index, map }
 
 applyFunctors = ( graph, options ) ->
   components = Quotient.apply graph
