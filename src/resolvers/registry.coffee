@@ -1,8 +1,29 @@
 import AtlasURL from "../url"
 
+validateKey = (key, keys) ->
+  if !( key in keys )
+    throw new Error "Resolver #{key} not in configured keys"
+
+lookupResolver = (key) ->
+  resolver = Registry.get key
+  if !resolver?
+    throw new Error "Resolver #{key} not found in registry"
+  resolver
+
+extractKey = (url) ->
+  parsed = AtlasURL.parse url
+  parsed.resolver
+
 class MetaResolver
   @make: (keys) ->
     Object.assign ( new @ ), { keys }
+
+  getResolver: (key) ->
+    validateKey key, @keys
+    lookupResolver key
+
+  getResolverForUrl: (url) ->
+    @getResolver extractKey url
 
   match: (context) ->
     for key in @keys
@@ -12,34 +33,18 @@ class MetaResolver
     null
 
   encode: (descriptor) ->
-    if !( descriptor.resolver in @keys )
-      throw new Error "Resolver #{descriptor.resolver} not in configured keys"
-    resolver = Registry.get descriptor.resolver
-    if !resolver?
-      throw new Error "Resolver #{descriptor.resolver} not found in registry"
+    resolver = @getResolver descriptor.resolver
     resolver.encode descriptor
 
   decode: (url) ->
-    parsed = AtlasURL.parse url
-    key = parsed.resolver
-    if !( key in @keys )
-      throw new Error "Resolver #{key} not in configured keys"
-    resolver = Registry.get key
-    if !resolver?
-      throw new Error "Resolver #{key} not found in registry"
+    resolver = @getResolverForUrl url
     resolver.decode url
 
   parse: (url) ->
     @decode url
 
   resolve: (url) ->
-    parsed = AtlasURL.parse url
-    key = parsed.resolver
-    if !( key in @keys )
-      throw new Error "Resolver #{key} not in configured keys"
-    resolver = Registry.get key
-    if !resolver?
-      throw new Error "Resolver #{key} not found in registry"
+    resolver = @getResolverForUrl url
     resolver.resolve url
 
 Registry =
