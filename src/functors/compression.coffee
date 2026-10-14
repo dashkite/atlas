@@ -4,9 +4,9 @@ extractSuffix = ( label, prefix ) ->
   suffix = label.substring prefix.length
   ( suffix.split "/" ).filter isNotEmpty
 
-findAncestor = ( target, suffixSegments ) ->
+findAncestor = ( target, segments ) ->
   current = target
-  for segment in suffixSegments by -1
+  for segment in segments by -1
     if current.segment != segment
       return null
     current = current.parent
@@ -60,7 +60,7 @@ collectPrefixes = ( bindings ) ->
   for [ label ] from bindings
     for prefix in generatePrefixes label
       prefixes.add prefix
-  ( Array.from prefixes ).sort ( a, b ) -> b.length - a.length
+  ( Array.from prefixes ).sort ( first, second ) -> second.length - first.length
 
 replaceBindings = ( node, prefix, result ) ->
   for label in result.group
@@ -85,8 +85,8 @@ Compression =
     trie
 
   compress: ( node ) ->
-    for childNode from node.children.values()
-      Compression.compress childNode
+    for child from node.children.values()
+      Compression.compress child
     compressNode node
     return
 
