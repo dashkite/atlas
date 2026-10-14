@@ -9,56 +9,56 @@ getAuthority = ( url ) ->
 getPathSegments = ( url ) ->
   if url.pathname.length > 1 then url.pathname[1..].split "/" else []
 
-isExternalPackage = ( packageId ) ->
-  ( packageId? ) &&
-    ( packageId != ENTRY_POINT ) &&
-    ( !( packageId.startsWith "atlas://application" ) )
+isExternalPackage = ( id ) ->
+  ( id? ) &&
+    ( id != ENTRY_POINT ) &&
+    ( !( id.startsWith "atlas://application" ) )
 
-parsePackageSegments = ( segments, packageId ) ->
-  url = new URL packageId
+parsePackageSegments = ( segments, id ) ->
+  url = new URL id
   authority = getAuthority url
   path = getPathSegments url
   segment = [ authority, path... ].join "/"
   remaining = segments.slice path.length
   [ segment, remaining... ]
 
-parseUrlSegments = ( url, packageId ) ->
+parseUrlSegments = ( url, id ) ->
   segments = getPathSegments url
-  if isExternalPackage packageId
-    parsePackageSegments segments, packageId
+  if isExternalPackage id
+    parsePackageSegments segments, id
   else
     authority = getAuthority url
     [ authority, segments... ]
 
-parseSegments = ( urlString, packageId ) ->
-  if urlString == ENTRY_POINT
+parseSegments = ( endpoint, id ) ->
+  if endpoint == ENTRY_POINT
     []
   else
-    url = new URL urlString
-    parseUrlSegments url, packageId
+    url = new URL endpoint
+    parseUrlSegments url, id
 
-markPackageRoot = ( root, packageId ) ->
-  if isExternalPackage packageId
-    node = Trie.upsertPath root, ( parseSegments packageId, packageId )
+markPackageRoot = ( root, id ) ->
+  if isExternalPackage id
+    node = Trie.upsertPath root, ( parseSegments id, id )
     node.isPackage = true
 
-resolve = ( root, moduleGraph, endpoint ) ->
-  packageId = ModuleGraph.getAttribute moduleGraph, endpoint, "packageId"
-  segments = parseSegments endpoint, packageId
+resolve = ( root, graph, endpoint ) ->
+  id = ModuleGraph.getAttribute graph, endpoint, "packageId"
+  segments = parseSegments endpoint, id
   node = Trie.upsertPath root, segments
-  { node, packageId }
+  { node, id }
 
-bindEdge = ( root, moduleGraph, edge ) ->
-  source = resolve root, moduleGraph, edge.source
-  target = resolve root, moduleGraph, edge.target
-  markPackageRoot root, source.packageId
+bindEdge = ( root, graph, edge ) ->
+  source = resolve root, graph, edge.source
+  target = resolve root, graph, edge.target
+  markPackageRoot root, source.id
   source.node.bindings.set edge.label, target.node
 
 Baseline =
-  apply: ( moduleGraph ) ->
+  apply: ( graph ) ->
     root = Trie.make()
-    for edge in ModuleGraph.getInterEdges moduleGraph
-      bindEdge root, moduleGraph, edge
+    for edge in ModuleGraph.getInterEdges graph
+      bindEdge root, graph, edge
     root
 
 export default Baseline
