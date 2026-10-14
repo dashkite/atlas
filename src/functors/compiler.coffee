@@ -26,8 +26,8 @@ findConflictedLabels = ( edges ) ->
   conflicted
 
 hasCollision = ( vertex, incoming, conflicted ) ->
-  for incomingEdge in incoming.get vertex
-    if conflicted.has incomingEdge.label
+  for edge in incoming.get vertex
+    if conflicted.has edge.label
       return true
   false
 
@@ -93,10 +93,10 @@ embedTree = ( context ) ->
   return
 
 Compiler =
-  apply: ( componentGraph, options = {} ) ->
+  apply: ( graph, options = {} ) ->
     options.compact ?= true
-    edges = ComponentGraph.getEdges componentGraph
-    vertices = ComponentGraph.getVertices componentGraph
+    edges = ComponentGraph.getEdges graph
+    vertices = ComponentGraph.getVertices graph
     context = createContext vertices, edges, options.compact
     embedTree context
     context.index
