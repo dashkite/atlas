@@ -1,41 +1,41 @@
 import Resolvers from "../resolvers"
 
-getNodeSegments = (node) ->
-  segments = []
-  current = node
-  while current.parent?
-    segments.unshift current.segment
-    current = current.parent
-  segments
-
-formatAtlasUrl = (segments) ->
-  host = segments[0]
-  path = segments[1..].join "/"
-  if path.length > 0
-    "atlas://#{host}/#{path}"
-  else
-    "atlas://#{host}"
-
-getFullUrl = (node) ->
-  formatAtlasUrl getNodeSegments node
-
-resolveBindings = (node, registry) ->
-  for [label, target] from node.bindings
-    url = getFullUrl target
-    value = registry.resolve url
-    node.bindings.set label, value
-  return
-
-traverse = (node, registry) ->
-  resolveBindings node, registry
-  for child from node.children.values()
-    traverse child, registry
-  return
-
 Resolution =
+  segments: (node) ->
+    segments = []
+    current = node
+    while current.parent?
+      segments.unshift current.segment
+      current = current.parent
+    segments
+
+  format: (segments) ->
+    host = segments[0]
+    path = segments[1..].join "/"
+    if path.length > 0
+      "atlas://#{host}/#{path}"
+    else
+      "atlas://#{host}"
+
+  address: (node) ->
+    Resolution.format Resolution.segments node
+
+  resolve: (node, registry) ->
+    for [label, target] from node.bindings
+      address = Resolution.address target
+      value = registry.resolve address
+      node.bindings.set label, value
+    return
+
+  traverse: (node, registry) ->
+    Resolution.resolve node, registry
+    for child from node.children.values()
+      Resolution.traverse child, registry
+    return
+
   apply: (trie, keys) ->
     registry = Resolvers.Registry.make keys
-    traverse trie, registry
+    Resolution.traverse trie, registry
     trie
 
 export default Resolution
