@@ -1,7 +1,7 @@
 import AtlasURL from "../url"
 import Path from "node:path"
 import { pathToFileURL } from "node:url"
-import { decode as urlDecode } from "@dashkite/url-codex"
+import { decode } from "@dashkite/url-codex"
 
 TEMPLATE =
   scoped: "/{scope}/{versioned}/{path*}"
@@ -18,10 +18,10 @@ make = ( config = {} ) ->
     parsed = AtlasURL.parse url
 
     decoded = try
-      match = urlDecode TEMPLATE.scoped, parsed.pathname
+      match = decode TEMPLATE.scoped, parsed.pathname
       if match.scope?.startsWith "@" then match else throw new Error
     catch
-      urlDecode TEMPLATE.unscoped, parsed.pathname
+      decode TEMPLATE.unscoped, parsed.pathname
 
     parts = decoded.versioned.split "@"
     name = parts[ 0 ]
@@ -41,7 +41,7 @@ make = ( config = {} ) ->
 
   resolve: ( url ) ->
     descriptor = @decode url
-    root = config.root ? config.cwd ? process.cwd()
+    root = config.root ? process.cwd()
     name = if descriptor.module.scope
       "#{descriptor.module.scope}/#{descriptor.module.name}"
     else
