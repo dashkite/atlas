@@ -7,11 +7,11 @@ Trie =
 
   # Helper to walk down or create a path of segments
   upsertPath: (root, segments) ->
-    currentNode = root
+    node = root
     for segment in segments
-      if !currentNode.children.has segment
-        currentNode.children.set segment, ( Trie.make segment, currentNode )
-      currentNode = currentNode.children.get segment
-    currentNode
+      if !node.children.has segment
+        node.children.set segment, ( Trie.make segment, node )
+      node = node.children.get segment
+    node
 
 export default Trie
