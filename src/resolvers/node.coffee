@@ -7,6 +7,31 @@ TEMPLATE =
   scoped: "/{scope}/{versioned}/{path*}"
   unscoped: "/{versioned}/{path*}"
 
+decodePathname = ( pathname ) ->
+  try
+    match = decode TEMPLATE.scoped, pathname
+    if match.scope?.startsWith "@" then match else throw new Error
+  catch
+    decode TEMPLATE.unscoped, pathname
+
+parseModule = ( { scope, versioned } ) ->
+  [ name, version ] = versioned.split "@"
+  { scope, name, version }
+
+buildDescriptor = ( resolver, decoded ) ->
+  {
+    resolver
+    module: parseModule decoded
+    path: "/" + ( decoded.path ? [] ).join "/"
+  }
+
+formatModuleName = ( { scope, name } ) ->
+  if scope then "#{scope}/#{name}" else name
+
+normalizeModulePath = ( path ) ->
+  normalized = if path != "" then path else ""
+  if normalized.startsWith "/" then normalized.slice 1 else normalized
+
 make = ( config = {} ) ->
   match: ( context ) ->
     context.source.includes "node_modules"
@@ -15,26 +40,8 @@ make = ( config = {} ) ->
     AtlasURL.format descriptor
 
   decode: ( url ) ->
-    parsed = AtlasURL.parse url
-
-    decoded = try
-      match = decode TEMPLATE.scoped, parsed.pathname
-      if match.scope?.startsWith "@" then match else throw new Error
-    catch
-      decode TEMPLATE.unscoped, parsed.pathname
-
-    parts = decoded.versioned.split "@"
-    name = parts[ 0 ]
-    version = parts[ 1 ]
-
-    {
-      resolver: parsed.resolver
-      module:
-        scope: decoded.scope
-        name: name
-        version: version
-      path: "/" + ( decoded.path ? [] ).join "/"
-    }
+    { resolver, pathname } = AtlasURL.parse url
+    buildDescriptor resolver, decodePathname pathname
 
   parse: ( url ) ->
     @decode url
@@ -42,18 +49,13 @@ make = ( config = {} ) ->
   resolve: ( url ) ->
     descriptor = @decode url
     root = config.root ? process.cwd()
-    name = if descriptor.module.scope
-      "#{descriptor.module.scope}/#{descriptor.module.name}"
-    else
-      descriptor.module.name
-    path = if descriptor.path != "" then descriptor.path else ""
-    path = path.slice 1 if path.startsWith "/"
-
+    name = formatModuleName descriptor.module
+    path = normalizeModulePath descriptor.path
     # We resolve to node_modules in the root. If it's a monorepo, Node
     # resolution handles it. But for a physical URL, we just point to
     # node_modules/name/path
-    path = Path.resolve root, "node_modules", name, path
-    ( pathToFileURL path ).href
+    resolved = Path.resolve root, "node_modules", name, path
+    ( pathToFileURL resolved ).href
 
 export default { make }
 export { make }
