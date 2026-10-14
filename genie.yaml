@@ -6,4 +6,4 @@ audit:
   advance: true
   max:
     duration:
-      minutes: 30
+      hours: 8
