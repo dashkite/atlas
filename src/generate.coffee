@@ -53,10 +53,7 @@ dumpDiagnostics = ( context ) ->
   context
 
 normalizeEntries = ( entries ) ->
-  if typeof entries == "string"
-    [ entries ]
-  else
-    entries
+  [ entries ].flat()
 
 normalizeOptions = ( options ) ->
   cwd = options.cwd ? options.root ? process.cwd()
