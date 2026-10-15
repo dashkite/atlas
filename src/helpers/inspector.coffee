@@ -6,7 +6,7 @@ extractPrefix = ( file, marker ) ->
     file.slice 0, index + marker.length
 
 Inspector =
-  make: ( files = [] ) ->
+  make: ( files ) ->
     files: files
 
   fromZip: ( buffer ) ->
