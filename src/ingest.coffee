@@ -101,11 +101,11 @@ resolvePackageId = ( metaResolver, url ) ->
 
 assignPackageId = ( graph, metaResolver, url ) ->
   id = resolvePackageId metaResolver, url
-  ModuleGraph.setAttribute graph, url, "packageId", id
+  graph.setAttribute url, [ "packageId", id ]
   return
 
 registerVertex = ( graph, metaResolver, url ) ->
-  ModuleGraph.addVertex graph, url
+  graph.addVertex url
   assignPackageId graph, metaResolver, url
   return
 
@@ -136,7 +136,7 @@ determineEdgeType = ( specifier ) ->
 
 recordDependencyEdge = ( graph, urls, specifier ) ->
   type = determineEdgeType specifier
-  ModuleGraph.addEdge graph,
+  graph.addEdge
     source: urls.source
     target: urls.target
     label: specifier

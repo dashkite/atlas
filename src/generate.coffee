@@ -3,7 +3,7 @@ import FS from "node:fs/promises"
 import { pipe } from "@dashkite/joy"
 import analyze from "./helpers/analyze"
 import ingest from "./ingest"
-import Baseline from "./functors/baseline"
+import baseline from "./functors/baseline"
 import Compaction from "./functors/compaction"
 import Compression from "./functors/compression"
 import Resolution from "./functors/resolution"
@@ -77,7 +77,7 @@ analyzeDependencies = ( context ) ->
   { context..., dependencies }
 
 applyBaseline = ( state ) ->
-  { state..., baselineTrie: Baseline.apply state.moduleGraph }
+  { state..., baselineTrie: baseline state.moduleGraph }
 
 applyCompaction = ( state ) ->
   { state..., compactedTrie: Compaction.apply state.baselineTrie }

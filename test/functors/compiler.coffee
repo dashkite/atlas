@@ -33,9 +33,9 @@ ISOLATION_EDGES = [
 buildGraph = (components, edges) ->
   graph = ComponentGraph.make()
   for [name, files] in components
-    ComponentGraph.addComponent graph, name, files
+    graph.addComponent name, files
   for edge in edges
-    ComponentGraph.addEdge graph, edge
+    graph.addEdge edge
   graph
 
 buildLinearGraph = ->

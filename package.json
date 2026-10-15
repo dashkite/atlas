@@ -50,6 +50,7 @@
     "release": "genie release"
   },
   "dependencies": {
+    "@dashkite/generic": "^0.9.32",
     "@dashkite/joy": "0.12.40",
     "@dashkite/polaris": "0.10.37",
     "@dashkite/url-codex": "link:../url-codex",

@@ -1,5 +1,4 @@
 import TreeIndex from "../categories/tree-index"
-import ComponentGraph from "../categories/component-graph"
 import Resolvers from "../resolvers"
 
 formatPackageName = ( descriptor ) ->
@@ -9,7 +8,7 @@ formatPackageName = ( descriptor ) ->
     descriptor.module.name
 
 getComponentPackageName = ( context, component ) ->
-  modules = ComponentGraph.getModules context.componentGraph, component
+  modules = context.componentGraph.getModules component
   module = ( Array.from modules )[ 0 ]
   descriptor = context.metaResolver.decode module
   formatPackageName descriptor
@@ -78,7 +77,7 @@ processModule = ( context, directory, url ) ->
 
 processComponent = ( context, path, component ) ->
   directory = resolveDirectory context, path, component
-  modules = ComponentGraph.getModules context.componentGraph, component
+  modules = context.componentGraph.getModules component
   for url from modules
     processModule context, directory, url
   return

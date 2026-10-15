@@ -16,41 +16,41 @@ INTER_EDGE =
 
 buildGraph = ->
   graph = ModuleGraph.make()
-  ModuleGraph.addVertex graph, "file:///app/index.js"
-  ModuleGraph.addVertex graph, "file:///app/helper.js"
-  ModuleGraph.addVertex graph, "file:///node_modules/maeve/index.js"
-  ModuleGraph.addEdge graph, INTRA_EDGE
-  ModuleGraph.addEdge graph, INTER_EDGE
+  graph.addVertex "file:///app/index.js"
+  graph.addVertex "file:///app/helper.js"
+  graph.addVertex "file:///node_modules/maeve/index.js"
+  graph.addEdge INTRA_EDGE
+  graph.addEdge INTER_EDGE
   graph
 
 export default ->
   [
     test "creates an empty graph", ->
       graph = ModuleGraph.make()
-      assert ( ModuleGraph.getVertices graph ).size == 0
-      assert ( ModuleGraph.getEdges graph ).length == 0
+      assert graph.getVertices().size == 0
+      assert graph.getEdges().length == 0
 
     test "adds vertices", ->
       graph = ModuleGraph.make()
-      ModuleGraph.addVertex graph, "file:///app/index.js"
+      graph.addVertex "file:///app/index.js"
 
-      vertices = ModuleGraph.getVertices graph
+      vertices = graph.getVertices()
       assert.equal vertices.size, 1
       assert vertices.has "file:///app/index.js"
 
     test "adds morphisms", ->
       graph = buildGraph()
-      assert.equal ( ModuleGraph.getEdges graph ).length, 2
+      assert.equal graph.getEdges().length, 2
 
     test "partitions intra-component morphisms", ->
-      edges = ModuleGraph.getIntraEdges buildGraph()
+      edges = buildGraph().getIntraEdges()
       assert.equal edges.length, 1
       assert.equal edges[ 0 ].label, "./helper.js"
       assert.equal edges[ 0 ].source, "file:///app/index.js"
       assert.equal edges[ 0 ].target, "file:///app/helper.js"
 
     test "partitions inter-component morphisms", ->
-      edges = ModuleGraph.getInterEdges buildGraph()
+      edges = buildGraph().getInterEdges()
       assert.equal edges.length, 1
       assert.equal edges[ 0 ].label, "maeve"
       assert.equal edges[ 0 ].source, "file:///app/index.js"

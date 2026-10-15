@@ -1,5 +1,4 @@
 import TreeIndex from "../categories/tree-index"
-import ComponentGraph from "../categories/component-graph"
 import Path from "../categories/path"
 
 buildEdgeIndex = ( vertices, edges, endpoint ) ->
@@ -95,8 +94,8 @@ embedTree = ( context ) ->
 Compiler =
   apply: ( graph, options = {} ) ->
     options.compact ?= true
-    edges = ComponentGraph.getEdges graph
-    vertices = ComponentGraph.getVertices graph
+    edges = graph.getEdges()
+    vertices = graph.getVertices()
     context = createContext vertices, edges, options.compact
     embedTree context
     context.index

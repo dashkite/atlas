@@ -1,7 +1,6 @@
 import { test } from "@dashkite/amen"
 import assert from "@dashkite/assert"
 import ModuleGraph from "../../src/categories/module-graph"
-import ComponentGraph from "../../src/categories/component-graph"
 import Quotient from "../../src/functors/quotient"
 
 APP_INDEX = "file:///app/index.js"
@@ -22,12 +21,12 @@ ENCHANT_INDEX = "#{ ENCHANT_PACKAGE }/build/node/src/index.js"
 
 addPackageModules = ( graph, id, uris ) ->
   for uri in uris
-    ModuleGraph.addVertex graph, uri
-    ModuleGraph.setAttribute graph, uri, "packageId", id
+    graph.addVertex uri
+    graph.setAttribute uri, [ "packageId", id ]
   return
 
 addInterEdge = ( graph, source, target, label ) ->
-  ModuleGraph.addEdge graph,
+  graph.addEdge
     source: source
     target: target
     label: label
@@ -41,26 +40,26 @@ buildContractsGraph = ->
   graph
 
 findComponent = ( graph, uri ) ->
-  for id from ComponentGraph.getVertices graph
-    if ( ComponentGraph.getModules graph, id ).has uri
+  for id from graph.getVertices()
+    if ( graph.getModules id ).has uri
       return id
   null
 
 verifyAppModules = ( graph, id ) ->
-  modules = ComponentGraph.getModules graph, id
+  modules = graph.getModules id
   assert.equal modules.size, 3
   assert modules.has APP_HELPER
   assert modules.has APP_UTILS
 
 verifyEdges = ( graph, source, target ) ->
-  edges = ComponentGraph.getEdges graph
+  edges = graph.getEdges()
   assert.equal edges.length, 1
   assert.equal edges[0].source, source
   assert.equal edges[0].target, target
   assert.equal edges[0].label, "maeve"
 
 verifyDiscreteComponents = ( graph ) ->
-  vertices = ComponentGraph.getVertices graph
+  vertices = graph.getVertices()
   assert.equal vertices.size, 2
   app = findComponent graph, APP_INDEX
   maeve = findComponent graph, MAEVE_INDEX
@@ -78,7 +77,7 @@ buildDisjointGraph = ->
   graph
 
 verifyDisjointComponents = ( graph ) ->
-  vertices = ComponentGraph.getVertices graph
+  vertices = graph.getVertices()
   assert.equal vertices.size, 2,
     "Expected disjoint entry points to be collapsed
     into a single package component vertex"

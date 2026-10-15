@@ -1,22 +1,22 @@
 import { test } from "@dashkite/amen"
 import assert from "@dashkite/assert"
 import ModuleGraph from "../../src/categories/module-graph"
-import Baseline from "../../src/functors/baseline"
+import baseline from "../../src/functors/baseline"
 
 addVertices = (graph) ->
-  ModuleGraph.addVertex graph, "atlas://app/src/index.js"
-  ModuleGraph.addVertex graph, "atlas://app/node_modules/maeve/index.js"
-  ModuleGraph.addVertex graph, "atlas://app/src/helper.js"
+  graph.addVertex "atlas://app/src/index.js"
+  graph.addVertex "atlas://app/node_modules/maeve/index.js"
+  graph.addVertex "atlas://app/src/helper.js"
 
 addInterEdge = (graph) ->
-  ModuleGraph.addEdge graph,
+  graph.addEdge
     source: "atlas://app/src/index.js"
     target: "atlas://app/node_modules/maeve/index.js"
     label: "maeve"
     type: "inter"
 
 addIntraEdge = (graph) ->
-  ModuleGraph.addEdge graph,
+  graph.addEdge
     source: "atlas://app/src/index.js"
     target: "atlas://app/src/helper.js"
     label: "./helper.js"
@@ -53,6 +53,6 @@ export default ->
   [
     test "creates exact, module-scoped baseline mappings", ->
       graph = buildFixtureGraph()
-      trie = Baseline.apply graph
+      trie = baseline graph
       verifyTrie trie
   ]

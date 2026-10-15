@@ -1,6 +1,5 @@
 import { URL } from "node:url"
 import Trie from "../categories/trie"
-import ModuleGraph from "../categories/module-graph"
 import { ENTRY_POINT } from "../ingest"
 
 getAuthority = ( url ) ->
@@ -38,7 +37,7 @@ parseSegments = ( endpoint, id ) ->
     parseUrlSegments url, id
 
 resolve = ( root, graph, endpoint ) ->
-  id = ModuleGraph.getAttribute graph, endpoint, "packageId"
+  id = graph.getAttribute endpoint, "packageId"
   segments = parseSegments endpoint, id
   Trie.upsertPath root, segments
 
@@ -50,7 +49,7 @@ bindEdge = ( root, graph, edge ) ->
 
 baseline = ( graph ) ->
   root = Trie.make()
-  for edge in ModuleGraph.getInterEdges graph
+  for edge in graph.getInterEdges()
     bindEdge root, graph, edge
   root
 

@@ -1,42 +1,26 @@
-make = ->
-  vertices: new Set()
-  edges: []
-  modules: new Map()
+class ComponentGraph
+  @make: ->
+    Object.assign ( new @ ),
+      vertices: new Set()
+      edges: []
+      modules: new Map()
 
-getVertices = ( graph ) ->
-  graph.vertices
+  getVertices: ->
+    @vertices
 
-getEdges = ( graph ) ->
-  graph.edges
+  getEdges: ->
+    @edges
 
-addComponent = ( graph, identifier, modules ) ->
-  graph.vertices.add identifier
-  graph.modules.set identifier, new Set modules
-  graph
+  addComponent: ( identifier, modules ) ->
+    @vertices.add identifier
+    @modules.set identifier, new Set modules
+    @
 
-getModules = ( graph, identifier ) ->
-  graph.modules.get identifier
+  getModules: ( identifier ) ->
+    @modules.get identifier
 
-addEdge = ( graph, edge ) ->
-  graph.edges.push edge
-  graph
-
-ComponentGraph = {
-  make
-  getVertices
-  getEdges
-  addComponent
-  getModules
-  addEdge
-}
+  addEdge: ( edge ) ->
+    @edges.push edge
+    @
 
 export default ComponentGraph
-export {
-  ComponentGraph
-  make
-  getVertices
-  getEdges
-  addComponent
-  getModules
-  addEdge
-}

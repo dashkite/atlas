@@ -8,7 +8,7 @@ import preset from "../../src/presets/node"
 createGraph = (components) ->
   graph = ComponentGraph.make()
   for name, files of components
-    ComponentGraph.addComponent graph, name, files
+    graph.addComponent name, files
   graph
 
 createFlatGraph = ->

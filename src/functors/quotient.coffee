@@ -1,8 +1,7 @@
-import ModuleGraph from "../categories/module-graph"
 import ComponentGraph from "../categories/component-graph"
 
 groupVertex = ( graph, groups, vertex ) ->
-  id = ModuleGraph.getAttribute graph, vertex, "packageId"
+  id = graph.getAttribute vertex, "packageId"
   if !groups.has id
     groups.set id, []
   ( groups.get id ).push vertex
@@ -11,7 +10,7 @@ groupVertex = ( graph, groups, vertex ) ->
 groupVertices = ( graph ) ->
   # 1. Edge Contraction: Equivalence Classes via packageId
   groups = new Map()
-  for vertex from ModuleGraph.getVertices graph
+  for vertex from graph.getVertices()
     groupVertex graph, groups, vertex
   groups
 
@@ -21,7 +20,7 @@ registerComponent = ( graph, components, group ) ->
   # Deterministic component ID based on packageId
   for module in modules
     components.set module, id
-  ComponentGraph.addComponent graph, id, modules
+  graph.addComponent id, modules
   return
 
 registerComponents = ( graph, groups ) ->
@@ -40,7 +39,7 @@ addUniqueEdge = ( graph, seen, edge ) ->
   key = "#{edge.source}::#{edge.target}::#{edge.label}"
   if !seen.has key
     seen.add key
-    ComponentGraph.addEdge graph, edge
+    graph.addEdge edge
   return
 
 projectEdges = ( graph, components, edges ) ->
@@ -56,7 +55,7 @@ Quotient =
     output = ComponentGraph.make()
     groups = groupVertices input
     components = registerComponents output, groups
-    edges = ModuleGraph.getInterEdges input
+    edges = input.getInterEdges()
     projectEdges output, components, edges
     output
 
