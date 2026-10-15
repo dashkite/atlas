@@ -1,36 +1,37 @@
-ModuleGraph =
-  make: ->
-    vertices: new Set()
-    edges: []
-    attributes: new Map()
+class ModuleGraph
+  @make: ->
+    Object.assign ( new @ ),
+      vertices: new Set()
+      edges: []
+      attributes: new Map()
 
-  getVertices: ( graph ) ->
-    graph.vertices
+  getVertices: ->
+    @vertices
 
-  getEdges: ( graph ) ->
-    graph.edges
+  getEdges: ->
+    @edges
 
-  addVertex: ( graph, vertex ) ->
-    graph.vertices.add vertex
-    graph
+  addVertex: ( vertex ) ->
+    @vertices.add vertex
+    @
 
-  addEdge: ( graph, edge ) ->
-    graph.edges.push edge
-    graph
+  addEdge: ( edge ) ->
+    @edges.push edge
+    @
 
-  getIntraEdges: ( graph ) ->
-    graph.edges.filter ( edge ) -> edge.type == "intra"
+  getIntraEdges: ->
+    @edges.filter ( edge ) -> edge.type == "intra"
 
-  getInterEdges: ( graph ) ->
-    graph.edges.filter ( edge ) -> edge.type == "inter"
+  getInterEdges: ->
+    @edges.filter ( edge ) -> edge.type == "inter"
 
-  setAttribute: ( graph, vertex, [ key, value ] ) ->
-    if !graph.attributes.has vertex
-      graph.attributes.set vertex, new Map()
-    ( graph.attributes.get vertex ).set key, value
-    graph
+  setAttribute: ( vertex, [ key, value ] ) ->
+    if !@attributes.has vertex
+      @attributes.set vertex, new Map()
+    ( @attributes.get vertex ).set key, value
+    @
 
-  getAttribute: ( graph, vertex, key ) ->
-    ( graph.attributes.get vertex )?.get key
+  getAttribute: ( vertex, key ) ->
+    ( @attributes.get vertex )?.get key
 
 export default ModuleGraph
