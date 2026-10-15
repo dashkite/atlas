@@ -2,7 +2,7 @@ import Path from "node:path"
 import esbuild from "esbuild"
 import Module from "./module"
 
-resolveOptions = ( options = {} ) ->
+resolveOptions = ( options ) ->
   platform = options.platform ? "node"
   {
     cwd: options.cwd ? process.cwd()
