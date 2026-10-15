@@ -23,7 +23,7 @@ validateConfig = ( config ) ->
 decodeTemplate = ( pathname ) ->
   try
     match = urlDecode SCOPED_TEMPLATE, pathname
-    if match.scope?.startsWith "@" then match else throw new Error
+    if match.scope.startsWith "@" then match else throw new Error
   catch
     urlDecode UNSCOPED_TEMPLATE, pathname
 
@@ -34,7 +34,7 @@ parseModuleDescriptor = ( parsed, match ) ->
     scope: match.scope
     name: parts[0]
     version: parts[1]
-  path: "/" + ( match.path ? [] ).join "/"
+  path: "/" + match.path.join "/"
 
 formatSpecifiers = ( module ) ->
   { scope, name, version } = module
@@ -49,7 +49,7 @@ resolveTemplate = ( template, descriptor, data ) ->
   else
     template
   # Convert string path to array for wildcard path expansion
-  segments = ( ( descriptor.path ? "" ).split "/" ).filter Boolean
+  segments = ( descriptor.path.split "/" ).filter Boolean
   encodeTemplate template, Object.assign {}, data, path: segments
 
 match = ( context ) ->
@@ -70,7 +70,7 @@ resolve = ( config, descriptor ) ->
   data = formatSpecifiers descriptor.module
   resolveTemplate config.template, descriptor, data
 
-make = ( config = {} ) ->
+make = ( config ) ->
   validateConfig config
   match: match
   encode: encode
