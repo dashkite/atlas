@@ -29,7 +29,7 @@ normalizePath = ( path ) ->
   else
     path
 
-normalizeConfig = ( config = {} ) ->
+normalizeConfig = ( config ) ->
   root: config.root ? process.cwd()
 
 resolvePath = ( config ) ->
