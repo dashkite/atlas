@@ -16,29 +16,29 @@ upsertMaeveNode = ( root ) ->
 createFixture = ->
   root = Trie.make()
   maeve = upsertMaeveNode root
-  app = root.upsertPath [ "app", "src", "index.js" ]
-  app.bindings.set "maeve", maeve
+  application = root.upsertPath [ "app", "src", "index.js" ]
+  application.bindings.set "maeve", maeve
   root
 
 registerMockResolvers = ->
   Registry.register "node",
-    decode: ( _atlasUrl ) -> { resolver: "node" }
-    resolve: ( _atlasUrl ) ->
+    decode: ( _url ) -> { resolver: "node" }
+    resolve: ( _url ) ->
       "https://cdn.example.com/@dashkite/maeve@1.0.0/src/index.js"
   Registry.register "app",
-    decode: ( _atlasUrl ) -> { resolver: "app" }
-    resolve: ( _atlasUrl ) -> "/src/index.js"
+    decode: ( _url ) -> { resolver: "app" }
+    resolve: ( _url ) -> "/src/index.js"
 
 assertTopology = ( root ) ->
   # Verify topology is intact
   assert ( root.children.has "app" ), "Topology should remain intact"
 
-findResolvedApp = ( root ) ->
+findResolvedApplication = ( root ) ->
   ( ( root.children.get "app" ).children.get "src" )
     .children.get "index.js"
 
-assertResolvedBinding = ( app ) ->
-  url = app.bindings.get "maeve"
+assertResolvedBinding = ( application ) ->
+  url = application.bindings.get "maeve"
   assert url?, "Binding should exist"
   assert.equal typeof url, "string",
     "Binding target should now be a string URL"
@@ -54,6 +54,6 @@ export default ->
         registerMockResolvers()
         root = Resolution.apply createFixture(), [ "node", "app" ]
         assertTopology root
-        app = findResolvedApp root
-        assertResolvedBinding app
+        application = findResolvedApplication root
+        assertResolvedBinding application
   ]
