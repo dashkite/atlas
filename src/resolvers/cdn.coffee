@@ -52,31 +52,28 @@ resolveTemplate = ( template, descriptor, data ) ->
   encodeTemplate ( template descriptor ),
     Object.assign {}, data, path: segments
 
-match = ( context ) ->
-  context.source.includes "node_modules"
+class CDNResolver
+  @make: ( config ) ->
+    Object.assign ( new @ ), normalizeConfig config
 
-encode = ( descriptor ) ->
-  AtlasURL.format descriptor
+  match: ( context ) ->
+    context.source.includes "node_modules"
 
-decode = ( url ) ->
-  parsed = AtlasURL.parse url
-  match = decodeTemplate parsed.pathname
-  parseModuleDescriptor parsed, match
+  encode: ( descriptor ) ->
+    AtlasURL.format descriptor
 
-parse = ( url ) ->
-  @decode url
+  decode: ( url ) ->
+    parsed = AtlasURL.parse url
+    match = decodeTemplate parsed.pathname
+    parseModuleDescriptor parsed, match
 
-resolve = ( config, descriptor ) ->
-  data = formatSpecifiers descriptor.module
-  resolveTemplate config.template, descriptor, data
+  parse: ( url ) ->
+    @decode url
 
-make = ( config ) ->
-  normalized = normalizeConfig config
-  match: match
-  encode: encode
-  decode: decode
-  parse: parse
-  resolve: ( url ) -> resolve normalized, @decode url
+  resolve: ( url ) ->
+    descriptor = @decode url
+    data = formatSpecifiers descriptor.module
+    resolveTemplate @template, descriptor, data
 
-export default { make }
-export { make }
+export default CDNResolver
+export { CDNResolver }
