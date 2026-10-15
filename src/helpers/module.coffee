@@ -1,8 +1,6 @@
 import Path from "node:path"
 import Zephyr from "@dashkite/zephyr"
 
-cache = {}
-
 normalize = ({ name, version, path }) ->
   specifier = name
   if name.startsWith "@"
@@ -43,17 +41,18 @@ _read = ( path, directory ) ->
 
   throw new Error "No module path found for #{ path }"
 
-Module =
-  initialize: ->
-    cache = {}
-    return
+class ModuleCache
+  @make: ( directory = "." ) ->
+    Object.assign ( new @ ),
+      directory: directory
+      cache: {}
 
-  read: ( path, directory = "." ) ->
+  read: ( path, directory = @directory ) ->
     key = if directory != "."
       "#{ directory }:#{ path }"
     else
       path
-    cache[ key ] ?= _read path, directory
+    @cache[ key ] ?= _read path, directory
 
-export { Module }
-export default Module
+export { ModuleCache }
+export default ModuleCache

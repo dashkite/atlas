@@ -1,6 +1,6 @@
 import Path from "node:path"
 import esbuild from "esbuild"
-import Module from "./module"
+import ModuleCache from "./module"
 
 resolveOptions = ( options ) ->
   platform = options.platform ? "node"
@@ -30,22 +30,23 @@ isIncluded = ( dependency ) ->
   ( dependency.external != true ) &&
     ( !( dependency.path.startsWith "(disabled):" ) )
 
-createDependency = ( dependency, path, directory ) ->
+createDependency = ( dependency, path, modules ) ->
   source: path: Path.normalize dependency.path
-  module: await Module.read dependency.path, directory
+  module: await modules.read dependency.path
   import:
     scope:
       source: path: Path.normalize path
-      module: await Module.read path, directory
+      module: await modules.read path
     specifier: dependency.original
 
 generateDependencies = ( entries, options ) ->
+  modules = ModuleCache.make options.cwd
   for entry in entries
     metafile = await buildMetafile entry, options
     for path, { imports } of metafile.inputs
       for dependency in imports
         if isIncluded dependency
-          yield await createDependency dependency, path, options.cwd
+          yield await createDependency dependency, path, modules
   return
 
 # Returns an async generator yielding dependency objects
