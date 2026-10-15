@@ -1,27 +1,6 @@
 import AtlasURL from "../url"
 import Path from "node:path"
 import { pathToFileURL } from "node:url"
-import { pipe } from "@dashkite/joy"
-
-match = ( context ) ->
-  if context.source.includes "node_modules"
-    return false
-  if context.source.startsWith ".."
-    return false
-  true
-
-encode = ( descriptor ) ->
-  AtlasURL.format { descriptor..., module: undefined }
-
-decode = ( url ) ->
-  parsed = AtlasURL.parse url
-  {
-    resolver: parsed.resolver
-    path: parsed.pathname
-  }
-
-parse = ( url ) ->
-  @decode url
 
 normalizePath = ( path ) ->
   if path.startsWith "/"
@@ -29,32 +8,38 @@ normalizePath = ( path ) ->
   else
     path
 
-normalizeConfig = ( config ) ->
-  root: config.root ? process.cwd()
-
-resolvePath = ( config ) ->
-  ( path ) ->
-    Path.resolve config.root, normalizePath path
-
 toFileURL = ( path ) ->
   ( pathToFileURL path ).href
 
-decodePath = ( url ) ->
-  ( decode url ).path
+class ApplicationResolver
+  @make: ( config = {} ) ->
+    Object.assign ( new @ ),
+      root: config.root ? process.cwd()
 
-makeResolve = ( config ) ->
-  pipe [
-    decodePath
-    resolvePath config
-    toFileURL
-  ]
+  match: ( context ) ->
+    if context.source.includes "node_modules"
+      return false
+    if context.source.startsWith ".."
+      return false
+    true
 
-make = ( config = {} ) ->
-  match: match
-  encode: encode
-  decode: decode
-  parse: parse
-  resolve: makeResolve normalizeConfig config
+  encode: ( descriptor ) ->
+    AtlasURL.format { descriptor..., module: undefined }
 
-export default { make }
-export { make }
+  decode: ( url ) ->
+    parsed = AtlasURL.parse url
+    {
+      resolver: parsed.resolver
+      path: parsed.pathname
+    }
+
+  parse: ( url ) ->
+    @decode url
+
+  resolve: ( url ) ->
+    { path } = @decode url
+    resolved = Path.resolve @root, normalizePath path
+    toFileURL resolved
+
+export default ApplicationResolver
+export { ApplicationResolver }
