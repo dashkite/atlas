@@ -37,28 +37,22 @@ parseSegments = ( endpoint, id ) ->
     url = new URL endpoint
     parseUrlSegments url, id
 
-markPackageRoot = ( root, id ) ->
-  if isExternalPackage id
-    node = Trie.upsertPath root, ( parseSegments id, id )
-    node.isPackage = true
-
 resolve = ( root, graph, endpoint ) ->
   id = ModuleGraph.getAttribute graph, endpoint, "packageId"
   segments = parseSegments endpoint, id
-  node = Trie.upsertPath root, segments
-  { node, id }
+  Trie.upsertPath root, segments
 
 bindEdge = ( root, graph, edge ) ->
   source = resolve root, graph, edge.source
   target = resolve root, graph, edge.target
-  markPackageRoot root, source.id
-  source.node.bindings.set edge.label, target.node
+  source.bindings.set edge.label, target
+  return
 
-Baseline =
-  apply: ( graph ) ->
-    root = Trie.make()
-    for edge in ModuleGraph.getInterEdges graph
-      bindEdge root, graph, edge
-    root
+baseline = ( graph ) ->
+  root = Trie.make()
+  for edge in ModuleGraph.getInterEdges graph
+    bindEdge root, graph, edge
+  root
 
-export default Baseline
+export default baseline
+export { baseline }
