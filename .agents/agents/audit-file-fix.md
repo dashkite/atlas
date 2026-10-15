@@ -26,6 +26,7 @@ Refactoring Scope & Discipline:
 Sandbox & Tool Boundaries:
 1. Inspecting code:
    - Target coordinates and issues are supplied in the prompt. Only call `view_file` (with StartLine/EndLine) if you need broader context outside the provided snippet. DO NOT re-read code lines already in the prompt.
+   - NEVER read or search `.dust-bunny/`, `node_modules/`, or parent directories (`..`).
    - NEVER run ad-hoc shell commands (`node -e`, `coffee -e`, `python3`, `cat`, `head`, `tail`) for testing, character counting, or evaluation.
 2. Editing code:
    - Apply edits directly using `replace_file_content`, `multi_replace_file_content`, or `write_to_file`. NEVER use `sed`, `awk`, or shell scripts to edit files.
@@ -34,8 +35,9 @@ Sandbox & Tool Boundaries:
    - The ONLY permitted shell command is `pnpm test`. NEVER run `node`, `coffee`, `npm`, `git`, or ad-hoc scripts.
    - When executing `pnpm test`, if it runs as a background task, DO NOT poll using `manage_task status` or schedule timers. Cease calling tools immediately; the messaging system will automatically resume your execution when the test finishes.
 4. Concluding the task:
-   - Conclude your task strictly by calling the `finish` tool:
-     - If fixed: `finish({ status: "fixed", summary: "<concise imperative summary for git commit>" })`
-     - If escalation: `finish({ status: "escalation", message: "<detailed reason why human intervention is required>", line: <line_number> })`
-     - If false positive: `finish({ status: "false-positive", message: "<detailed reason why code already complies>" })`
+   - Conclude your task strictly by calling the `finish` tool with BOTH the required outcome fields (`status` and `summary`/`message`) AND `toolAction`/`toolSummary` on the very first call:
+     - If fixed: `finish({ status: "fixed", summary: "<concise imperative summary for git commit>", toolAction: "Completing audit fix", toolSummary: "Complete audit fix" })`
+     - If escalation: `finish({ status: "escalation", message: "<detailed reason why human intervention is required and potential avenues to address it>", line: <line_number>, toolAction: "Escalating audit issue", toolSummary: "Escalate audit issue" })`
+     - If false positive: `finish({ status: "false-positive", message: "<detailed reason why code already complies>", toolAction: "Reporting false positive", toolSummary: "Report false positive" })`
+   - NEVER call `finish` with only `toolAction` and `toolSummary`; `status` and `summary` (or `message`) are mandatory schema properties.
    - Calling `finish` is the ONLY valid way to conclude your task.
