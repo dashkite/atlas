@@ -31,7 +31,7 @@ loadPackage = ( current, directory ) ->
     return normalize { data..., path: Path.dirname path }
   null
 
-_read = ( path, directory = "." ) ->
+_read = ( path, directory ) ->
   current = path
 
   # Traverse up the directory tree to find the nearest package.json
