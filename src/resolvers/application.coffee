@@ -3,7 +3,7 @@ import Path from "node:path"
 import { pathToFileURL } from "node:url"
 import { pipe } from "@dashkite/joy"
 
-match = ( context = {} ) ->
+match = ( context ) ->
   if context.source.includes "node_modules"
     return false
   if context.source.startsWith ".."
@@ -29,7 +29,7 @@ normalizePath = ( path ) ->
   else
     path
 
-rootFor = ( config = {} ) ->
+rootFor = ( config ) ->
   config.root ? config.cwd ? process.cwd()
 
 resolvePath = ( config, path ) ->
