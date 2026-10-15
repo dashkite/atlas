@@ -6,16 +6,6 @@ import nodePreset from "./presets/node"
 
 ENTRY_POINT = Symbol "atlas:entry-point"
 
-validatePreconditions = ( dependencies, options ) ->
-  if !dependencies?
-    throw new Error "Dependencies argument is required"
-  isIterable = ( typeof dependencies[ Symbol.iterator ] == "function" ) ||
-    ( typeof dependencies[ Symbol.asyncIterator ] == "function" )
-  if !isIterable
-    throw new Error "Dependencies must be an iterable or async iterable"
-  if ( typeof options != "object" ) || ( !options? )
-    throw new Error "Options must be an object"
-
 createModuleGraph = ->
   graph = ModuleGraph.make()
   graph.sources = new Map()
@@ -167,7 +157,6 @@ processDependencies = ( dependencies, context ) ->
   return
 
 ingest = ( dependencies, options = {} ) ->
-  validatePreconditions dependencies, options
   context = createIngestContext options
   dependencies = await collectDependencies dependencies
   processDependencies dependencies, context
