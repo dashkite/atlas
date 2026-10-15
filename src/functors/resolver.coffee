@@ -7,20 +7,20 @@ formatPackageName = ( descriptor ) ->
     descriptor.module.name
 
 getComponentPackageName = ( context, component ) ->
-  modules = context.componentGraph.getModules component
+  modules = context.graph.getModules component
   module = ( Array.from modules )[ 0 ]
-  descriptor = context.metaResolver.decode module
+  descriptor = context.resolver.decode module
   formatPackageName descriptor
 
-isRootComponent = ( treeIndex, component ) ->
-  bindings = treeIndex.getBindings []
+isRootComponent = ( index, component ) ->
+  bindings = index.getBindings []
   for [ label, target ] from bindings
     if target == component
       return label == component
   false
 
 resolveRootDirectory = ( context, component ) ->
-  if isRootComponent context.treeIndex, component
+  if isRootComponent context.index, component
     ""
   else
     name = getComponentPackageName context, component
@@ -50,10 +50,10 @@ computeDirectory = ( context, path, component ) ->
 
 resolveDirectory = ( context, path, component ) ->
   key = "#{component}::#{JSON.stringify path}"
-  if context.directoryCache.has key
-    return context.directoryCache.get key
+  if context.cache.has key
+    return context.cache.get key
   directory = computeDirectory context, path, component
-  context.directoryCache.set key, directory
+  context.cache.set key, directory
   directory
 
 formatOutputFile = ( directory, path ) ->
@@ -68,7 +68,7 @@ formatOutputFile = ( directory, path ) ->
     "#{directory}/#{path}"
 
 processModule = ( context, directory, url ) ->
-  descriptor = context.metaResolver.decode url
+  descriptor = context.resolver.decode url
   path = descriptor.path
   file = formatOutputFile directory, path
   context.bundle.set file, url
@@ -76,28 +76,28 @@ processModule = ( context, directory, url ) ->
 
 processComponent = ( context, path, component ) ->
   directory = resolveDirectory context, path, component
-  modules = context.componentGraph.getModules component
+  modules = context.graph.getModules component
   for url from modules
     processModule context, directory, url
   return
 
 processPath = ( context, path ) ->
-  bindings = context.treeIndex.getBindings path
+  bindings = context.index.getBindings path
   for component from bindings.values()
     processComponent context, path, component
   return
 
-createContext = ( componentGraph, treeIndex, keys ) ->
-  componentGraph: componentGraph
-  treeIndex: treeIndex
-  metaResolver: Resolvers.Registry.make keys
+createContext = ( graph, index, keys ) ->
+  graph: graph
+  index: index
+  resolver: Resolvers.Registry.make keys
   bundle: new Map()
-  directoryCache: new Map()
+  cache: new Map()
 
 Resolver =
-  apply: ( componentGraph, treeIndex, keys ) ->
-    context = createContext componentGraph, treeIndex, keys
-    paths = treeIndex.getPaths()
+  apply: ( graph, index, keys ) ->
+    context = createContext graph, index, keys
+    paths = index.getPaths()
     for path in paths
       processPath context, path
     context.bundle
