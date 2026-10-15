@@ -107,16 +107,6 @@ resolveEntryPaths = ( directory, entry ) ->
   absolute = Path.resolve directory, relative
   { relative, absolute }
 
-archiveEntry = ( context, entry ) ->
-  { relative, absolute } = resolveEntryPaths context.directory, entry
-  await archiveFile context, relative, absolute
-  return
-
-archiveEntries = ( context, entries ) ->
-  for entry in entries
-    await archiveEntry context, entry
-  return
-
 resolveRootManifestPath = ( directory ) ->
   Path.resolve directory, "package.json"
 
@@ -132,64 +122,76 @@ readRootManifest = ( directory ) ->
   path = resolveRootManifestPath directory
   readOptionalFile path
 
-archiveRootManifest = ( context ) ->
-  { zip, directory, destinations } = context
-  content = await readRootManifest directory
-  if content?
-    zip.file "package.json", content
-    destinations.add "package.json"
-  return
+class BundleArchive
+  @make: ( directory, graph ) ->
+    Object.assign ( new @ ),
+      zip: JSZip()
+      directory: directory
+      graph: graph
+      destinations: new Set()
+      packages: new Set()
 
-archiveFile = ( context, destination, path ) ->
-  { zip, destinations } = context
-  if !destinations.has destination
-    destinations.add destination
-    content = await FS.readFile path
-    zip.file destination, content
-  return
+  addFile: ( destination, path ) ->
+    if !@destinations.has destination
+      @destinations.add destination
+      content = await FS.readFile path
+      @zip.file destination, content
+    return
 
-archivePackageManifest = ( context, directory, path ) ->
-  manifest = await findPackageManifest path
-  if !manifest?
-    throw new Error "Package manifest not found for #{ path }"
-  destination = Path.join directory, "package.json"
-  await archiveFile context, destination, manifest
-  return
+  addEntry: ( entry ) ->
+    { relative, absolute } = resolveEntryPaths @directory, entry
+    await @addFile relative, absolute
+    return
 
-archiveDependencyManifest = ( context, destination, path ) ->
-  { packages } = context
-  directory = derivePackageBundleDirectory destination
-  if directory != ""
-    if !packages.has directory
-      packages.add directory
-      await archivePackageManifest context, directory, path
-  return
+  addEntries: ( entries ) ->
+    for entry in entries
+      await @addEntry entry
+    return
 
-archiveBundleEntry = ( context, destination, source ) ->
-  path = resolveSourceDiskPath source, context.graph
-  await archiveDependencyManifest context, destination, path
-  await archiveFile context, destination, path
-  return
+  addRootManifest: ->
+    content = await readRootManifest @directory
+    if content?
+      @zip.file "package.json", content
+      @destinations.add "package.json"
+    return
 
-archiveBundleMap = ( context, map ) ->
-  for [ destination, source ] from map
-    await archiveBundleEntry context, destination, source
-  return
+  addPackageManifest: ( directory, path ) ->
+    manifest = await findPackageManifest path
+    if !manifest?
+      throw new Error "Package manifest not found for #{ path }"
+    destination = Path.join directory, "package.json"
+    await @addFile destination, manifest
+    return
 
-createArchiveContext = ( directory, graph ) ->
-  zip: JSZip()
-  directory: directory
-  graph: graph
-  destinations: new Set()
-  packages: new Set()
+  addDependencyManifest: ( destination, path ) ->
+    directory = derivePackageBundleDirectory destination
+    if directory != ""
+      if !@packages.has directory
+        @packages.add directory
+        await @addPackageManifest directory, path
+    return
+
+  addBundleEntry: ( destination, source ) ->
+    path = resolveSourceDiskPath source, @graph
+    await @addDependencyManifest destination, path
+    await @addFile destination, path
+    return
+
+  addBundleMap: ( map ) ->
+    for [ destination, source ] from map
+      await @addBundleEntry destination, source
+    return
+
+  generate: ->
+    @zip.generateAsync ZIP_OPTIONS
 
 constructArchive = ( context ) ->
-  archive = createArchiveContext context.options.directory,
+  archive = BundleArchive.make context.options.directory,
     context.pipeline.graph
-  await archiveEntries archive, context.entries
-  await archiveRootManifest archive
-  await archiveBundleMap archive, context.pipeline.map
-  archive.zip.generateAsync ZIP_OPTIONS
+  await archive.addEntries context.entries
+  await archive.addRootManifest()
+  await archive.addBundleMap context.pipeline.map
+  archive.generate()
 
 normalizeEntries = ( entries ) ->
   if !entries?
