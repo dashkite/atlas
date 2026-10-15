@@ -20,10 +20,10 @@ MAEVE_COMMON = "#{ MAEVE_PACKAGE }/build/node/src/common.js"
 MAEVE_SUBLIME = "#{ MAEVE_PACKAGE }/build/node/src/sublime/index.js"
 ENCHANT_INDEX = "#{ ENCHANT_PACKAGE }/build/node/src/index.js"
 
-addPackageModules = ( graph, packageId, uris ) ->
+addPackageModules = ( graph, id, uris ) ->
   for uri in uris
     ModuleGraph.addVertex graph, uri
-    ModuleGraph.setAttribute graph, uri, "packageId", packageId
+    ModuleGraph.setAttribute graph, uri, "packageId", id
   return
 
 addInterEdge = ( graph, source, target, label ) ->
@@ -46,28 +46,28 @@ findComponent = ( graph, uri ) ->
       return id
   null
 
-verifyAppModules = ( graph, componentId ) ->
-  modules = ComponentGraph.getModules graph, componentId
+verifyAppModules = ( graph, id ) ->
+  modules = ComponentGraph.getModules graph, id
   assert.equal modules.size, 3
   assert modules.has APP_HELPER
   assert modules.has APP_UTILS
 
-verifyEdges = ( graph, sourceId, targetId ) ->
+verifyEdges = ( graph, source, target ) ->
   edges = ComponentGraph.getEdges graph
   assert.equal edges.length, 1
-  assert.equal edges[0].source, sourceId
-  assert.equal edges[0].target, targetId
+  assert.equal edges[0].source, source
+  assert.equal edges[0].target, target
   assert.equal edges[0].label, "maeve"
 
-verifyDiscreteComponents = ( componentGraph ) ->
-  vertices = ComponentGraph.getVertices componentGraph
+verifyDiscreteComponents = ( graph ) ->
+  vertices = ComponentGraph.getVertices graph
   assert.equal vertices.size, 2
-  appId = findComponent componentGraph, APP_INDEX
-  maeveId = findComponent componentGraph, MAEVE_INDEX
-  assert appId?
-  assert maeveId?
-  verifyAppModules componentGraph, appId
-  verifyEdges componentGraph, appId, maeveId
+  app = findComponent graph, APP_INDEX
+  maeve = findComponent graph, MAEVE_INDEX
+  assert app?
+  assert maeve?
+  verifyAppModules graph, app
+  verifyEdges graph, app, maeve
 
 buildDisjointGraph = ->
   graph = ModuleGraph.make()
@@ -77,8 +77,8 @@ buildDisjointGraph = ->
   addInterEdge graph, ENCHANT_INDEX, MAEVE_SUBLIME, "@dashkite/maeve/sublime"
   graph
 
-verifyDisjointComponents = ( componentGraph ) ->
-  vertices = ComponentGraph.getVertices componentGraph
+verifyDisjointComponents = ( graph ) ->
+  vertices = ComponentGraph.getVertices graph
   assert.equal vertices.size, 2,
     "Expected disjoint entry points to be collapsed
     into a single package component vertex"
@@ -87,12 +87,10 @@ export default ->
   [
     test "contracts intra-component edges into discrete components", ->
       graph = buildContractsGraph()
-      componentGraph = Quotient.apply graph
-      verifyDiscreteComponents componentGraph
+      verifyDiscreteComponents Quotient.apply graph
 
     test "contracts disjoint entry points of the same package
     into a single component", ->
       graph = buildDisjointGraph()
-      componentGraph = Quotient.apply graph
-      verifyDisjointComponents componentGraph
+      verifyDisjointComponents Quotient.apply graph
   ]
