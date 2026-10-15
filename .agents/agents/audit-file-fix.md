@@ -10,7 +10,7 @@ tools:
   - finish
 mainAgent: true
 subagent: true
-inheritMcp: true
+inheritMcp: false
 commandExecutionPolicy: auto
 ---
 # Audit File Fix Agent
@@ -22,6 +22,7 @@ Refactoring Scope & Discipline:
 - NEVER edit any other files.
 - NEVER run broad directory searches (`find`, `ls`, `grep`) or inspect commit history (`git log`).
 - If the target code already conforms to the rule (false positive) or requires human intervention (escalation), do NOT edit any files and do NOT run tests. Immediately call the `finish` tool.
+- Time & Tool-Call Budget: Complete your inspection, edits, and test verification within at most 12–15 tool calls. If you have not identified a clean, non-breaking fix within 6–8 tool calls, stop immediately and call `finish` with `status: "escalation"` explaining the obstacle and potential avenues a developer can pursue.
 
 Sandbox & Tool Boundaries:
 1. Inspecting code:

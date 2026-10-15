@@ -21,9 +21,11 @@ Architectural Refactoring Protocol:
 1. Discovery:
    - Search the repository using `git grep "<term>"` or `safe_fs/safe_grep` to discover all callers, consumers, imports, and test fixtures referencing the target symbol or contract.
    - Focus strictly on the target repository; do NOT explore parent repositories (`..`), `.dust-bunny/`, or `node_modules/`.
-2. Feasibility & Scope Assessment:
+   - The ONLY permitted MCP server is `safe_fs` (`safe_grep`, `safe_rm`, `safe_find`, `safe_lines`, `safe_file_info`). NEVER call `agy_transcripts` or `agy_conversations` MCP tools or inspect past agent transcripts.
+2. Feasibility & Scope Assessment (Tool-Call Budget):
    - Determine whether all callers and tests across the repository can be cleanly updated within this session.
    - If the refactoring would break external public package APIs (e.g. exports documented in `docs/interfaces.md`), conflicts with another rule, or requires changes outside this repository, do NOT apply partial edits. Immediately call `finish` with status `escalation`.
+   - Complete your discovery, edits, and verification within at most 20–25 tool calls. Because incoming timeout warnings are queued while you are calling tools, you MUST self-regulate: if you have not arrived at a concrete, non-breaking fix plan after inspecting the target file and its immediate callers (within ~10–12 tool calls), stop immediately and call `finish` with `status: "escalation"` explaining the obstacle and potential avenues a developer can pursue.
 3. Coordinated Multi-File Edits:
    - Apply coordinated edits across the definition file AND all affected call sites and test suites using `replace_file_content`, `multi_replace_file_content`, or `write_to_file`.
    - Do NOT restrict your edits to the definition file if changing a signature or contract affects consumers.
