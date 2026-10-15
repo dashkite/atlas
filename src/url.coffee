@@ -24,8 +24,6 @@ formatPackageSpecifier = ( module ) ->
     module.name
 
 formatModuleIdentifier = ( module ) ->
-  if !module?.name?
-    return null
   specifier = formatPackageSpecifier module
   if module.version?
     "#{specifier}@#{module.version}"
@@ -33,17 +31,15 @@ formatModuleIdentifier = ( module ) ->
     specifier
 
 normalizePath = ( path ) ->
-  if ( !path? ) || ( path == "" )
-    return null
-  path = if path.startsWith "/" then path.slice 1 else path
-  if path != "" then path else null
+  if path.startsWith "/" then path.slice 1 else path
 
 formatPathname = ( descriptor ) ->
   segments = []
-  identifier = formatModuleIdentifier descriptor.module
-  segments.push identifier if identifier?
-  path = normalizePath descriptor.path
-  segments.push path if path?
+  if descriptor.module?
+    segments.push formatModuleIdentifier descriptor.module
+  if descriptor.path?
+    path = normalizePath descriptor.path
+    segments.push path if path != ""
   if segments.length > 0 then "/" + segments.join "/" else ""
 
 export default
