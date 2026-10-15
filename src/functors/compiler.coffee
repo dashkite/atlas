@@ -59,17 +59,18 @@ initializeQueue = ( index, roots ) ->
     queue.push QueueItem.make root, Path.root
   queue
 
+analyzeGraph = ( vertices, edges ) ->
+  incoming: buildEdgeIndex vertices, edges, "target"
+  outgoing: buildEdgeIndex vertices, edges, "source"
+  conflicted: findConflictedLabels edges
+
 class TraversalContext
   @make: ( vertices, edges, compact ) ->
-    incoming = buildEdgeIndex vertices, edges, "target"
-    outgoing = buildEdgeIndex vertices, edges, "source"
+    analysis = analyzeGraph vertices, edges
     index = TreeIndex.make()
-    Object.assign ( new @ ),
+    Object.assign ( new @ ), analysis,
       index: index
-      incoming: incoming
-      outgoing: outgoing
-      conflicted: findConflictedLabels edges
-      queue: initializeQueue index, ( findRoots vertices, incoming )
+      queue: initializeQueue index, ( findRoots vertices, analysis.incoming )
       compact: compact
       visited: new Set()
       cache: new Map()
