@@ -45,18 +45,15 @@ findRoots = ( vertices, incoming ) ->
       roots.push vertex
   roots
 
-class QueueItem
-  @make: ( component, path ) ->
-    Object.assign ( new @ ),
-      component: component
-      path: path
+createQueueItem = ( component, path ) ->
+  { component, path }
 
 initializeQueue = ( index, roots ) ->
   queue = []
   for root in roots
     index.bind Path.root, [ root, root ]
     index.addVertex root
-    queue.push QueueItem.make root, Path.root
+    queue.push createQueueItem root, Path.root
   queue
 
 analyzeGraph = ( vertices, edges ) ->
@@ -64,16 +61,17 @@ analyzeGraph = ( vertices, edges ) ->
   outgoing: buildEdgeIndex vertices, edges, "source"
   conflicted: findConflictedLabels edges
 
-class TraversalContext
-  @make: ( vertices, edges, compact ) ->
-    analysis = analyzeGraph vertices, edges
-    index = TreeIndex.make()
-    Object.assign ( new @ ), analysis,
-      index: index
-      queue: initializeQueue index, ( findRoots vertices, analysis.incoming )
-      compact: compact
-      visited: new Set()
-      cache: new Map()
+createContext = ( vertices, edges, compact ) ->
+  analysis = analyzeGraph vertices, edges
+  index = TreeIndex.make()
+  {
+    analysis...
+    index: index
+    queue: initializeQueue index, ( findRoots vertices, analysis.incoming )
+    compact: compact
+    visited: new Set()
+    cache: new Map()
+  }
 
 resolvePath = ( target, item, context ) ->
   if context.compact && ( canHoist target, context )
@@ -86,7 +84,7 @@ embedEdge = ( context, edge, item ) ->
   destination = resolvePath target, item, context
   context.index.addVertex target
   context.index.bind destination, [ edge.label, target ]
-  context.queue.push QueueItem.make target, destination
+  context.queue.push createQueueItem target, destination
   return
 
 processItem = ( item, context ) ->
@@ -107,7 +105,7 @@ Compiler =
   apply: ( graph, compact = true ) ->
     edges = graph.getEdges()
     vertices = graph.getVertices()
-    context = TraversalContext.make vertices, edges, compact
+    context = createContext vertices, edges, compact
     embedTree context
     context.index
 
