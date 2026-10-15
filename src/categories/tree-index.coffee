@@ -13,9 +13,7 @@ TreeIndex =
   getVertices: ( index ) ->
     index.vertices
 
-  bind: ( index, path, binding... ) ->
-    [ label, target ] =
-      if Array.isArray binding[ 0 ] then binding[ 0 ] else binding
+  bind: ( index, path, [ label, target ] ) ->
     key = serializePath path
     if !index.bindings.has key
       index.bindings.set key, new Map()
