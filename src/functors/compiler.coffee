@@ -45,33 +45,35 @@ findRoots = ( vertices, incoming ) ->
       roots.push vertex
   roots
 
-createQueueItem = ( component, path ) ->
-  { component, path }
+class QueueItem
+  @make: ( component, path ) ->
+    Object.assign ( new @ ), { component, path }
 
 initializeQueue = ( index, roots ) ->
   queue = []
   for root in roots
     index.bind Path.root, [ root, root ]
     index.addVertex root
-    queue.push createQueueItem root, Path.root
+    queue.push QueueItem.make root, Path.root
   queue
 
-analyzeGraph = ( vertices, edges ) ->
-  incoming: buildEdgeIndex vertices, edges, "target"
-  outgoing: buildEdgeIndex vertices, edges, "source"
-  conflicted: findConflictedLabels edges
+class GraphAnalysis
+  @make: ( vertices, edges ) ->
+    Object.assign ( new @ ),
+      incoming: buildEdgeIndex vertices, edges, "target"
+      outgoing: buildEdgeIndex vertices, edges, "source"
+      conflicted: findConflictedLabels edges
 
-createContext = ( vertices, edges, compact ) ->
-  analysis = analyzeGraph vertices, edges
-  index = TreeIndex.make()
-  {
-    analysis...
-    index: index
-    queue: initializeQueue index, ( findRoots vertices, analysis.incoming )
-    compact: compact
-    visited: new Set()
-    cache: new Map()
-  }
+class Context
+  @make: ( vertices, edges, compact ) ->
+    analysis = GraphAnalysis.make vertices, edges
+    index = TreeIndex.make()
+    Object.assign ( new @ ), analysis,
+      index: index
+      queue: initializeQueue index, ( findRoots vertices, analysis.incoming )
+      compact: compact
+      visited: new Set()
+      cache: new Map()
 
 resolvePath = ( target, item, context ) ->
   if context.compact && ( canHoist target, context )
@@ -84,7 +86,7 @@ embedEdge = ( context, edge, item ) ->
   destination = resolvePath target, item, context
   context.index.addVertex target
   context.index.bind destination, [ edge.label, target ]
-  context.queue.push createQueueItem target, destination
+  context.queue.push QueueItem.make target, destination
   return
 
 processItem = ( item, context ) ->
@@ -105,7 +107,7 @@ Compiler =
   apply: ( graph, compact = true ) ->
     edges = graph.getEdges()
     vertices = graph.getVertices()
-    context = createContext vertices, edges, compact
+    context = Context.make vertices, edges, compact
     embedTree context
     context.index
 
