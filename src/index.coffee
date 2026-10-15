@@ -7,7 +7,7 @@ import TreeIndex from "./categories/tree-index"
 import Path from "./categories/path"
 import Quotient from "./functors/quotient"
 import Compiler from "./functors/compiler"
-import Resolver from "./functors/resolver"
+import BundleResolver from "./functors/resolver"
 import AtlasURL from "./url"
 import Resolvers, { App, NPM, Metarepo } from "./resolvers"
 
@@ -24,7 +24,7 @@ export default {
   Path
   Quotient
   Compiler
-  Resolver
+  BundleResolver
   AtlasURL
   Resolvers
   App
@@ -43,7 +43,7 @@ export {
   Path
   Quotient
   Compiler
-  Resolver
+  BundleResolver
   AtlasURL
   Resolvers
   App

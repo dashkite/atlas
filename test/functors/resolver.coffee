@@ -2,7 +2,7 @@ import { test } from "@dashkite/amen"
 import assert from "@dashkite/assert"
 import ComponentGraph from "../../src/categories/component-graph"
 import TreeIndex from "../../src/categories/tree-index"
-import Resolver from "../../src/functors/resolver"
+import BundleResolver from "../../src/functors/resolver"
 import preset from "../../src/presets/node"
 
 createGraph = (components) ->
@@ -62,12 +62,14 @@ export default ->
     test "projects flat tree index into physical node_modules", ->
       graph = createFlatGraph()
       index = createFlatIndex()
-      bundle = Resolver.apply graph, index, preset
+      resolver = BundleResolver.make graph, index, preset
+      bundle = resolver.resolve()
       assertFlatBundle bundle
 
     test "projects deeply nested hierarchical tree index", ->
       graph = createNestedGraph()
       index = createNestedIndex()
-      bundle = Resolver.apply graph, index, preset
+      resolver = BundleResolver.make graph, index, preset
+      bundle = resolver.resolve()
       assertNestedBundle bundle
   ]
