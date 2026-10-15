@@ -29,21 +29,18 @@ normalizePath = ( path ) ->
   else
     path
 
-rootFor = ( config ) ->
-  config.root ? config.cwd ? process.cwd()
+normalizeConfig = ( config = {} ) ->
+  root: config.root ? process.cwd()
 
-resolvePath = ( config, path ) ->
-  if path?
-    Path.resolve ( rootFor config ), ( normalizePath path )
-  else
-    ( path ) ->
-      Path.resolve ( rootFor config ), ( normalizePath path )
+resolvePath = ( config ) ->
+  ( path ) ->
+    Path.resolve config.root, normalizePath path
 
 toFileURL = ( path ) ->
   ( pathToFileURL path ).href
 
 decodePath = ( url ) ->
-  ( ( @decode ? decode ) url ).path
+  ( decode url ).path
 
 makeResolve = ( config ) ->
   pipe [
@@ -57,7 +54,7 @@ make = ( config = {} ) ->
   encode: encode
   decode: decode
   parse: parse
-  resolve: makeResolve config
+  resolve: makeResolve normalizeConfig config
 
 export default { make }
 export { make }
