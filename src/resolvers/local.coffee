@@ -8,7 +8,7 @@ SCOPED_TEMPLATE = "/{scope}/{versioned}/{path*}"
 UNSCOPED_TEMPLATE = "/{versioned}/{path*}"
 DEFAULT_PATTERNS = [ "../**/*", "packages/**/*" ]
 
-normalizeConfig = ( config = {} ) ->
+normalizeConfig = ( config ) ->
   if !config.root?
     throw new Error "Local resolver requires 'root' in configuration"
   root: config.root
@@ -55,14 +55,12 @@ decodeUrl = ( url ) ->
   }
 
 resolvePath = ( root, descriptor ) ->
-  path = descriptor.path
-  path = path.slice 1 if path.startsWith "/"
-  path = Path.resolve root, path
+  path = Path.resolve root, descriptor.path.slice 1
   ( pathToFileURL path ).href
 
 make = ( config = {} ) ->
   { root, cwd, patterns } = normalizeConfig config
-  match: ( context = {} ) -> matchPattern context.source, patterns, cwd
+  match: ( context ) -> matchPattern context.source, patterns, cwd
   encode: ( descriptor ) -> AtlasURL.format descriptor
   decode: ( url ) -> decodeUrl url
   parse: ( url ) -> @decode url
