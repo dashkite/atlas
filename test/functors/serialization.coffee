@@ -7,7 +7,7 @@ import { Registry } from "../../src/resolvers/index"
 createFixture = ->
   root = Trie.make()
   root.bindings.set "helper", "/src/helper.js"
-  node = Trie.upsertPath root, [ "node", "@dashkite", "maeve@1.0.0" ]
+  node = root.upsertPath [ "node", "@dashkite", "maeve@1.0.0" ]
   node.bindings.set "./",
     "https://cdn.example.com/@dashkite/maeve@1.0.0/lib/index.js"
   root

@@ -45,23 +45,34 @@ findRoots = ( vertices, incoming ) ->
       roots.push vertex
   roots
 
+class QueueItem
+  @make: ( component, path ) ->
+    Object.assign ( new @ ),
+      component: component
+      path: path
+
 initializeQueue = ( index, roots ) ->
   queue = []
   for root in roots
-    TreeIndex.bind index, Path.root, root, root
-    TreeIndex.addVertex index, root
-    queue.push { component: root, path: Path.root }
+    index.bind Path.root, [ root, root ]
+    index.addVertex root
+    queue.push QueueItem.make root, Path.root
   queue
 
-createContext = ( vertices, edges, compact ) ->
-  incoming = buildEdgeIndex vertices, edges, "target"
-  outgoing = buildEdgeIndex vertices, edges, "source"
-  index = TreeIndex.make()
-  queue = initializeQueue index, ( findRoots vertices, incoming )
-  conflicted = findConflictedLabels edges
-  visited = new Set()
-  cache = new Map()
-  { index, incoming, outgoing, conflicted, queue, compact, visited, cache }
+class TraversalContext
+  @make: ( vertices, edges, compact ) ->
+    incoming = buildEdgeIndex vertices, edges, "target"
+    outgoing = buildEdgeIndex vertices, edges, "source"
+    index = TreeIndex.make()
+    Object.assign ( new @ ),
+      index: index
+      incoming: incoming
+      outgoing: outgoing
+      conflicted: findConflictedLabels edges
+      queue: initializeQueue index, ( findRoots vertices, incoming )
+      compact: compact
+      visited: new Set()
+      cache: new Map()
 
 resolvePath = ( target, item, context ) ->
   if context.compact && ( canHoist target, context )
@@ -72,9 +83,9 @@ resolvePath = ( target, item, context ) ->
 embedEdge = ( context, edge, item ) ->
   target = edge.target
   destination = resolvePath target, item, context
-  TreeIndex.addVertex context.index, target
-  TreeIndex.bind context.index, destination, edge.label, target
-  context.queue.push { component: target, path: destination }
+  context.index.addVertex target
+  context.index.bind destination, [ edge.label, target ]
+  context.queue.push QueueItem.make target, destination
   return
 
 processItem = ( item, context ) ->
@@ -92,11 +103,10 @@ embedTree = ( context ) ->
   return
 
 Compiler =
-  apply: ( graph, options = {} ) ->
-    options.compact ?= true
+  apply: ( graph, compact = true ) ->
     edges = graph.getEdges()
     vertices = graph.getVertices()
-    context = createContext vertices, edges, options.compact
+    context = TraversalContext.make vertices, edges, compact
     embedTree context
     context.index
 

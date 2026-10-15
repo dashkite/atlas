@@ -5,7 +5,7 @@ import Resolution from "../../src/functors/resolution"
 import { Registry } from "../../src/resolvers/index"
 
 upsertMaeveNode = ( root ) ->
-  Trie.upsertPath root, [
+  root.upsertPath [
     "node"
     "@dashkite"
     "maeve@1.0.0"
@@ -16,7 +16,7 @@ upsertMaeveNode = ( root ) ->
 createFixture = ->
   root = Trie.make()
   maeve = upsertMaeveNode root
-  app = Trie.upsertPath root, [ "app", "src", "index.js" ]
+  app = root.upsertPath [ "app", "src", "index.js" ]
   app.bindings.set "maeve", maeve
   root
 

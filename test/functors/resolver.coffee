@@ -21,10 +21,10 @@ createFlatGraph = ->
 
 createFlatIndex = ->
   index = TreeIndex.make()
-  TreeIndex.addVertex index, "pkg-root"
-  TreeIndex.addVertex index, "pkg-A"
-  TreeIndex.bind index, [], "pkg-root", "pkg-root"
-  TreeIndex.bind index, [], "a", "pkg-A"
+  index.addVertex "pkg-root"
+  index.addVertex "pkg-A"
+  index.bind [], [ "pkg-root", "pkg-root" ]
+  index.bind [], [ "a", "pkg-A" ]
   index
 
 assertFlatBundle = (bundle) ->
@@ -42,12 +42,12 @@ createNestedGraph = ->
 
 createNestedIndex = ->
   index = TreeIndex.make()
-  TreeIndex.addVertex index, "pkg-root"
-  TreeIndex.addVertex index, "pkg-A"
-  TreeIndex.addVertex index, "pkg-B"
-  TreeIndex.bind index, [], "pkg-root", "pkg-root"
-  TreeIndex.bind index, [], "a", "pkg-A"
-  TreeIndex.bind index, [ "pkg-A" ], "b", "pkg-B"
+  index.addVertex "pkg-root"
+  index.addVertex "pkg-A"
+  index.addVertex "pkg-B"
+  index.bind [], [ "pkg-root", "pkg-root" ]
+  index.bind [], [ "a", "pkg-A" ]
+  index.bind [ "pkg-A" ], [ "b", "pkg-B" ]
   index
 
 assertNestedBundle = (bundle) ->

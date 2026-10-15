@@ -39,7 +39,7 @@ parseSegments = ( endpoint, id ) ->
 resolve = ( root, graph, endpoint ) ->
   id = graph.getAttribute endpoint, "packageId"
   segments = parseSegments endpoint, id
-  Trie.upsertPath root, segments
+  root.upsertPath segments
 
 bindEdge = ( root, graph, edge ) ->
   source = resolve root, graph, edge.source

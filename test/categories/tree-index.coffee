@@ -3,21 +3,22 @@ import assert from "@dashkite/assert"
 import TreeIndex from "../../src/categories/tree-index"
 
 bindingFor = ( index, path, label ) ->
-  ( TreeIndex.getBindings index, path ).get label
+  ( index.getBindings path ).get label
 
 export default ->
   [
     test "creates an empty tree index", ->
       index = TreeIndex.make()
-      assert ( TreeIndex.getPaths index ).length == 0
-      assert ( TreeIndex.getVertices index ).size == 0
+      assert index instanceof TreeIndex
+      assert index.getPaths().length == 0
+      assert index.getVertices().size == 0
 
     test "retains manifest of explicit vertices", ->
       index = TreeIndex.make()
-      TreeIndex.addVertex index, "pkg-A"
-      TreeIndex.addVertex index, "pkg-B"
+      index.addVertex "pkg-A"
+      index.addVertex "pkg-B"
 
-      vertices = TreeIndex.getVertices index
+      vertices = index.getVertices()
       assert.equal vertices.size, 2
       assert vertices.has "pkg-A"
 
@@ -25,24 +26,24 @@ export default ->
       index = TreeIndex.make()
       path = [ "pkg-A" ]
 
-      TreeIndex.bind index, path, "maeve", "pkg-maeve"
-      TreeIndex.bind index, path, "cerulean", "pkg-cerulean"
+      index.bind path, [ "maeve", "pkg-maeve" ]
+      index.bind path, [ "cerulean", "pkg-cerulean" ]
 
-      bindings = TreeIndex.getBindings index, path
+      bindings = index.getBindings path
       assert.equal bindings.size, 2
       assert.equal ( bindings.get "maeve" ), "pkg-maeve"
 
     test "retrieves distinct paths", ->
       index = TreeIndex.make()
-      TreeIndex.bind index, [ "pkg-A" ], "maeve", "pkg-maeve"
-      TreeIndex.bind index, [ "pkg-A", "pkg-B" ], "cerulean", "pkg-cerulean"
-      paths = TreeIndex.getPaths index
+      index.bind [ "pkg-A" ], [ "maeve", "pkg-maeve" ]
+      index.bind [ "pkg-A", "pkg-B" ], [ "cerulean", "pkg-cerulean" ]
+      paths = index.getPaths()
       assert.equal paths.length, 2
 
     test "retains bindings across distinct paths", ->
       index = TreeIndex.make()
-      TreeIndex.bind index, [ "pkg-A" ], "maeve", "pkg-maeve"
-      TreeIndex.bind index, [ "pkg-A", "pkg-B" ], "cerulean", "pkg-cerulean"
+      index.bind [ "pkg-A" ], [ "maeve", "pkg-maeve" ]
+      index.bind [ "pkg-A", "pkg-B" ], [ "cerulean", "pkg-cerulean" ]
       assert.equal ( bindingFor index, [ "pkg-A" ], "maeve" ), "pkg-maeve"
       assert.equal ( bindingFor index, [ "pkg-A", "pkg-B" ], "cerulean" ),
         "pkg-cerulean"

@@ -4,7 +4,7 @@ import Trie from "../../src/categories/trie"
 import Compression from "../../src/functors/compression"
 
 setupMaeveNode = ( root ) ->
-  Trie.upsertPath root, [
+  root.upsertPath [
     "npm"
     "@dashkite"
     "maeve@1.0.0"
@@ -15,12 +15,12 @@ setupMaeveNode = ( root ) ->
 
 setupTargetPaths = ( root ) ->
   maeve = setupMaeveNode root
-  common = Trie.upsertPath maeve, [ "common.js" ]
-  sublime = Trie.upsertPath maeve, [ "sublime", "index.js" ]
+  common = maeve.upsertPath [ "common.js" ]
+  sublime = maeve.upsertPath [ "sublime", "index.js" ]
   { maeve, common, sublime }
 
 setupBindings = ( root, { common, sublime } ) ->
-  app = Trie.upsertPath root, [ "app" ]
+  app = root.upsertPath [ "app" ]
   app.bindings.set "@dashkite/maeve/common.js", common
   app.bindings.set "@dashkite/maeve/sublime/index.js", sublime
 

@@ -230,7 +230,7 @@ createPipeline = ( graph, components, index, map ) ->
 
 applyFunctors = ( graph, options ) ->
   components = Quotient.apply graph
-  index = Compiler.apply components, options
+  index = Compiler.apply components, options.compact
   map = Resolver.apply components, index, options.resolvers
   createPipeline graph, components, index, map
 

@@ -1,4 +1,3 @@
-import TreeIndex from "../categories/tree-index"
 import Resolvers from "../resolvers"
 
 formatPackageName = ( descriptor ) ->
@@ -14,7 +13,7 @@ getComponentPackageName = ( context, component ) ->
   formatPackageName descriptor
 
 isRootComponent = ( treeIndex, component ) ->
-  bindings = TreeIndex.getBindings treeIndex, []
+  bindings = treeIndex.getBindings []
   for [ label, target ] from bindings
     if target == component
       return label == component
@@ -83,7 +82,7 @@ processComponent = ( context, path, component ) ->
   return
 
 processPath = ( context, path ) ->
-  bindings = TreeIndex.getBindings context.treeIndex, path
+  bindings = context.treeIndex.getBindings path
   for component from bindings.values()
     processComponent context, path, component
   return
@@ -98,7 +97,7 @@ createContext = ( componentGraph, treeIndex, keys ) ->
 Resolver =
   apply: ( componentGraph, treeIndex, keys ) ->
     context = createContext componentGraph, treeIndex, keys
-    paths = TreeIndex.getPaths treeIndex
+    paths = treeIndex.getPaths()
     for path in paths
       processPath context, path
     context.bundle

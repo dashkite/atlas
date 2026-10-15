@@ -1,7 +1,6 @@
 import { test } from "@dashkite/amen"
 import assert from "@dashkite/assert"
 import ComponentGraph from "../../src/categories/component-graph"
-import TreeIndex from "../../src/categories/tree-index"
 import Compiler from "../../src/functors/compiler"
 
 LINEAR_COMPONENTS = [
@@ -45,7 +44,7 @@ buildIsolationGraph = ->
   buildGraph ISOLATION_COMPONENTS, ISOLATION_EDGES
 
 verifyBinding = (index, path, key, expected) ->
-  bindings = TreeIndex.getBindings index, path
+  bindings = index.getBindings path
   assert.equal ( bindings.get key ), expected
 
 verifyBaseline = (index) ->
@@ -73,17 +72,17 @@ export default ->
   [
     test "baseline tree embedding (uncompacted)", ->
       graph = buildLinearGraph()
-      index = Compiler.apply graph, { compact: false }
+      index = Compiler.apply graph, false
       verifyBaseline index
 
     test "topological compaction (unconflicted rebasing)", ->
       graph = buildLinearGraph()
-      index = Compiler.apply graph, { compact: true }
+      index = Compiler.apply graph, true
       verifyCompacted index
 
     test "topological isolation
       (allows parent hoisting with nested children)", ->
       graph = buildIsolationGraph()
-      index = Compiler.apply graph, { compact: true }
+      index = Compiler.apply graph, true
       verifyIsolation index
   ]

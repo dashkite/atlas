@@ -8,9 +8,9 @@ import Compaction from "../../src/functors/compaction"
 # src/helper.js has binding `a -> targetA`
 # Both should lift to `src`, and then to `app`, and then to `root`
 setupSourceNodes = (root, target) ->
-  node = Trie.upsertPath root, [ "app", "src", "index.js" ]
+  node = root.upsertPath [ "app", "src", "index.js" ]
   node.bindings.set "a", target
-  node = Trie.upsertPath root, [ "app", "src", "helper.js" ]
+  node = root.upsertPath [ "app", "src", "helper.js" ]
   node.bindings.set "a", target
 
 # 2. Colliding lift
@@ -19,7 +19,7 @@ setupSourceNodes = (root, target) ->
 # When `lib` tries to lift to `app`, `app` already has `a -> targetA`.
 # Since targetA != targetB, it must trap the binding at `lib`.
 setupLibraryNode = (root, target) ->
-  node = Trie.upsertPath root, [ "app", "lib", "index.js" ]
+  node = root.upsertPath [ "app", "lib", "index.js" ]
   node.bindings.set "a", target
 
 setupTrie = (targetA, targetB) ->
