@@ -1,24 +1,27 @@
 import AtlasURL from "../url"
 import { decode as urlDecode } from "@dashkite/url-codex"
+import { isFunction } from "@dashkite/joy/type"
 
 SCOPED_TEMPLATE = "/{scope}/{versioned}/{path*}"
 UNSCOPED_TEMPLATE = "/{versioned}/{path*}"
 
 encodeTemplate = ( template, data ) ->
   # Simple regex replacement for string templates
-  template.replace /\{(\w+)(\*|\?)?\}/g, (match, key, _modifier) ->
+  template.replace /\{(\w+)(\*|\?)?\}/g, (match, key, modifier) ->
     value = data[key]
-    if Array.isArray value
+    if modifier == "*"
       value.join "/"
     else if value?
       value
     else
       ""
 
-validateConfig = ( config ) ->
+normalizeConfig = ( config ) ->
   if !config?.template?
     throw new Error "CDN resolver requires a URL Codex template string or
       function in configuration"
+  { template } = config
+  template: if isFunction template then template else -> template
 
 decodeTemplate = ( pathname ) ->
   try
@@ -44,13 +47,10 @@ formatSpecifiers = ( module ) ->
   { scope, specifier, release, versioned }
 
 resolveTemplate = ( template, descriptor, data ) ->
-  template = if typeof template == "function"
-    template descriptor
-  else
-    template
   # Convert string path to array for wildcard path expansion
   segments = ( descriptor.path.split "/" ).filter Boolean
-  encodeTemplate template, Object.assign {}, data, path: segments
+  encodeTemplate ( template descriptor ),
+    Object.assign {}, data, path: segments
 
 match = ( context ) ->
   context.source.includes "node_modules"
@@ -71,12 +71,12 @@ resolve = ( config, descriptor ) ->
   resolveTemplate config.template, descriptor, data
 
 make = ( config ) ->
-  validateConfig config
+  normalized = normalizeConfig config
   match: match
   encode: encode
   decode: decode
   parse: parse
-  resolve: ( url ) -> resolve config, @decode url
+  resolve: ( url ) -> resolve normalized, @decode url
 
 export default { make }
 export { make }
