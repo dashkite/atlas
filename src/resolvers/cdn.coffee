@@ -1,3 +1,4 @@
+import { pipe } from "@dashkite/joy"
 import AtlasURL from "../url"
 import { decode as urlDecode } from "@dashkite/url-codex"
 import { isFunction } from "@dashkite/joy/type"
@@ -62,18 +63,24 @@ class CDNResolver
   encode: ( descriptor ) ->
     AtlasURL.format descriptor
 
-  decode: ( url ) ->
-    parsed = AtlasURL.parse url
-    match = decodeTemplate parsed.pathname
-    parseModuleDescriptor parsed, match
+  decode: pipe [
+    AtlasURL.parse
+    ( parsed ) ->
+      { parsed, match: decodeTemplate parsed.pathname }
+    ( { parsed, match } ) ->
+      parseModuleDescriptor parsed, match
+  ]
 
   parse: ( url ) ->
     @decode url
 
-  resolve: ( url ) ->
-    descriptor = @decode url
-    data = formatSpecifiers descriptor.module
-    resolveTemplate @template, descriptor, data
+  resolve: pipe [
+    ( url ) -> @decode url
+    ( descriptor ) ->
+      { descriptor, data: formatSpecifiers descriptor.module }
+    ( { descriptor, data } ) ->
+      resolveTemplate @template, descriptor, data
+  ]
 
 export default CDNResolver
 export { CDNResolver }
