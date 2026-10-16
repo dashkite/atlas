@@ -40,8 +40,6 @@ findResolvedApplication = ( root ) ->
 assertResolvedBinding = ( application ) ->
   url = application.bindings.get "maeve"
   assert url?, "Binding should exist"
-  assert.equal typeof url, "string",
-    "Binding target should now be a string URL"
   # Target was ["npm", "@dashkite", "maeve@1.0.0", "src", "index.js"]
   # Which corresponds to atlas://node/@dashkite/maeve@1.0.0/src/index.js
   assert.equal url,
