@@ -27,8 +27,8 @@ class MetaResolver
 
   match: (context) ->
     for key in @keys
-      resolver = Registry.get key
-      if resolver?.match context
+      resolver = lookupResolver key
+      if resolver.match context
         return key
     null
 
