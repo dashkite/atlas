@@ -1,11 +1,12 @@
+import { pipe } from "@dashkite/joy"
 import TreeIndex from "../categories/tree-index"
 import Path from "../categories/path"
 
-buildEdgeIndex = ( vertices, edges, endpoint ) ->
+buildEdgeIndex = ( graph, endpoint ) ->
   index = new Map()
-  for vertex from vertices
+  for vertex from graph.getVertices()
     index.set vertex, []
-  for edge in edges
+  for edge in graph.getEdges()
     ( index.get edge[ endpoint ] ).push edge
   index
 
@@ -38,9 +39,9 @@ canHoist = ( target, context ) ->
     context.cache.set target, hoistable
     hoistable
 
-findRoots = ( vertices, incoming ) ->
+findRoots = ( graph, incoming ) ->
   roots = []
-  for vertex from vertices
+  for vertex from graph.getVertices()
     if ( incoming.get vertex ).length == 0
       roots.push vertex
   roots
@@ -56,18 +57,18 @@ initializeQueue = ( index, roots ) ->
     queue.push createQueueItem root, Path.root
   queue
 
-analyzeGraph = ( vertices, edges ) ->
-  incoming: buildEdgeIndex vertices, edges, "target"
-  outgoing: buildEdgeIndex vertices, edges, "source"
-  conflicted: findConflictedLabels edges
+analyzeGraph = ( graph ) ->
+  incoming: buildEdgeIndex graph, "target"
+  outgoing: buildEdgeIndex graph, "source"
+  conflicted: findConflictedLabels graph.getEdges()
 
-createContext = ( vertices, edges, compact ) ->
-  analysis = analyzeGraph vertices, edges
+createContext = ( graph, compact = true ) ->
+  analysis = analyzeGraph graph
   index = TreeIndex.make()
   {
     analysis...
     index: index
-    queue: initializeQueue index, ( findRoots vertices, analysis.incoming )
+    queue: initializeQueue index, ( findRoots graph, analysis.incoming )
     compact: compact
     visited: new Set()
     cache: new Map()
@@ -99,14 +100,12 @@ embedTree = ( context ) ->
   while context.queue.length > 0
     item = context.queue.shift()
     processItem item, context
-  return
+  context.index
 
 Compiler =
-  apply: ( graph, compact = true ) ->
-    edges = graph.getEdges()
-    vertices = graph.getVertices()
-    context = createContext vertices, edges, compact
-    embedTree context
-    context.index
+  apply: pipe [
+    createContext
+    embedTree
+  ]
 
 export default Compiler
