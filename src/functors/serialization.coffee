@@ -33,10 +33,12 @@ traverseScopes = ( node, resolver ) ->
     ( buildScopes node, resolver )...
   }
 
-buildScopes = ( node, resolver ) ->
-  ( Array.from node.children.values() ).reduce ( scopes, child ) ->
+mergeChildScopes = ( resolver ) ->
+  ( scopes, child ) ->
     { scopes..., ( traverseScopes child, resolver )... }
-  , {}
+
+buildScopes = ( node, resolver ) ->
+  ( Array.from node.children.values() ).reduce ( mergeChildScopes resolver ), {}
 
 Serialization =
   apply: ( trie, keys ) ->
