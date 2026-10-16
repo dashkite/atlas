@@ -58,13 +58,24 @@ resolvePath = ( root, descriptor ) ->
   path = Path.resolve root, descriptor.path.slice 1
   ( pathToFileURL path ).href
 
-make = ( config = {} ) ->
-  { root, cwd, patterns } = normalizeConfig config
-  match: ( context ) -> matchPattern context.source, patterns, cwd
-  encode: ( descriptor ) -> AtlasURL.format descriptor
-  decode: ( url ) -> decodeUrl url
-  parse: ( url ) -> @decode url
-  resolve: ( url ) -> resolvePath root, @decode url
+class LocalResolver
+  @make: ( config = {} ) ->
+    Object.assign ( new @ ), normalizeConfig config
 
-export default { make }
-export { make }
+  match: ( context ) ->
+    matchPattern context.source, @patterns, @cwd
+
+  encode: ( descriptor ) ->
+    AtlasURL.format descriptor
+
+  decode: ( url ) ->
+    decodeUrl url
+
+  parse: ( url ) ->
+    @decode url
+
+  resolve: ( url ) ->
+    resolvePath @root, @decode url
+
+export default LocalResolver
+export { LocalResolver }
