@@ -37,8 +37,6 @@ cleanEnvironment = ->
     await FS.rm ( Path.join process.cwd(), ".atlas" ),
       recursive: true
       force: true
-  catch
-    null
 
 loadSuite = ( [ name, path ] ) ->
   test name, await tests path
