@@ -1,3 +1,4 @@
+import { pipe } from "@dashkite/joy"
 import AtlasURL from "../url"
 import Path from "node:path"
 import { pathToFileURL } from "node:url"
@@ -26,20 +27,22 @@ class ApplicationResolver
   encode: ( descriptor ) ->
     AtlasURL.format { descriptor..., module: undefined }
 
-  decode: ( url ) ->
-    parsed = AtlasURL.parse url
-    {
+  decode: pipe [
+    AtlasURL.parse
+    ( parsed ) ->
       resolver: parsed.resolver
       path: parsed.pathname
-    }
+  ]
 
   parse: ( url ) ->
     @decode url
 
-  resolve: ( url ) ->
-    { path } = @decode url
-    resolved = Path.resolve @root, normalizePath path
-    toFileURL resolved
+  resolve: pipe [
+    ( url ) -> @decode url
+    ( { path } ) -> normalizePath path
+    ( path ) -> Path.resolve @root, path
+    toFileURL
+  ]
 
 export default ApplicationResolver
 export { ApplicationResolver }
