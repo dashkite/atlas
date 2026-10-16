@@ -42,8 +42,8 @@ writePipelineDiagnostics = ( directory, pipeline ) ->
     await FS.mkdir directory, recursive: true
     for [ filename, key ] from DIAGNOSTIC_FILES
       await writeDiagnosticFile directory, filename, pipeline[ key ]
-  catch
-    return
+  catch error
+    console.warn "Failed to write pipeline diagnostics: #{ error.message }"
   return
 
 dumpDiagnostics = ( context ) ->
