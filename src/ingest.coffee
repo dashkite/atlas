@@ -1,3 +1,4 @@
+import { pipe } from "@dashkite/joy"
 import ModuleGraph from "./categories/module-graph"
 import Resolvers from "./resolvers"
 import Path from "node:path"
@@ -7,9 +8,8 @@ import nodePreset from "./presets/node"
 ENTRY_POINT = Symbol "atlas:entry-point"
 
 createModuleGraph = ->
-  graph = ModuleGraph.make()
-  graph.sources = new Map()
-  graph
+  Object.assign ModuleGraph.make(),
+    sources: new Map()
 
 resolveCwd = ( options ) ->
   options.cwd ? process.cwd()
@@ -18,19 +18,20 @@ resolveMetaResolver = ( options ) ->
   resolvers = options.resolvers ? nodePreset
   options.metaResolver ? Resolvers.Registry.make resolvers
 
-createIngestContext = ( options ) ->
+createIngestContext = ( dependencies, options = {} ) ->
   {
+    dependencies
     cwd: resolveCwd options
     metaResolver: resolveMetaResolver options
     graph: createModuleGraph()
     inodeCache: new Map()
   }
 
-collectDependencies = ( dependencies ) ->
+collectDependencies = ( context ) ->
   items = []
-  for await dependency from dependencies
+  for await dependency from context.dependencies
     items.push dependency
-  items
+  { context..., dependencies: items }
 
 deriveModuleMetadata = ( module ) ->
   {
@@ -64,13 +65,10 @@ matchResolverKey = ( metaResolver, target, cwd ) ->
 
 encodeTarget = ( target, metaResolver, cwd ) ->
   key = matchResolverKey metaResolver, target, cwd
-  descriptor = buildDescriptor target, key, cwd
-  metaResolver.encode descriptor
+  metaResolver.encode buildDescriptor target, key, cwd
 
 resolveFileInode = ( cwd, path ) ->
-  path = Path.resolve cwd, path
-  stat = FS.statSync path
-  stat.ino
+  ( FS.statSync Path.resolve cwd, path ).ino
 
 resolveTargetUrl = ( target, context ) ->
   inode = resolveFileInode context.cwd, target.source.path
@@ -87,9 +85,8 @@ resolveSourceUrl = ( item, context ) ->
     ENTRY_POINT
 
 resolveDependencyUrls = ( item, context ) ->
-  source = resolveSourceUrl item, context
-  target = resolveTargetUrl item, context
-  { source, target }
+  source: resolveSourceUrl item, context
+  target: resolveTargetUrl item, context
 
 resolvePackageId = ( metaResolver, url ) ->
   if url == ENTRY_POINT
@@ -100,8 +97,10 @@ resolvePackageId = ( metaResolver, url ) ->
     metaResolver.encode parsed
 
 assignPackageId = ( graph, metaResolver, url ) ->
-  id = resolvePackageId metaResolver, url
-  graph.setAttribute url, [ "packageId", id ]
+  graph.setAttribute url, [
+    "packageId"
+    resolvePackageId metaResolver, url
+  ]
   return
 
 registerVertex = ( graph, metaResolver, url ) ->
@@ -110,16 +109,16 @@ registerVertex = ( graph, metaResolver, url ) ->
   return
 
 resolveFileUrl = ( cwd, path ) ->
-  path = Path.resolve cwd, path
-  ( new URL "file://#{ path }" ).href
+  ( new URL "file://#{ Path.resolve cwd, path }" ).href
+
+recordSource = ( { graph, cwd }, url, target ) ->
+  graph.sources.set url, resolveFileUrl cwd, target.source.path
+  return
 
 recordSources = ( context, item, urls ) ->
-  { graph, cwd } = context
-  { source, target } = urls
-  graph.sources.set target, resolveFileUrl cwd, item.source.path
+  recordSource context, urls.target, item
   if item.import.scope?
-    path = item.import.scope.source.path
-    graph.sources.set source, resolveFileUrl cwd, path
+    recordSource context, urls.source, item.import.scope
   return
 
 isRelative = ( specifier ) ->
@@ -135,12 +134,11 @@ determineEdgeType = ( specifier ) ->
     "inter"
 
 recordDependencyEdge = ( graph, urls, specifier ) ->
-  type = determineEdgeType specifier
   graph.addEdge
     source: urls.source
     target: urls.target
     label: specifier
-    type: type
+    type: determineEdgeType specifier
   return
 
 processDependency = ( item, context ) ->
@@ -151,16 +149,20 @@ processDependency = ( item, context ) ->
   recordDependencyEdge context.graph, urls, item.import.specifier
   return
 
-processDependencies = ( dependencies, context ) ->
-  for item in dependencies
+processDependencies = ( context ) ->
+  for item in context.dependencies
     processDependency item, context
-  return
+  context
 
-ingest = ( dependencies, options = {} ) ->
-  context = createIngestContext options
-  dependencies = await collectDependencies dependencies
-  processDependencies dependencies, context
+extractGraph = ( context ) ->
   context.graph
+
+ingest = pipe [
+  createIngestContext
+  collectDependencies
+  processDependencies
+  extractGraph
+]
 
 export default ingest
 export { ingest, ENTRY_POINT }
