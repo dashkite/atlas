@@ -8,7 +8,7 @@ segments = ( node ) ->
     []
 
 format = ( parts ) ->
-  "atlas://#{parts.join '/'}"
+  "atlas://#{parts.join "/"}"
 
 address = pipe [
   segments
