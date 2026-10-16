@@ -29,8 +29,7 @@ formatModuleName = ( { scope, name } ) ->
   if scope then "#{scope}/#{name}" else name
 
 normalizeModulePath = ( path ) ->
-  normalized = if path != "" then path else ""
-  if normalized.startsWith "/" then normalized.slice 1 else normalized
+  if path.startsWith "/" then path.slice 1 else path
 
 make = ( config = {} ) ->
   match: ( context ) ->
