@@ -1,3 +1,4 @@
+import { pipe } from "@dashkite/joy"
 import ComponentGraph from "../categories/component-graph"
 
 groupVertex = ( graph, groups, vertex ) ->
@@ -23,12 +24,6 @@ registerComponent = ( graph, components, group ) ->
   graph.addComponent id, modules
   return
 
-registerComponents = ( graph, groups ) ->
-  components = new Map()
-  for group from groups
-    registerComponent graph, components, group
-  components
-
 projectEdge = ( components, edge ) ->
   source: components.get edge.source
   target: components.get edge.target
@@ -42,21 +37,28 @@ addUniqueEdge = ( graph, seen, edge ) ->
     graph.addEdge edge
   return
 
-projectEdges = ( graph, components, edges ) ->
+createContext = ( input ) ->
+  input: input
+  output: ComponentGraph.make()
+
+registerComponents = ( context ) ->
+  components = new Map()
+  for group from groupVertices context.input
+    registerComponent context.output, components, group
+  { context..., components }
+
+projectEdges = ( context ) ->
   # 2. Map Inter-Component Edges
   seen = new Set()
-  for edge in edges
-    projected = projectEdge components, edge
-    addUniqueEdge graph, seen, projected
-  return
+  for edge in context.input.getInterEdges()
+    addUniqueEdge context.output, seen, projectEdge context.components, edge
+  context.output
 
 Quotient =
-  apply: ( input ) ->
-    output = ComponentGraph.make()
-    groups = groupVertices input
-    components = registerComponents output, groups
-    edges = input.getInterEdges()
-    projectEdges output, components, edges
-    output
+  apply: pipe [
+    createContext
+    registerComponents
+    projectEdges
+  ]
 
 export default Quotient
