@@ -11,7 +11,7 @@ collectSegments = ( node ) ->
     []
 
 formatUrl = ( segments ) ->
-  "atlas://#{ segments.join '/' }"
+  "atlas://#{ segments.join "/" }"
 
 getFullUrl = pipe [
   collectSegments
