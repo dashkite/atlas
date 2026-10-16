@@ -27,7 +27,7 @@ export default ->
       assert instances.includes "node_modules/a"
 
     test "constructs inspector from a Map", ->
-      map = new Map ( FILES.map ( f ) -> [ f, "" ] )
+      map = new Map ( FILES.map ( file ) -> [ file, "" ] )
       inspector = BundleInspector.fromMap map
       assert.equal ( inspector.countInstancesOf "@dashkite/joy" ), 2
 
