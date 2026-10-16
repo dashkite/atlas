@@ -31,7 +31,11 @@ formatModuleName = ( { scope, name } ) ->
 normalizeModulePath = ( path ) ->
   path.slice 1
 
-make = ( config = {} ) ->
+class NodeResolver
+  @make: ( config = {} ) ->
+    Object.assign ( new @ ),
+      root: config.root ? process.cwd()
+
   match: ( context ) ->
     context.source.includes "node_modules"
 
@@ -47,14 +51,13 @@ make = ( config = {} ) ->
 
   resolve: ( url ) ->
     descriptor = @decode url
-    root = config.root ? process.cwd()
     name = formatModuleName descriptor.module
     path = normalizeModulePath descriptor.path
     # We resolve to node_modules in the root. If it's a monorepo, Node
     # resolution handles it. But for a physical URL, we just point to
     # node_modules/name/path
-    resolved = Path.resolve root, "node_modules", name, path
+    resolved = Path.resolve @root, "node_modules", name, path
     ( pathToFileURL resolved ).href
 
-export default { make }
-export { make }
+export default NodeResolver
+export { NodeResolver }
