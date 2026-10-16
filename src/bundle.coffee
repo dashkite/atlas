@@ -95,8 +95,8 @@ dumpDiagnostics = ( context ) ->
       directory = deriveDiagnosticsDirectory context.entries
       await writePipelineDiagnostics directory, context.pipeline
       await writeBundleDiagnostics directory, context.pipeline.map
-    catch
-      null
+    catch error
+      console.warn error
   context
 
 resolveEntryPaths = ( directory, entry ) ->
