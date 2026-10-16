@@ -1,3 +1,4 @@
+import { pipe } from "@dashkite/joy"
 import AtlasURL from "../url"
 import Path from "node:path"
 import { pathToFileURL } from "node:url"
@@ -31,6 +32,17 @@ formatModuleName = ( { scope, name } ) ->
 normalizeModulePath = ( path ) ->
   path.slice 1
 
+# We resolve to node_modules in the root. If it's a monorepo, Node
+# resolution handles it. But for a physical URL, we just point to
+# node_modules/name/path
+resolveModulePath = ( root, { module, path } ) ->
+  Path.resolve root, "node_modules",
+    ( formatModuleName module ),
+    ( normalizeModulePath path )
+
+toFileURL = ( path ) ->
+  ( pathToFileURL path ).href
+
 class NodeResolver
   @make: ( config = {} ) ->
     Object.assign ( new @ ),
@@ -49,15 +61,11 @@ class NodeResolver
   parse: ( url ) ->
     @decode url
 
-  resolve: ( url ) ->
-    descriptor = @decode url
-    name = formatModuleName descriptor.module
-    path = normalizeModulePath descriptor.path
-    # We resolve to node_modules in the root. If it's a monorepo, Node
-    # resolution handles it. But for a physical URL, we just point to
-    # node_modules/name/path
-    resolved = Path.resolve @root, "node_modules", name, path
-    ( pathToFileURL resolved ).href
+  resolve: pipe [
+    ( url ) -> @decode url
+    ( descriptor ) -> resolveModulePath @root, descriptor
+    toFileURL
+  ]
 
 export default NodeResolver
 export { NodeResolver }
