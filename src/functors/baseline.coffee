@@ -46,11 +46,10 @@ bindEdge = ( root, graph, { source, target, label } ) ->
     resolve root, graph, target
   return
 
-baseline = ( graph ) ->
+functor = ( graph ) ->
   root = Trie.make()
   for edge in graph.getInterEdges()
     bindEdge root, graph, edge
   root
 
-export default baseline
-export { baseline }
+export default functor
