@@ -2,7 +2,7 @@ import { pipe } from "@dashkite/joy"
 import ModuleGraph from "./categories/module-graph"
 import Resolvers from "./resolvers"
 import Path from "node:path"
-import FS from "node:fs"
+import FS from "node:fs/promises"
 import nodePreset from "./presets/node"
 
 ENTRY_POINT = Symbol "atlas:entry-point"
@@ -68,10 +68,10 @@ encodeTarget = ( target, metaResolver, cwd ) ->
   metaResolver.encode buildDescriptor target, key, cwd
 
 resolveFileInode = ( cwd, path ) ->
-  ( FS.statSync Path.resolve cwd, path ).ino
+  ( await FS.stat Path.resolve cwd, path ).ino
 
 resolveTargetUrl = ( target, context ) ->
-  inode = resolveFileInode context.cwd, target.source.path
+  inode = await resolveFileInode context.cwd, target.source.path
   if context.inodeCache.has inode
     return context.inodeCache.get inode
   url = encodeTarget target, context.metaResolver, context.cwd
@@ -85,8 +85,8 @@ resolveSourceUrl = ( item, context ) ->
     ENTRY_POINT
 
 resolveDependencyUrls = ( item, context ) ->
-  source: resolveSourceUrl item, context
-  target: resolveTargetUrl item, context
+  source: await resolveSourceUrl item, context
+  target: await resolveTargetUrl item, context
 
 resolvePackageId = ( metaResolver, url ) ->
   if url == ENTRY_POINT
@@ -142,7 +142,7 @@ recordDependencyEdge = ( graph, urls, specifier ) ->
   return
 
 processDependency = ( item, context ) ->
-  urls = resolveDependencyUrls item, context
+  urls = await resolveDependencyUrls item, context
   registerVertex context.graph, context.metaResolver, urls.source
   registerVertex context.graph, context.metaResolver, urls.target
   recordSources context, item, urls
@@ -151,7 +151,7 @@ processDependency = ( item, context ) ->
 
 processDependencies = ( context ) ->
   for item in context.dependencies
-    processDependency item, context
+    await processDependency item, context
   context
 
 extractGraph = ( context ) ->
