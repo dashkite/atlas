@@ -10,7 +10,7 @@ extractResolver = ( parsed ) ->
 formatAuthority = ( resolver ) ->
   [ head, tail... ] = resolver.split "@"
   if tail.length > 0
-    "#{encodeURIComponent head}@#{encodeURIComponent tail.join '@'}"
+    "#{encodeURIComponent head}@#{encodeURIComponent tail.join "@"}"
   else
     encodeURIComponent head
 
@@ -40,7 +40,7 @@ extractSegments = ( { module, path } ) ->
 
 formatPathname = ( descriptor ) ->
   segments = extractSegments descriptor
-  if segments.length > 0 then "/#{segments.join '/'}" else ""
+  if segments.length > 0 then "/#{segments.join "/"}" else ""
 
 export default
   parse: ( url ) ->
