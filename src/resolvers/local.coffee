@@ -2,7 +2,7 @@ import AtlasURL from "../url"
 import Path from "node:path"
 import micromatch from "micromatch"
 import { pathToFileURL } from "node:url"
-import { decode as urlDecode } from "@dashkite/url-codex"
+import * as Codex from "@dashkite/url-codex"
 
 SCOPED_TEMPLATE = "/{scope}/{versioned}/{path*}"
 UNSCOPED_TEMPLATE = "/{versioned}/{path*}"
@@ -12,28 +12,28 @@ normalizeConfig = ( config ) ->
   if !config.root?
     throw new Error "Local resolver requires 'root' in configuration"
   root: config.root
-  cwd: config.cwd ? process.cwd()
+  workingDirectory: config.cwd ? process.cwd()
   patterns: config.patterns ? DEFAULT_PATTERNS
 
-normalizeRelativePath = ( path, cwd ) ->
+normalizeRelativePath = ( path, workingDirectory ) ->
   if Path.isAbsolute path
-    Path.relative cwd, path
+    Path.relative workingDirectory, path
   else
     path
 
-matchPattern = ( path, patterns, cwd ) ->
+matchPattern = ( path, patterns, workingDirectory ) ->
   if path.includes "node_modules"
     return false
   if patterns.length == 0
     return false
-  path = normalizeRelativePath path, cwd
+  path = normalizeRelativePath path, workingDirectory
   micromatch.isMatch path, patterns, { contains: true }
 
 decodePathname = ( pathname ) ->
   if pathname.startsWith "/@"
-    urlDecode SCOPED_TEMPLATE, pathname
+    Codex.decode SCOPED_TEMPLATE, pathname
   else
-    urlDecode UNSCOPED_TEMPLATE, pathname
+    Codex.decode UNSCOPED_TEMPLATE, pathname
 
 parseModule = ( scope, versioned ) ->
   parts = versioned.split "@"
@@ -62,7 +62,7 @@ class LocalResolver
     Object.assign ( new @ ), normalizeConfig config
 
   match: ( context ) ->
-    matchPattern context.source, @patterns, @cwd
+    matchPattern context.source, @patterns, @workingDirectory
 
   encode: ( descriptor ) ->
     AtlasURL.format descriptor
