@@ -22,20 +22,16 @@ Resolution =
 
   resolve: (node, registry) ->
     for [label, target] from node.bindings
-      address = Resolution.address target
-      value = registry.resolve address
-      node.bindings.set label, value
+      node.bindings.set label, registry.resolve Resolution.address target
     return
 
   traverse: (node, registry) ->
     Resolution.resolve node, registry
     for child from node.children.values()
       Resolution.traverse child, registry
-    return
+    node
 
   apply: (trie, keys) ->
-    registry = Resolvers.Registry.make keys
-    Resolution.traverse trie, registry
-    trie
+    Resolution.traverse trie, Resolvers.Registry.make keys
 
 export default Resolution
