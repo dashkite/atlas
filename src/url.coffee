@@ -8,14 +8,11 @@ extractResolver = ( parsed ) ->
     decodeURIComponent parsed.hostname
 
 formatAuthority = ( resolver ) ->
-  parts = resolver.split "@"
-  authority =
-    if parts.length > 1
-      "#{encodeURIComponent parts[ 0 ]}@" +
-        encodeURIComponent ( parts.slice 1 ).join "@"
-    else
-      encodeURIComponent parts[ 0 ]
-  authority
+  [ head, tail... ] = resolver.split "@"
+  if tail.length > 0
+    "#{encodeURIComponent head}@#{encodeURIComponent tail.join '@'}"
+  else
+    encodeURIComponent head
 
 formatPackageSpecifier = ( module ) ->
   if module.scope
@@ -24,6 +21,7 @@ formatPackageSpecifier = ( module ) ->
     module.name
 
 formatModuleIdentifier = ( module ) ->
+  return unless module?
   specifier = formatPackageSpecifier module
   if module.version?
     "#{specifier}@#{module.version}"
@@ -31,16 +29,18 @@ formatModuleIdentifier = ( module ) ->
     specifier
 
 normalizePath = ( path ) ->
+  return unless path?
   if path.startsWith "/" then path.slice 1 else path
 
+extractSegments = ( { module, path } ) ->
+  [
+    formatModuleIdentifier module
+    normalizePath path
+  ].filter Boolean
+
 formatPathname = ( descriptor ) ->
-  segments = []
-  if descriptor.module?
-    segments.push formatModuleIdentifier descriptor.module
-  if descriptor.path?
-    path = normalizePath descriptor.path
-    segments.push path if path != ""
-  if segments.length > 0 then "/" + segments.join "/" else ""
+  segments = extractSegments descriptor
+  if segments.length > 0 then "/#{segments.join '/'}" else ""
 
 export default
   parse: ( url ) ->
