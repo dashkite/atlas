@@ -10,7 +10,7 @@ TEMPLATE =
 decodePathname = ( pathname ) ->
   try
     match = decode TEMPLATE.scoped, pathname
-    if match.scope?.startsWith "@" then match else throw new Error
+    if match.scope.startsWith "@" then match else throw new Error
   catch
     decode TEMPLATE.unscoped, pathname
 
@@ -22,14 +22,14 @@ buildDescriptor = ( resolver, decoded ) ->
   {
     resolver
     module: parseModule decoded
-    path: "/" + ( decoded.path ? [] ).join "/"
+    path: "/" + decoded.path.join "/"
   }
 
 formatModuleName = ( { scope, name } ) ->
   if scope then "#{scope}/#{name}" else name
 
 normalizeModulePath = ( path ) ->
-  if path.startsWith "/" then path.slice 1 else path
+  path.slice 1
 
 make = ( config = {} ) ->
   match: ( context ) ->
