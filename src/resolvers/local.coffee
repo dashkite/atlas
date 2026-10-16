@@ -32,7 +32,7 @@ matchPattern = ( path, patterns, cwd ) ->
 decodePathname = ( pathname ) ->
   try
     match = urlDecode SCOPED_TEMPLATE, pathname
-    if match.scope?.startsWith "@" then match else throw new Error
+    if match.scope.startsWith "@" then match else throw new Error
   catch
     urlDecode UNSCOPED_TEMPLATE, pathname
 
