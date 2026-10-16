@@ -43,11 +43,12 @@ cleanEnvironment = ->
 loadSuite = ( [ name, path ] ) ->
   test name, await tests path
 
-executeTestSuite = ->
-  cases = []
+loadSuites = ->
   for entry in SUITES
-    cases.push ( await loadSuite entry )
-  print await test "Atlas", cases
+    await loadSuite entry
+
+executeTestSuite = ->
+  print await test "Atlas", await loadSuites()
 
 do ->
   await cleanEnvironment()
