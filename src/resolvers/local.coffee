@@ -30,10 +30,9 @@ matchPattern = ( path, patterns, cwd ) ->
   micromatch.isMatch path, patterns, { contains: true }
 
 decodePathname = ( pathname ) ->
-  try
-    match = urlDecode SCOPED_TEMPLATE, pathname
-    if match.scope.startsWith "@" then match else throw new Error
-  catch
+  if pathname.startsWith "/@"
+    urlDecode SCOPED_TEMPLATE, pathname
+  else
     urlDecode UNSCOPED_TEMPLATE, pathname
 
 parseModule = ( scope, versioned ) ->
