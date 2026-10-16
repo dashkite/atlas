@@ -21,7 +21,7 @@ formatPackageSpecifier = ( module ) ->
     module.name
 
 formatModuleIdentifier = ( module ) ->
-  return unless module?
+  return if !( module? )
   specifier = formatPackageSpecifier module
   if module.version?
     "#{specifier}@#{module.version}"
@@ -29,7 +29,7 @@ formatModuleIdentifier = ( module ) ->
     specifier
 
 normalizePath = ( path ) ->
-  return unless path?
+  return if !( path? )
   if path.startsWith "/" then path.slice 1 else path
 
 extractSegments = ( { module, path } ) ->
