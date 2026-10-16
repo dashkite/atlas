@@ -8,43 +8,42 @@ getAuthority = ( url ) ->
 getPathSegments = ( url ) ->
   if url.pathname.length > 1 then url.pathname[1..].split "/" else []
 
+getUrlSegments = ( url ) ->
+  [ ( getAuthority url ), ( getPathSegments url )... ]
+
+getPackageSegment = ( url ) ->
+  ( getUrlSegments url ).join "/"
+
+getRemainingSegments = ( segments, url ) ->
+  segments.slice ( getPathSegments url ).length
+
 isExternalPackage = ( id ) ->
   ( id? ) &&
     ( id != ENTRY_POINT ) &&
     ( !( id.startsWith "atlas://application" ) )
 
-parsePackageSegments = ( segments, id ) ->
-  url = new URL id
-  authority = getAuthority url
-  path = getPathSegments url
-  segment = [ authority, path... ].join "/"
-  remaining = segments.slice path.length
-  [ segment, remaining... ]
+parsePackageSegments = ( segments, url ) ->
+  [ ( getPackageSegment url ), ( getRemainingSegments segments, url )... ]
 
 parseUrlSegments = ( url, id ) ->
-  segments = getPathSegments url
   if isExternalPackage id
-    parsePackageSegments segments, id
+    parsePackageSegments ( getPathSegments url ), new URL id
   else
-    authority = getAuthority url
-    [ authority, segments... ]
+    getUrlSegments url
 
 parseSegments = ( endpoint, id ) ->
   if endpoint == ENTRY_POINT
     []
   else
-    url = new URL endpoint
-    parseUrlSegments url, id
+    parseUrlSegments ( new URL endpoint ), id
 
 resolve = ( root, graph, endpoint ) ->
-  id = graph.getAttribute endpoint, "packageId"
-  segments = parseSegments endpoint, id
-  root.upsertPath segments
+  root.upsertPath parseSegments endpoint,
+    graph.getAttribute endpoint, "packageId"
 
-bindEdge = ( root, graph, edge ) ->
-  source = resolve root, graph, edge.source
-  target = resolve root, graph, edge.target
-  source.bindings.set edge.label, target
+bindEdge = ( root, graph, { source, target, label } ) ->
+  ( resolve root, graph, source ).bindings.set label,
+    resolve root, graph, target
   return
 
 baseline = ( graph ) ->
