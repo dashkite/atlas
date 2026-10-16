@@ -9,10 +9,10 @@ TEMPLATE =
   unscoped: "/{versioned}/{path*}"
 
 decodePathname = ( pathname ) ->
-  try
-    match = decode TEMPLATE.scoped, pathname
-    if match.scope.startsWith "@" then match else throw new Error
-  catch
+  match = decode TEMPLATE.scoped, pathname
+  if match?.scope.startsWith "@"
+    match
+  else
     decode TEMPLATE.unscoped, pathname
 
 parseModule = ( { scope, versioned } ) ->
