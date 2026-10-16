@@ -54,9 +54,11 @@ class NodeResolver
   encode: ( descriptor ) ->
     AtlasURL.format descriptor
 
-  decode: ( url ) ->
-    { resolver, pathname } = AtlasURL.parse url
-    buildDescriptor resolver, decodePathname pathname
+  decode: pipe [
+    AtlasURL.parse
+    ( { resolver, pathname } ) ->
+      buildDescriptor resolver, decodePathname pathname
+  ]
 
   parse: ( url ) ->
     @decode url
