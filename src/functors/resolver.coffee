@@ -1,3 +1,4 @@
+import { pipe } from "@dashkite/joy"
 import Resolvers from "../resolvers"
 
 formatPackageName = ( descriptor ) ->
@@ -32,15 +33,15 @@ class BundleResolver
       bundle: new Map()
       cache: new Map()
 
-  getComponentPackageName: ( component ) ->
-    modules = @graph.getModules component
-    module = ( Array.from modules )[ 0 ]
-    descriptor = @resolver.decode module
-    formatPackageName descriptor
+  getComponentPackageName: pipe [
+    ( component ) -> @graph.getModules component
+    ( modules ) -> ( Array.from modules )[ 0 ]
+    ( module ) -> @resolver.decode module
+    formatPackageName
+  ]
 
   isRootComponent: ( component ) ->
-    bindings = @index.getBindings []
-    for [ label, target ] from bindings
+    for [ label, target ] from @index.getBindings []
       if target == component
         return label == component
     false
@@ -49,24 +50,19 @@ class BundleResolver
     if @isRootComponent component
       ""
     else
-      name = @getComponentPackageName component
-      "node_modules/#{name}"
+      "node_modules/#{@getComponentPackageName component}"
 
   resolveParentDirectory: ( path ) ->
-    component = path[ path.length - 1 ]
-    path = path.slice 0, -1
-    @resolveDirectory path, component
+    @resolveDirectory ( path.slice 0, -1 ), path[ path.length - 1 ]
 
   resolveNestedDirectory: ( path, name ) ->
-    directory = @resolveParentDirectory path
-    formatNestedDirectory directory, name
+    formatNestedDirectory ( @resolveParentDirectory path ), name
 
   computeDirectory: ( path, component ) ->
     if path.length == 0
       @resolveRootDirectory component
     else
-      name = @getComponentPackageName component
-      @resolveNestedDirectory path, name
+      @resolveNestedDirectory path, @getComponentPackageName component
 
   resolveDirectory: ( path, component ) ->
     key = "#{component}::#{JSON.stringify path}"
@@ -76,23 +72,24 @@ class BundleResolver
     @cache.set key, directory
     directory
 
-  processModule: ( directory, url ) ->
-    descriptor = @resolver.decode url
-    path = descriptor.path
-    file = formatOutputFile directory, path
-    @bundle.set file, url
-    return
+  processModule: pipe [
+    ( directory, url ) ->
+      { directory, url, descriptor: @resolver.decode url }
+    ( { directory, url, descriptor } ) ->
+      { url, file: formatOutputFile directory, descriptor.path }
+    ( { file, url } ) ->
+      @bundle.set file, url
+      return
+  ]
 
   processComponent: ( path, component ) ->
     directory = @resolveDirectory path, component
-    modules = @graph.getModules component
-    for url from modules
+    for url from @graph.getModules component
       @processModule directory, url
     return
 
   processPath: ( path ) ->
-    bindings = @index.getBindings path
-    for component from bindings.values()
+    for component from ( @index.getBindings path ).values()
       @processComponent path, component
     return
 
