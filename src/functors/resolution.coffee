@@ -1,37 +1,41 @@
+import { pipe } from "@dashkite/joy"
 import Resolvers from "../resolvers"
 
-Resolution =
-  segments: (node) ->
-    segments = []
-    current = node
-    while current.parent?
-      segments.unshift current.segment
-      current = current.parent
-    segments
+segments = ( node ) ->
+  if node.parent?
+    [ ( segments node.parent )..., node.segment ]
+  else
+    []
 
-  format: (segments) ->
-    host = segments[0]
-    path = segments[1..].join "/"
-    if path.length > 0
-      "atlas://#{host}/#{path}"
-    else
-      "atlas://#{host}"
+format = ( parts ) ->
+  "atlas://#{parts.join '/'}"
 
-  address: (node) ->
-    Resolution.format Resolution.segments node
+address = pipe [
+  segments
+  format
+]
 
-  resolve: (node, registry) ->
-    for [label, target] from node.bindings
-      node.bindings.set label, registry.resolve Resolution.address target
-    return
+resolve = ( node, registry ) ->
+  for [ label, target ] from node.bindings
+    node.bindings.set label, registry.resolve address target
+  return
 
-  traverse: (node, registry) ->
-    Resolution.resolve node, registry
-    for child from node.children.values()
-      Resolution.traverse child, registry
-    node
+traverse = ( node, registry ) ->
+  resolve node, registry
+  for child from node.children.values()
+    traverse child, registry
+  node
 
-  apply: (trie, keys) ->
-    Resolution.traverse trie, Resolvers.Registry.make keys
+apply = ( trie, keys ) ->
+  traverse trie, Resolvers.Registry.make keys
+
+Resolution = {
+  segments
+  format
+  address
+  resolve
+  traverse
+  apply
+}
 
 export default Resolution
