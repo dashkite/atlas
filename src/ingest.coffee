@@ -12,7 +12,7 @@ createModuleGraph = ->
   graph
 
 resolveCwd = ( options ) ->
-  options.cwd ? options.root ? process.cwd()
+  options.cwd ? process.cwd()
 
 resolveMetaResolver = ( options ) ->
   resolvers = options.resolvers ? nodePreset
