@@ -5,7 +5,7 @@ validateKey = (key, keys) ->
     throw new Error "Resolver #{key} not in configured keys"
 
 lookupResolver = (key) ->
-  resolver = Registry.get key
+  resolver = ResolverRegistry.get key
   if !resolver?
     throw new Error "Resolver #{key} not found in registry"
   resolver
@@ -14,7 +14,15 @@ extractKey = (url) ->
   parsed = AtlasURL.parse url
   parsed.resolver
 
-class MetaResolver
+class ResolverRegistry
+  @resolvers: {}
+
+  @register: (key, resolver) ->
+    @resolvers[key] = resolver
+
+  @get: (key) ->
+    @resolvers[key]
+
   @make: (keys) ->
     Object.assign ( new @ ), { keys }
 
@@ -47,17 +55,5 @@ class MetaResolver
     resolver = @getResolverForUrl url
     resolver.resolve url
 
-Registry =
-  resolvers: {}
-
-  register: (key, resolver) ->
-    @resolvers[key] = resolver
-
-  get: (key) ->
-    @resolvers[key]
-
-  make: (keys) ->
-    MetaResolver.make keys
-
-export default Registry
-export { Registry, MetaResolver }
+export default ResolverRegistry
+export { ResolverRegistry }
