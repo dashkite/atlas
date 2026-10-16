@@ -199,11 +199,10 @@ normalizeEntries = ( entries ) ->
   [ entries ].flat()
 
 normalizeOptions = ( options ) ->
-  directory = options.directory ? options.cwd ? options.root ? process.cwd()
-  root = options.root ? directory
+  directory = options.directory ? process.cwd()
   external = [ "@aws-sdk/*", ( options.external ? [] )... ]
   resolvers = options.resolvers ? preset
-  { options..., directory, root, external, resolvers }
+  { options..., directory, external, resolvers }
 
 createContext = ( entries, options = {} ) ->
   entries: normalizeEntries entries

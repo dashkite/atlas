@@ -38,15 +38,15 @@ testBundle = ->
   directory = await createFixtures()
   try
     entry = Path.join directory, "index.js"
-    buffer = await bundle entry, { cwd: directory }
+    buffer = await bundle entry, { directory }
     await verifyZip buffer
   finally
     await cleanup directory
 
-testBundleWithRoot = ->
+testRelativeEntry = ->
   directory = await createFixtures()
   try
-    buffer = await bundle "index.js", { root: directory }
+    buffer = await bundle "index.js", { directory }
     await verifyZip buffer
   finally
     await cleanup directory
@@ -54,6 +54,6 @@ testBundleWithRoot = ->
 export default ->
   [
     test "creates a bundle zip with entry and package.json", testBundle
-    test "creates a bundle zip when specifying root without cwd",
-      testBundleWithRoot
+    test "creates a bundle zip with relative entry and directory",
+      testRelativeEntry
   ]
