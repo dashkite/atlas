@@ -12,21 +12,20 @@ normalizeConfig = ( config ) ->
   if !config.root?
     throw new Error "Local resolver requires 'root' in configuration"
   root: config.root
-  workingDirectory: config.cwd ? process.cwd()
   patterns: config.patterns ? DEFAULT_PATTERNS
 
-normalizeRelativePath = ( path, workingDirectory ) ->
+normalizeRelativePath = ( path, directory ) ->
   if Path.isAbsolute path
-    Path.relative workingDirectory, path
+    Path.relative directory, path
   else
     path
 
-matchPattern = ( path, patterns, workingDirectory ) ->
+matchPattern = ( path, patterns, directory ) ->
   if path.includes "node_modules"
     return false
   if patterns.length == 0
     return false
-  path = normalizeRelativePath path, workingDirectory
+  path = normalizeRelativePath path, directory
   micromatch.isMatch path, patterns, { contains: true }
 
 decodePathname = ( pathname ) ->
@@ -62,7 +61,7 @@ class LocalResolver
     Object.assign ( new @ ), normalizeConfig config
 
   match: ( context ) ->
-    matchPattern context.source, @patterns, @workingDirectory
+    matchPattern context.source, @patterns, ( context.cwd ? @root )
 
   encode: ( descriptor ) ->
     AtlasURL.format descriptor

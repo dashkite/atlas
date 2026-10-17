@@ -34,26 +34,60 @@ verifyZip = ( buffer ) ->
 cleanup = ( directory ) ->
   FS.rm directory, { recursive: true, force: true }
 
+writeNestedFixtures = ( directory ) ->
+  sourceDirectory = Path.join directory, "src", "shell"
+  await FS.mkdir sourceDirectory, { recursive: true }
+  await FS.writeFile ( Path.join sourceDirectory, "index.js" ), ENTRY_SOURCE
+  await FS.writeFile ( Path.join sourceDirectory, "foo.js" ),
+    "export const foo = 'hello';"
+  FS.writeFile ( Path.join directory, "package.json" ),
+    JSON.stringify { name: "test-pkg", version: "1.0.0" }
+
+createNestedFixtures = ->
+  directory = await FS.mkdtemp Path.join OS.tmpdir(), "atlas-bundle-source-"
+  await writeNestedFixtures directory
+  directory
+
+verifyNestedZip = ( buffer ) ->
+  assert Buffer.isBuffer buffer
+  zip = await JSZip.loadAsync buffer
+  files = Object.keys zip.files
+  assert files.includes "src/shell/index.js"
+  assert files.includes "src/shell/foo.js"
+  assert files.includes "package.json"
+  content = await ( zip.file "src/shell/index.js" ).async "string"
+  assert content == ENTRY_SOURCE
+
 testBundle = ->
-  directory = await createFixtures()
+  cwd = await createFixtures()
   try
-    entry = Path.join directory, "index.js"
-    buffer = await bundle entry, { directory }
+    entry = Path.join cwd, "index.js"
+    buffer = await bundle entry, { cwd }
     await verifyZip buffer
   finally
-    await cleanup directory
+    await cleanup cwd
 
 testRelativeEntry = ->
-  directory = await createFixtures()
+  cwd = await createFixtures()
   try
-    buffer = await bundle "index.js", { directory }
+    buffer = await bundle "index.js", { cwd }
     await verifyZip buffer
   finally
-    await cleanup directory
+    await cleanup cwd
+
+testSourceDirectory = ->
+  cwd = await createNestedFixtures()
+  try
+    buffer = await bundle "index.js", { cwd, source: "src/shell" }
+    await verifyNestedZip buffer
+  finally
+    await cleanup cwd
 
 export default ->
   [
     test "creates a bundle zip with entry and package.json", testBundle
-    test "creates a bundle zip with relative entry and directory",
+    test "creates a bundle zip with relative entry and cwd",
       testRelativeEntry
+    test "creates a bundle zip with entry relative to source",
+      testSourceDirectory
   ]

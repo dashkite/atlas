@@ -13,80 +13,51 @@ For more detailed reading on import maps as a technology, consult the following 
 
 ### Dependency Analysis with esbuild
 
-Before Atlas can generate mappings, it needs a complete picture of the module graph. Atlas delegates this dependency analysis to [esbuild](https://esbuild.github.io/).
+Before Atlas can generate an import map or application bundle, it needs a complete picture of the module graph. Atlas delegates this dependency analysis to [esbuild](https://esbuild.github.io/).
 
-The amazing performance of esbuild makes it extremely efficient at resolving the version-specific dependency tree needed to assemble an import map. Rather than emitting a bundled file, Atlas runs a mock build (targeting `/dev/null`) and leverages esbuild's `metafile` API. By inspecting the `inputs` and `imports` within the `metafile`, Atlas rapidly and accurately discovers all modules, their import specifiers, and their exact file paths.
+The performance of esbuild makes it extremely efficient at resolving the version-specific dependency tree. Rather than emitting a bundled file, `analyze` runs a mock build (targeting `/dev/null` with `metafile: true`) using `absWorkingDir: Path.resolve(options.cwd)` and resolving each input entry point against `options.source` (`Path.resolve(cwd, options.source ? ".")`). By inspecting the `inputs` and `imports` within the `metafile`, Atlas discovers all modules, their import specifiers, and their exact file paths relative to `cwd`.
 
-### The Algorithm
+### Directory Options: `cwd`, `source`, and `root`
 
-The high-level algorithm is expressed in the `generate` function itself:
+Atlas strictly separates pipeline execution directories from resolver configuration roots:
 
-```coffeescript
-generate = ( entries, map ) ->
-  map = if map? then Map.from map else Map.make()
-  Map.optimize await Map.add map, analyze entries
-```
+1. **`options.cwd` (Target Package Root)**:
+   - Accepted by `analyze`, `ingest`, `generate`, and `bundle` (defaulting to `process.cwd()`).
+   - Defines the target package root directory where `package.json` and `node_modules` live.
+   - Passed to `esbuild` as `absWorkingDir`, used by `ingest` to resolve and `stat` dependency files, and used by `bundle` to read the root `package.json` and compute archive-relative entry paths.
+2. **`options.source` (Entry Point Base Directory)**:
+   - Accepted by `analyze`, `generate`, and `bundle` (defaulting to `options.cwd`, resolved via `Path.resolve(cwd, options.source ? ".")`).
+   - Convenience option specifying the directory from which input `entries` are resolved (`Path.resolve(source, entry)`).
+   - **Input Entry Resolution Only**: `options.source` only affects how input `entries` are located on disk. All intra-application module paths and ZIP archive paths remain relative to `options.cwd`, ensuring that `package.json` `#` subpath imports, `../` relative imports outside `source`, and AWS Lambda handler paths remain consistent with the package root.
+3. **`config.root` (Resolver Base Directory / Workspace Boundary)**:
+   - Accepted by `Application.make`, `Node.make`, and `Local.make` at resolver instantiation time.
+   - Used by `resolve(atlasUrl)` to map canonical `atlas://` URLs back to `file://` URLs on disk, and used by `LocalResolver` as the fallback base directory when `context.cwd` is not provided.
 
-There are two high-level interfaces here:
+### Ingestion and Physical Deduplication
 
-- `analyze`: performs a dependency analysis on the given entry points and returns a reactor producing dependency objects, which include module and import information.
-- `Map.add`: adds a list of dependencies—in the form of a reactor—to a map. `add` is a generic, so this is just a wrapper around a function that adds a single dependency.
+The `ingest` stage consumes the dependency reactor from `analyze` and constructs a `ModuleGraph`:
+- **Inode Deduplication**: Because package managers like `pnpm` create symlinked virtual stores pointing to hard-linked files, `esbuild` can emit multiple paths that refer to the same physical file on disk. `ingest` checks `(await FS.stat(Path.resolve(cwd, path))).ino` and caches the encoded `atlas://` URL by inode so identical files always collapse to a single vertex in `ModuleGraph`.
+- **Canonical `atlas://` URLs**: Each dependency is matched against a composite Meta Resolver (`Resolvers.Registry.make(keys)`) with `context = { source: target.source.path, cwd }` and encoded into a canonical `atlas://` URL (`atlas://application/...`, `atlas://local@key/...`, `atlas://node/...`, or `atlas://cdn@key/...`).
 
-### Mappings
+### Functor Pipelines
 
-Adding a dependency to a map involves transforming a dependency into a mapping, which, in turn, consists of three properties:
+Once `ingest` produces a `ModuleGraph`, Atlas applies category-theoretic functor pipelines depending on the target output:
 
-- `scope`: a URL specifier for the import scope for the dependency
-- `specifier`: a module specifier or a URL corresponding to the dependency itself
-- `target`: the URL corresponding to the specifier
+#### 1. Import Map Generation (`generate`)
+1. **`baseline`**: Projects the `ModuleGraph` into a baseline scope trie containing exact module-scoped mappings.
+2. **`Compaction`**: Safely lifts common mappings toward parent scopes or the root `imports` block without introducing shadowing conflicts.
+3. **`Compression`**: Collapses file-level mappings sharing common directory prefixes into trailing-slash directory prefix mappings.
+4. **`Resolution`**: Translates canonical `atlas://` target and scope URLs into runtime URLs (`https://...` or `file://...`) via `metaResolver.resolve`.
+5. **`Serialization`**: Formats the resolved trie into a standard WHATWG `{ imports, scopes }` JSON object.
 
-Effectively, the scope and specifier are the URLs that the browser would compute for a given dependency. Thus, if the specifier and target are the same, we can ignore the mapping, since that would mean that the browser can compute the target without the mapping.
-
-Given a mapping, adding it to the map looks like this:
-
-```coffeescript
-    generic add, Type.isObject, isMapping,
-      ( map, { scope, specifier, target }) ->
-        unless specifier == target
-          _scope = if scope?
-            if scope.startsWith "/"
-              map.imports
-            else
-              map.scopes[ XRL.directory XRL.pop scope ] ?= {}
-          else
-            map.imports
-          _scope[ specifier ] = target
-        map
-```
-
-We first check to see if the specifier and target are the same, which means we don't need to add it. Next, we determine the scope. If the scope is provided, we use it (ensuring it's treated as a directory-level scope); otherwise, we default to the global `imports`.
-
-### Generators
-
-Different kinds of dependencies require different kinds of mappings. For example, we need different mappings for external dependencies than for those within an application. The functions that produce these mappings are called generators. We wrap these functions in generator objects that also provide a predicate that tells us whether a given generator can produce a mapping for a given dependency.
-
-Producing a mapping is thus a matter of finding a generator that can produce it. The `Genarator.find` function implements this, using `Generator.match` as the predicate for `Array.find`.
-
-Generators are registered using the `Generator.register` interface, which is the basis for Atlas' extensibility. There are three built-in generators:
-
-- `CDN`: generates mappings for `node_modules` dependencies to their corresponding CDN URL.
-- `Relative`: generates mappings for dependencies whose source path lay within a given build directory.
-- `Sky`: generates mappings for linked dependencies, using the file hash and Sky environment.
-
-### The Compaction Algorithm
-
-Atlas uses a Top-Down Verified Compaction algorithm to minimize the size of the generated import map while ensuring behavioral correctness.
-
-The process consists of three main phases:
-
-1. Grouping and Prioritization: Mappings are grouped by their specifier and target, then sorted by frequency so that the most impactful optimizations are processed first.
-2. Verified Optimization: For every mapping, Atlas attempts to find its most general "safe home"—starting with complete removal, then promotion to the root `imports`, and finally lifting through parent directories. Each move is verified against a resolver to ensure it perfectly preserves all original requirements.
-3. Final Cleanup: After all optimizations are committed, any scopes that have become empty are removed from the map.
-
-This strategy ensures that Atlas generates the smallest possible map that is guaranteed to be completely correct relative to the initial uncompacted results.
+#### 2. Application Bundling (`bundle`)
+1. **`Quotient`**: Contracts intra-package edges (`./`, `../`, `#`) so each package version forms a single strongly connected component in a `ComponentGraph`.
+2. **`Compiler`**: Embeds the `ComponentGraph` into a hierarchical `TreeIndex` (performing topological hoisting/compaction when conflict-free, and isolating conflicting versions into nested scopes).
+3. **`BundleResolver`**: Projects the `TreeIndex` and `ModuleGraph` into a physical `Map<destinationPath, atlasUrl>` placing external packages under `node_modules/` and workspace packages under `local/`.
+4. **`BundleArchive`**: Packages the entry points (at `Path.relative(cwd, Path.resolve(source, entry))`), the root `package.json`, all resolved dependency files, and their nearest `package.json` manifests into a compressed ZIP `Buffer`.
 
 ### The Shadowing Problem
 
-The primary challenge in import map compaction is avoiding accidental shadowing. Because the browser resolves specifiers by finding the most specific matching scope and stopping there, lifting a mapping to a broader parent scope can "capture" modules that weren't intended to be affected.
+The primary challenge in both import map compaction and bundle tree hoisting is avoiding accidental shadowing. Because browsers (for import maps) and Node.js (for `node_modules` resolution) resolve specifiers by matching the most specific enclosing scope first and stopping there, lifting a binding to a broader parent scope can capture descendant modules that require a different version of the same specifier.
 
-To solve this, Atlas checks each possible conflict when promoting. By trying the broadest scopes first and only committing safe moves, we achieve maximal compaction without shadowing.
+To prevent shadowing, Atlas verifies candidate promotions against all descendant scopes in the trie or tree index, committing a lift only when every module continues to resolve to its exact required target.

@@ -3,9 +3,11 @@ import esbuild from "esbuild"
 import ModuleCache from "./module"
 
 resolveOptions = ( options ) ->
+  cwd = options.cwd ? process.cwd()
   platform = options.platform ? "node"
   {
-    cwd: options.cwd ? process.cwd()
+    cwd: cwd
+    source: Path.resolve cwd, ( options.source ? "." )
     platform: platform
     conditions: options.conditions ? [ platform ]
     external: [ "esbuild", ( options.external ? [] )... ]
@@ -13,7 +15,7 @@ resolveOptions = ( options ) ->
 
 buildOptions = ( entry, options ) ->
   {
-    entryPoints: [ entry ]
+    entryPoints: [ Path.resolve options.source, entry ]
     bundle: true, sourcemap: false, treeShaking: false
     platform: options.platform, conditions: options.conditions
     outfile: "/dev/null", external: options.external

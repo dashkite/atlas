@@ -11,6 +11,12 @@ generateTestMap = ->
   options = { cwd: process.cwd() }
   generate entry, { options..., resolvers }
 
+generateTestMapWithSource = ->
+  source = Path.resolve process.cwd(), "build/node/src"
+  await FS.access Path.join source, "index.js"
+  options = { cwd: process.cwd(), source: "build/node/src" }
+  generate "index.js", { options..., resolvers }
+
 assertStructure = ( map ) ->
   assert map?, "ImportMap should exist"
   assert map.imports?, "ImportMap should have 'imports' block"
@@ -37,6 +43,11 @@ export default ->
   [
     test "generates an import map from an entry point using CDN resolver", ->
       map = await generateTestMap()
+      assertStructure map
+      assertUrls map
+
+    test "generates an import map with entry relative to source", ->
+      map = await generateTestMapWithSource()
       assertStructure map
       assertUrls map
   ]

@@ -57,9 +57,10 @@ normalizeEntries = ( entries ) ->
 
 normalizeOptions = ( options ) ->
   cwd = options.cwd ? process.cwd()
+  source = Path.resolve cwd, ( options.source ? "." )
   external = [ "@aws-sdk/*", ( options.external ? [] )... ]
   resolvers = options.resolvers ? nodePreset
-  { options..., cwd, external, resolvers }
+  { options..., cwd, source, external, resolvers }
 
 createContext = ( entries, options = {} ) ->
   entries: normalizeEntries entries
@@ -68,10 +69,8 @@ createContext = ( entries, options = {} ) ->
 analyzeDependencies = ( context ) ->
   dependencies = analyze context.entries, {
     context.options...
-    cwd: context.options.cwd
     platform: "node"
     conditions: [ "node" ]
-    external: context.options.external
   }
   { context..., dependencies }
 

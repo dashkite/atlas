@@ -1,107 +1,86 @@
 # Usage Guides
 
-## Generating a basic import map
+## Generating a browser import map
 
-This task involves generating an import map for a local build.
-Atlas enables this by analyzing the specified entry points to find dependencies, matching them against registered generators, and optimizing the resulting map.
-
-```coffeescript
-import Atlas from "@dashkite/atlas"
-import Relative from "@dashkite/atlas/generators/relative"
-
-# external initialization of generators
-Atlas.register Relative.make build: "build/browser/src"
-
-map = await Atlas.generate [ "build/index.js" ]
-```
-
-1. We import Atlas and the `Relative` generator.
-2. We register the generator by passing the build directory to its `make` function.
-3. We call `Atlas.generate` with the entry points we want to analyze. The algorithm will automatically discover dependencies, translate them using the `Relative` generator, and compact the map.
-
-## Registering multiple generators
-
-This task involves mapping different kinds of dependencies, such as local application files and external CDN packages.
-Atlas enables this by allowing creators to register multiple generators in an array. Atlas will try each generator in last-in, first-out order to match dependencies.
+This task involves generating a compacted WHATWG import map for a browser application using the built-in browser resolver preset.
 
 ```coffeescript
-import Atlas from "@dashkite/atlas"
-import CDN from "@dashkite/atlas/generators/cdn"
-import Relative from "@dashkite/atlas/generators/relative"
+import { generate } from "@dashkite/atlas"
+import browserPreset from "@dashkite/atlas/presets/browser"
 
-# external configuration setup
-Atlas.register [
-  CDN.make provider: "jsdelivr"
-  Relative.make build: "build/browser/src"
-]
-
-map = await Atlas.generate [ "build/index.js" ]
+map = await generate "index.js",
+  cwd: "/path/to/app"
+  source: "build/browser/src"
+  resolvers: browserPreset
 ```
 
-1. We supply an array of generators to `Atlas.register`.
-2. When `generate` analyzes a dependency, it queries the generators in reverse order.
-3. A local file will match the `Relative` generator and resolve to a local path.
-4. An external package from `node_modules` will match the `CDN` generator and resolve to a JSDelivr URL.
+1. We import `generate` from `@dashkite/atlas` and the default browser resolver key list (`["application", "local@default", "cdn@unpkg"]`) from `@dashkite/atlas/presets/browser`.
+2. We specify `cwd` as the root of the target package (where `package.json` and `node_modules` live) and `source` as `"build/browser/src"` (relative to `cwd`).
+3. `generate` resolves `"index.js"` against `source`, analyzes its dependency tree relative to `cwd`, ingests and deduplicates all modules into a `ModuleGraph`, and runs the baseline, compaction, compression, resolution, and serialization functors to produce `{ imports, scopes }`.
 
-## Building an import map incrementally
+## Bundling an AWS Lambda or Node.js entry point
 
-This task involves constructing an import map by adding dependencies manually, which is useful when integrating with a larger build pipeline or transforming maps over time.
-Atlas enables this by exposing the underlying `Map` operations, allowing creators to decouple analysis from the mapping and optimization phases.
+This task involves bundling one or more compiled entry points from a nested source directory into a self-contained ZIP buffer while preserving paths relative to the package root (`cwd`).
 
 ```coffeescript
-import { Map } from "@dashkite/atlas/src/helpers/import-map"
-import analyze from "@dashkite/atlas/src/helpers/analyze"
-import Relative from "@dashkite/atlas/src/generators/relative"
-import Atlas from "@dashkite/atlas"
+import { bundle } from "@dashkite/atlas"
 
-# register a generator
-Atlas.register Relative.make build: "build/browser/src"
-
-# start with a clean map
-map = Map.make()
-
-# generate an asynchronous iterator of dependencies
-dependencies = analyze [ "build/index.js" ]
-
-# add each dependency incrementally
-for await dependency from dependencies
-  # add will internally apply the registered generators
-  map = await Map.add map, dependency
-
-# optimize to perform top-down verified compaction
-optimizedMap = Map.optimize map
+storageArchive = await bundle "storage.js",
+  cwd: "/path/to/cerulean"
+  source: "build/node/src/shell"
 ```
 
-1. We create an empty map structure with `Map.make`.
-2. We analyze the entry point using the `analyze` function to obtain an asynchronous iterator (a reactor) of `dependency` objects.
-3. We loop over the reactor and incrementally `Map.add` each dependency. Atlas translates the dependency to a scope and target using our registered `Relative` generator.
-4. Finally, we call `Map.optimize` to compact the map and remove overlapping scopes.
+1. `bundle` resolves `"storage.js"` relative to `source` (`/path/to/cerulean/build/node/src/shell/storage.js`).
+2. `esbuild` analyzes the dependency graph with `absWorkingDir` set to `cwd` (`/path/to/cerulean`).
+3. Inside the generated ZIP buffer, the entry point is stored at `build/node/src/shell/storage.js` (relative to `cwd`), the package's root `package.json` is placed at `package.json`, and external/local dependencies are placed in their resolved `node_modules/` or `local/` locations alongside their respective `package.json` manifests.
 
-## Merging into an existing import map
+## Registering a custom Local or CDN resolver
 
-This task involves adding new dependencies to an import map that has already been generated or defined externally.
-Atlas enables this by allowing creators to initialize a map structure from an existing plain object using `Map.from`.
+This task involves configuring a custom `Local` workspace resolver (with a workspace `root` distinct from the target package `cwd`) or a custom `CDN` resolver in `Resolvers.Registry`.
 
 ```coffeescript
-import { Map } from "@dashkite/atlas/src/helpers/import-map"
-import analyze from "@dashkite/atlas/src/helpers/analyze"
+import { bundle, generate, Resolvers } from "@dashkite/atlas"
 
-existing =
-  imports:
-    "@dashkite/joy": "https://cdn.jsdelivr.net/npm/@dashkite/joy@1.0.0/index.js"
-  scopes: {}
+# Register a Local resolver for a metarepo workspace root
+Resolvers.Registry.register "local@central-park",
+  Resolvers.Local.make
+    root: "/path/to/central-park"
+    patterns: [ "**/.tempo/repos/**/*", "../**/*" ]
 
-# inflate the object into an Atlas map structure
-map = Map.from existing
+# Bundle a package inside the metarepo using the custom resolver key
+zipBuffer = await bundle "gateway.js",
+  cwd: "/path/to/central-park/.tempo/repos/cerulean"
+  source: "build/node/src/shell"
+  resolvers: [ "application", "local@central-park", "node" ]
 
-# add new dependencies directly as a reactor
-map = await Map.add map, analyze [ "build/client.js" ]
-
-# optimize the combined result
-finalMap = Map.optimize map
+# Or generate an import map using a specific CDN preset key ("cdn@jsdelivr")
+map = await generate "index.js",
+  cwd: "/path/to/central-park/.tempo/repos/cerulean"
+  source: "build/browser/src"
+  resolvers: [ "application", "local@central-park", "cdn@jsdelivr" ]
 ```
 
-1. We start with an existing import map containing pre-defined `imports` or `scopes`.
-2. We load it into Atlas using `Map.from`.
-3. We use `Map.add` to add the results of a new `analyze` pass. The `Map.add` function can gracefully accept a reactor (the result of `analyze`) directly, resolving all items automatically.
-4. We finalize the map by running `Map.optimize` to incorporate the new scopes optimally alongside the existing imports.
+1. Resolver instances are configured once via `.make({ root, patterns })` (or `.make({ template })` for `CDN`) and registered under a named key in `Resolvers.Registry`.
+2. Pipeline functions (`generate` and `bundle`) receive an ordered array of registered resolver keys in `options.resolvers`, keeping static resolver configuration (`root`) cleanly separated from pipeline execution options (`cwd` and `source`).
+
+## Inspecting the dependency graph with `analyze` and `ingest`
+
+This task involves running the discovery and ingestion stages directly to inspect the deduplicated `ModuleGraph`.
+
+```coffeescript
+import { analyze, ingest } from "@dashkite/atlas"
+import nodePreset from "@dashkite/atlas/presets/node"
+
+options =
+  cwd: "/path/to/app"
+  source: "build/node/src"
+  resolvers: nodePreset
+
+dependencies = analyze [ "index.js" ], options
+graph = await ingest dependencies, options
+
+console.log Array.from graph.sources.entries()
+```
+
+1. `analyze` runs `esbuild` on `"index.js"` (resolved against `options.source`) with `absWorkingDir` set to `options.cwd`, returning an async generator of dependency edges.
+2. `ingest` consumes the async generator, deduplicates physical files by inode (`fs.stat(path).ino`), encodes each module into a canonical `atlas://` URL using the configured `resolvers`, and returns the `ModuleGraph`.

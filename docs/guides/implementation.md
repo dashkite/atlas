@@ -2,7 +2,45 @@
 
 *for DashKite Atlas*
 
-## The Algorithm
+## Current Architecture: Functor Pipelines & Configurable Resolvers
+
+Atlas is organized around two functor pipelines (`generate` and `bundle`) that share a common front-end (`analyze` and `ingest`) and a unified **Configurable Resolver** registry (`Application`, `Local`, `Node`, `CDN`):
+
+```coffeescript
+# Import Map Generation Pipeline (src/generate.coffee)
+generate = pipe [
+  createContext
+  analyzeDependencies
+  executePipeline      # ingest -> baseline -> Compaction -> Compression -> Resolution -> Serialization
+  dumpDiagnostics
+  extractImportMap
+]
+
+# Application Bundling Pipeline (src/bundle.coffee)
+bundle = pipe [
+  createContext
+  analyzeDependencies
+  executeFunctors      # ingest -> Quotient -> Compiler -> BundleResolver
+  dumpDiagnostics
+  constructArchive     # BundleArchive -> ZIP Buffer
+]
+```
+
+### Directory Options (`cwd`, `source`, and `root`)
+
+1. **`options.cwd` (Target Package Root)**:
+   - Used by `analyze`, `ingest`, `generate`, and `bundle` (defaults to `process.cwd()`).
+   - Passed to `esbuild` as `absWorkingDir`, used by `ModuleCache.make(cwd)` and `ingest` to resolve relative paths on disk, and used by `BundleArchive` to read the root `package.json` and compute archive-relative entry point paths.
+2. **`options.source` (Entry Point Base Directory)**:
+   - Used by `analyze`, `generate`, and `bundle` (defaults to `options.cwd`, normalized via `Path.resolve(cwd, options.source ? ".")`).
+   - Resolves input `entries` (`Path.resolve(source, entry)`) while keeping all `esbuild` `metafile.inputs` paths and archive entry paths relative to `options.cwd`.
+3. **`config.root` (Resolver Base Directory / Workspace Boundary)**:
+   - Passed to `Application.make({ root })`, `Node.make({ root })`, and `Local.make({ root, patterns })` when instantiating resolvers.
+   - Used by `resolve(atlasUrl)` to produce `file://` URLs and by `LocalResolver::match(context)` as fallback when `context.cwd` is omitted.
+
+---
+
+## Historical v1 Architecture Overview
 
 The high-level algorithm is expressed in the `generate` function itself:
 

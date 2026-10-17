@@ -99,12 +99,9 @@ dumpDiagnostics = ( context ) ->
       console.warn error
   context
 
-resolveEntryPaths = ( directory, entry ) ->
-  relative = if Path.isAbsolute entry
-    Path.relative directory, entry
-  else
-    entry
-  absolute = Path.resolve directory, relative
+resolveEntryPaths = ( cwd, source, entry ) ->
+  absolute = Path.resolve source, entry
+  relative = Path.relative cwd, absolute
   { relative, absolute }
 
 resolveRootManifestPath = ( directory ) ->
@@ -123,10 +120,11 @@ readRootManifest = ( directory ) ->
   readOptionalFile path
 
 class BundleArchive
-  @make: ( directory, graph ) ->
+  @make: ( options, graph ) ->
     Object.assign ( new @ ),
       zip: JSZip()
-      directory: directory
+      cwd: options.cwd
+      source: options.source
       graph: graph
       destinations: new Set()
       packages: new Set()
@@ -139,7 +137,7 @@ class BundleArchive
     return
 
   addEntry: ( entry ) ->
-    { relative, absolute } = resolveEntryPaths @directory, entry
+    { relative, absolute } = resolveEntryPaths @cwd, @source, entry
     await @addFile relative, absolute
     return
 
@@ -149,7 +147,7 @@ class BundleArchive
     return
 
   addRootManifest: ->
-    content = await readRootManifest @directory
+    content = await readRootManifest @cwd
     if content?
       @zip.file "package.json", content
       @destinations.add "package.json"
@@ -186,8 +184,7 @@ class BundleArchive
     @zip.generateAsync ZIP_OPTIONS
 
 constructArchive = ( context ) ->
-  archive = BundleArchive.make context.options.directory,
-    context.pipeline.graph
+  archive = BundleArchive.make context.options, context.pipeline.graph
   await archive.addEntries context.entries
   await archive.addRootManifest()
   await archive.addBundleMap context.pipeline.map
@@ -199,10 +196,11 @@ normalizeEntries = ( entries ) ->
   [ entries ].flat()
 
 normalizeOptions = ( options ) ->
-  directory = options.directory ? process.cwd()
+  cwd = options.cwd ? process.cwd()
+  source = Path.resolve cwd, ( options.source ? "." )
   external = [ "@aws-sdk/*", ( options.external ? [] )... ]
   resolvers = options.resolvers ? preset
-  { options..., directory, external, resolvers }
+  { options..., cwd, source, external, resolvers }
 
 createContext = ( entries, options = {} ) ->
   entries: normalizeEntries entries
@@ -211,18 +209,13 @@ createContext = ( entries, options = {} ) ->
 analyzeDependencies = ( context ) ->
   dependencies = analyze context.entries, {
     context.options...
-    cwd: context.options.directory
     platform: "node"
     conditions: [ "node" ]
-    external: context.options.external
   }
   { context..., dependencies }
 
 ingestDependencies = ( dependencies, options ) ->
-  ingest dependencies, {
-    options...
-    cwd: options.directory
-  }
+  ingest dependencies, options
 
 createPipeline = ( graph, components, index, map ) ->
   { graph, components, index, map }
