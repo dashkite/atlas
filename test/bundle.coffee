@@ -10,84 +10,88 @@ ENTRY_SOURCE =
   "import { foo } from './foo.js';\n" +
   "export const main = () => { console.log(foo); };"
 
-writeFixtures = ( directory ) ->
-  await FS.writeFile ( Path.join directory, "index.js" ), ENTRY_SOURCE
-  await FS.writeFile ( Path.join directory, "foo.js" ),
-    "export const foo = 'hello';"
-  FS.writeFile ( Path.join directory, "package.json" ),
-    JSON.stringify { name: "test-pkg", version: "1.0.0" }
+Fixtures =
+  write: ( directory ) ->
+    await FS.writeFile ( Path.join directory, "index.js" ), ENTRY_SOURCE
+    await FS.writeFile ( Path.join directory, "foo.js" ),
+      "export const foo = 'hello';"
+    FS.writeFile ( Path.join directory, "package.json" ),
+      JSON.stringify { name: "test-pkg", version: "1.0.0" }
 
-createFixtures = ->
-  directory = await FS.mkdtemp Path.join OS.tmpdir(), "atlas-bundle-"
-  await writeFixtures directory
-  directory
+  create: ->
+    directory = await FS.mkdtemp Path.join OS.tmpdir(), "atlas-bundle-"
+    await Fixtures.write directory
+    directory
 
-verifyZip = ( buffer ) ->
-  assert Buffer.isBuffer buffer
-  zip = await JSZip.loadAsync buffer
-  files = Object.keys zip.files
-  assert files.includes "index.js"
-  assert files.includes "package.json"
-  content = await ( zip.file "index.js" ).async "string"
-  assert content == ENTRY_SOURCE
+Nested =
+  write: ( directory ) ->
+    source = Path.join directory, "src", "shell"
+    await FS.mkdir source, { recursive: true }
+    await FS.writeFile ( Path.join source, "index.js" ), ENTRY_SOURCE
+    await FS.writeFile ( Path.join source, "foo.js" ),
+      "export const foo = 'hello';"
+    FS.writeFile ( Path.join directory, "package.json" ),
+      JSON.stringify { name: "test-pkg", version: "1.0.0" }
+
+  create: ->
+    directory = await FS.mkdtemp Path.join OS.tmpdir(), "atlas-bundle-source-"
+    await Nested.write directory
+    directory
+
+Zip =
+  verify: ( buffer ) ->
+    assert Buffer.isBuffer buffer
+    zip = await JSZip.loadAsync buffer
+    files = Object.keys zip.files
+    assert files.includes "index.js"
+    assert files.includes "package.json"
+    content = await ( zip.file "index.js" ).async "string"
+    assert content == ENTRY_SOURCE
+
+  nested: ( buffer ) ->
+    assert Buffer.isBuffer buffer
+    zip = await JSZip.loadAsync buffer
+    files = Object.keys zip.files
+    assert files.includes "src/shell/index.js"
+    assert files.includes "src/shell/foo.js"
+    assert files.includes "package.json"
+    content = await ( zip.file "src/shell/index.js" ).async "string"
+    assert content == ENTRY_SOURCE
 
 cleanup = ( directory ) ->
   FS.rm directory, { recursive: true, force: true }
 
-writeNestedFixtures = ( directory ) ->
-  source = Path.join directory, "src", "shell"
-  await FS.mkdir source, { recursive: true }
-  await FS.writeFile ( Path.join source, "index.js" ), ENTRY_SOURCE
-  await FS.writeFile ( Path.join source, "foo.js" ),
-    "export const foo = 'hello';"
-  FS.writeFile ( Path.join directory, "package.json" ),
-    JSON.stringify { name: "test-pkg", version: "1.0.0" }
+Cases =
+  bundle: ->
+    directory = await Fixtures.create()
+    try
+      entry = Path.join directory, "index.js"
+      buffer = await bundle entry, { cwd: directory }
+      await Zip.verify buffer
+    finally
+      await cleanup directory
 
-createNestedFixtures = ->
-  directory = await FS.mkdtemp Path.join OS.tmpdir(), "atlas-bundle-source-"
-  await writeNestedFixtures directory
-  directory
+  relative: ->
+    directory = await Fixtures.create()
+    try
+      buffer = await bundle "index.js", { cwd: directory }
+      await Zip.verify buffer
+    finally
+      await cleanup directory
 
-verifyNestedZip = ( buffer ) ->
-  assert Buffer.isBuffer buffer
-  zip = await JSZip.loadAsync buffer
-  files = Object.keys zip.files
-  assert files.includes "src/shell/index.js"
-  assert files.includes "src/shell/foo.js"
-  assert files.includes "package.json"
-  content = await ( zip.file "src/shell/index.js" ).async "string"
-  assert content == ENTRY_SOURCE
-
-testBundle = ->
-  directory = await createFixtures()
-  try
-    entry = Path.join directory, "index.js"
-    buffer = await bundle entry, { cwd: directory }
-    await verifyZip buffer
-  finally
-    await cleanup directory
-
-testRelativeEntry = ->
-  directory = await createFixtures()
-  try
-    buffer = await bundle "index.js", { cwd: directory }
-    await verifyZip buffer
-  finally
-    await cleanup directory
-
-testSourceDirectory = ->
-  directory = await createNestedFixtures()
-  try
-    buffer = await bundle "index.js", { cwd: directory, source: "src/shell" }
-    await verifyNestedZip buffer
-  finally
-    await cleanup directory
+  source: ->
+    directory = await Nested.create()
+    try
+      buffer = await bundle "index.js", { cwd: directory, source: "src/shell" }
+      await Zip.nested buffer
+    finally
+      await cleanup directory
 
 export default ->
   [
-    test "creates a bundle zip with entry and package.json", testBundle
+    test "creates a bundle zip with entry and package.json", Cases.bundle
     test "creates a bundle zip with relative entry and cwd",
-      testRelativeEntry
+      Cases.relative
     test "creates a bundle zip with entry relative to source",
-      testSourceDirectory
+      Cases.source
   ]
