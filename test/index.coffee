@@ -31,7 +31,7 @@ SUITES = [
   [ "Serialization", "functors/serialization" ]
 ]
 
-cleanEnvironment = ->
+clean = ->
   if !process.env.DEBUG
     return
   try
@@ -39,16 +39,16 @@ cleanEnvironment = ->
       recursive: true
       force: true
 
-loadSuite = ( [ name, path ] ) ->
+suite = ( [ name, path ] ) ->
   test name, await tests path
 
-loadSuites = ->
+load = ->
   for entry in SUITES
-    await loadSuite entry
+    await suite entry
 
-executeTestSuite = ->
-  print await test "Atlas", await loadSuites()
+execute = ->
+  print await test "Atlas", await load()
 
 do ->
-  await cleanEnvironment()
-  await executeTestSuite()
+  await clean()
+  await execute()
