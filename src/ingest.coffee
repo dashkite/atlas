@@ -12,7 +12,7 @@ resolveCwd = ( options ) ->
 
 resolveRegistry = ( options ) ->
   resolvers = options.resolvers ? preset
-  options.metaResolver ? Resolvers.Registry.make resolvers
+  Resolvers.Registry.make resolvers
 
 deriveMetadata = ( module ) ->
   {

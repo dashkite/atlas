@@ -73,7 +73,6 @@ Consumes the asynchronous dependency stream from `analyze`, deduplicates physica
 - **`options`** *(Object, optional)*:
   - **`cwd`** *(String, default: `process.cwd()`)*: Base directory used to resolve relative dependency paths on disk and passed in `context = { source, cwd }` to `resolver.match(context)`.
   - **`resolvers`** *(Array\<String\>, default: `presets/node`)*: Registered resolver keys used to construct the composite Meta Resolver.
-  - **`metaResolver`** *(Object, optional)*: Explicit composite resolver instance (overrides `options.resolvers`).
 
 ---
 
