@@ -35,10 +35,10 @@ cleanup = ( directory ) ->
   FS.rm directory, { recursive: true, force: true }
 
 writeNestedFixtures = ( directory ) ->
-  sourceDirectory = Path.join directory, "src", "shell"
-  await FS.mkdir sourceDirectory, { recursive: true }
-  await FS.writeFile ( Path.join sourceDirectory, "index.js" ), ENTRY_SOURCE
-  await FS.writeFile ( Path.join sourceDirectory, "foo.js" ),
+  source = Path.join directory, "src", "shell"
+  await FS.mkdir source, { recursive: true }
+  await FS.writeFile ( Path.join source, "index.js" ), ENTRY_SOURCE
+  await FS.writeFile ( Path.join source, "foo.js" ),
     "export const foo = 'hello';"
   FS.writeFile ( Path.join directory, "package.json" ),
     JSON.stringify { name: "test-pkg", version: "1.0.0" }
@@ -59,29 +59,29 @@ verifyNestedZip = ( buffer ) ->
   assert content == ENTRY_SOURCE
 
 testBundle = ->
-  cwd = await createFixtures()
+  directory = await createFixtures()
   try
-    entry = Path.join cwd, "index.js"
-    buffer = await bundle entry, { cwd }
+    entry = Path.join directory, "index.js"
+    buffer = await bundle entry, { cwd: directory }
     await verifyZip buffer
   finally
-    await cleanup cwd
+    await cleanup directory
 
 testRelativeEntry = ->
-  cwd = await createFixtures()
+  directory = await createFixtures()
   try
-    buffer = await bundle "index.js", { cwd }
+    buffer = await bundle "index.js", { cwd: directory }
     await verifyZip buffer
   finally
-    await cleanup cwd
+    await cleanup directory
 
 testSourceDirectory = ->
-  cwd = await createNestedFixtures()
+  directory = await createNestedFixtures()
   try
-    buffer = await bundle "index.js", { cwd, source: "src/shell" }
+    buffer = await bundle "index.js", { cwd: directory, source: "src/shell" }
     await verifyNestedZip buffer
   finally
-    await cleanup cwd
+    await cleanup directory
 
 export default ->
   [
