@@ -1,32 +1,34 @@
 import Resolvers from "../resolvers"
 
-toBindingsMap = ( bindings ) ->
+toMap = ( bindings ) ->
   Object.fromEntries bindings
 
-resolveScopeUrl = ( node, resolver ) ->
-  resolver.resolve node.getAddress()
+Scopes =
 
-recordScope = ( node, resolver ) ->
-  if node.bindings.size > 0
-    { [ ( resolveScopeUrl node, resolver ) ]: toBindingsMap node.bindings }
-  else
-    {}
+  resolve: ( node, resolver ) ->
+    resolver.resolve node.getAddress()
 
-traverseScopes = ( node, resolver ) ->
-  {
-    ( recordScope node, resolver )...
-    ( buildScopes node, resolver )...
-  }
+  record: ( node, resolver ) ->
+    if node.bindings.size > 0
+      { [ ( Scopes.resolve node, resolver ) ]: toMap node.bindings }
+    else
+      {}
 
-mergeChildScopes = ( resolver ) ->
-  ( scopes, child ) ->
-    { scopes..., ( traverseScopes child, resolver )... }
+  traverse: ( node, resolver ) ->
+    {
+      ( Scopes.record node, resolver )...
+      ( Scopes.build node, resolver )...
+    }
 
-buildScopes = ( node, resolver ) ->
-  ( Array.from node.children.values() ).reduce ( mergeChildScopes resolver ), {}
+  merge: ( resolver ) ->
+    ( scopes, child ) ->
+      { scopes..., ( Scopes.traverse child, resolver )... }
+
+  build: ( node, resolver ) ->
+    ( Array.from node.children.values() ).reduce ( Scopes.merge resolver ), {}
 
 functor = ( trie, keys ) ->
-  imports: toBindingsMap trie.bindings
-  scopes: buildScopes trie, Resolvers.Registry.make keys
+  imports: toMap trie.bindings
+  scopes: Scopes.build trie, Resolvers.Registry.make keys
 
 export default functor
