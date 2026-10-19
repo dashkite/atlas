@@ -69,19 +69,19 @@ registrySuite = ->
     test "Meta Resolver validates keys on resolve", testMetaResolveValidation
   ]
 
-testAppMatchIntra = ->
+testApplicationMatchIntraPackage = ->
   resolver = Application.make()
   assert resolver.match { source: "src/index.coffee", cwd: "/root" }
 
-testAppRejectNodeModules = ->
+testApplicationRejectNodeModules = ->
   resolver = Application.make()
   assert !resolver.match { source: "node_modules/foo/index.js", cwd: "/root" }
 
-testAppRejectEscapingPath = ->
+testApplicationRejectEscapingPath = ->
   resolver = Application.make()
   assert !resolver.match { source: "../src/index.coffee", cwd: "/root" }
 
-testAppEncode = ->
+testApplicationEncode = ->
   resolver = Application.make()
   url = resolver.encode
     resolver: "application"
@@ -89,25 +89,27 @@ testAppEncode = ->
     path: "/src/index.coffee"
   assert.equal "atlas://application/src/index.coffee", url
 
-testAppDecode = ->
+testApplicationDecode = ->
   resolver = Application.make()
   descriptor = resolver.decode "atlas://application/src/index.coffee"
   assert.equal descriptor.resolver, "application"
   assert.equal descriptor.path, "/src/index.coffee"
 
-testAppResolve = ->
+testApplicationResolve = ->
   resolver = Application.make()
   url = resolver.resolve "atlas://application/src/index.coffee"
   assert typeof url == "string"
 
 applicationSuite = ->
   test "Application Resolver", [
-    test "matches intra-package paths unconditionally", testAppMatchIntra
-    test "rejects paths containing node_modules", testAppRejectNodeModules
-    test "rejects paths escaping cwd (..)", testAppRejectEscapingPath
-    test "encodes target to virtual root", testAppEncode
-    test "decodes atlas URL", testAppDecode
-    test "resolves to physical path", testAppResolve
+    test "matches intra-package paths unconditionally",
+      testApplicationMatchIntraPackage
+    test "rejects paths containing node_modules",
+      testApplicationRejectNodeModules
+    test "rejects paths escaping cwd (..)", testApplicationRejectEscapingPath
+    test "encodes target to virtual root", testApplicationEncode
+    test "decodes atlas URL", testApplicationDecode
+    test "resolves to physical path", testApplicationResolve
   ]
 
 testNodeMatch = ->
