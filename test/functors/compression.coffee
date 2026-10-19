@@ -3,7 +3,7 @@ import assert from "@dashkite/assert"
 import Trie from "../../src/categories/trie"
 import compress from "../../src/functors/compression"
 
-setupMaeveNode = ( root ) ->
+setupMaeve = ( root ) ->
   root.upsertPath [
     "npm"
     "@dashkite"
@@ -13,8 +13,8 @@ setupMaeveNode = ( root ) ->
     "src"
   ]
 
-setupTargetPaths = ( root ) ->
-  maeve = setupMaeveNode root
+setupTargets = ( root ) ->
+  maeve = setupMaeve root
   common = maeve.upsertPath [ "common.js" ]
   sublime = maeve.upsertPath [ "sublime", "index.js" ]
   { maeve, common, sublime }
@@ -26,18 +26,18 @@ setupBindings = ( root, { common, sublime } ) ->
 
 createFixture = ->
   root = Trie.make()
-  targets = setupTargetPaths root
+  targets = setupTargets root
   setupBindings root, targets
   { root, maeve: targets.maeve }
 
-assertPrefixBinding = ( app, expected ) ->
+assertPrefix = ( app, expected ) ->
   assert ( app.bindings.has "@dashkite/maeve/" ),
     "Should have created trailing-slash prefix binding"
   target = app.bindings.get "@dashkite/maeve/"
   assert.equal target, expected,
     "Prefix binding should point to common ancestor node"
 
-assertPrunedBindings = ( app ) ->
+assertPruned = ( app ) ->
   assert.equal ( app.bindings.has "@dashkite/maeve/common.js" ),
     false,
     "Should have pruned specific file binding"
@@ -51,6 +51,6 @@ export default ->
       { root, maeve } = createFixture()
       root = compress root
       app = root.children.get "app"
-      assertPrefixBinding app, maeve
-      assertPrunedBindings app
+      assertPrefix app, maeve
+      assertPruned app
   ]
