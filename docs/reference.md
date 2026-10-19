@@ -133,7 +133,7 @@ Matches dependencies residing within `node_modules` and resolves canonical `atla
 `AtlasURL` provides inverse encoding and decoding functions for canonical `atlas://` URLs:
 
 - $AtlasURL.encode: [descriptor] \to url$ — Formats a dependency descriptor (`{ resolver, module, path }`) into a canonical `atlas://` URL string.
-- $AtlasURL.decode: [url] \to descriptor$ — Decodes a canonical `atlas://` module URL string into `{ resolver, module: { scope, name, version }, path }`, checking the scoped URL Codex pathname template (`"/{scope}/{versioned}/{path*}"`) first and falling back to the unscoped template (`"/{versioned}/{path*}"`).
+- $AtlasURL.decode: [url] \to descriptor$ — Decodes a canonical `atlas://` module URL string into `{ resolver, module: { scope, name, version }, path }`, matching the scoped URL Codex pathname template (`"/{scope}/{versioned}/{path*}"`) when `pathname` begins with `"/@"` and the unscoped template (`"/{versioned}/{path*}"`) otherwise.
 - $AtlasURL.parse: [url] \to \{ resolver, pathname \}$ — Parses the resolver key (`username@hostname` or `hostname`) and raw `pathname` from an `atlas://` URL string.
 - $AtlasURL.format: [descriptor] \to url$ — Alias for `AtlasURL.encode`.
 

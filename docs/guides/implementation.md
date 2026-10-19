@@ -9,9 +9,8 @@ Atlas is organized around two functor pipelines (`generate` and `bundle`) that s
 ```coffeescript
 # Import Map Generation Pipeline (src/generate.coffee)
 generate = pipe [
-  createContext
-  analyzeDependencies
-  executePipeline      # ingest -> baseline -> compact -> compress -> resolve -> serialize
+  prepareContext       # createContext -> analyzeDependencies
+  executePipeline      # ingestDependencies -> runFunctors (baseline -> compact -> compress -> resolve -> serialize)
   dumpDiagnostics
   extractImportMap
 ]
