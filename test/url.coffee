@@ -2,11 +2,11 @@ import { test } from "@dashkite/amen"
 import assert from "@dashkite/assert"
 import AtlasURL from "../src/url"
 
-scopedURL = "atlas://cdn@unpkg/@dashkite/joy@0.7.0/src/index.js"
-unscopedURL = "atlas://node/foo@1.0.0/build/index.js"
-applicationURL = "atlas://application/src/index.js"
+SCOPED_URL = "atlas://cdn@unpkg/@dashkite/joy@0.7.0/src/index.js"
+UNSCOPED_URL = "atlas://node/foo@1.0.0/build/index.js"
+APPLICATION_URL = "atlas://application/src/index.js"
 
-scopedDescriptor =
+SCOPED_DESCRIPTOR =
   resolver: "cdn@unpkg"
   module:
     scope: "@dashkite"
@@ -14,7 +14,7 @@ scopedDescriptor =
     version: "0.7.0"
   path: "/src/index.js"
 
-unscopedDescriptor =
+UNSCOPED_DESCRIPTOR =
   resolver: "node"
   module:
     scope: undefined
@@ -22,7 +22,7 @@ unscopedDescriptor =
     version: "1.0.0"
   path: "/build/index.js"
 
-applicationDescriptor =
+APPLICATION_DESCRIPTOR =
   resolver: "application"
   path: "/src/index.js"
 
@@ -39,9 +39,9 @@ assertRoundTrip = ( descriptor, expected ) ->
 parseTests = ->
   [
     test "parses basic resolver key", ->
-      assertParsed applicationURL, "application", "/src/index.js"
+      assertParsed APPLICATION_URL, "application", "/src/index.js"
     test "parses parameterized resolver key", ->
-      assertParsed scopedURL, "cdn@unpkg", "/@dashkite/joy@0.7.0/src/index.js"
+      assertParsed SCOPED_URL, "cdn@unpkg", "/@dashkite/joy@0.7.0/src/index.js"
     test "fails fast on malformed URLs", ->
       assert.throws -> AtlasURL.parse "not a url"
   ]
@@ -49,17 +49,17 @@ parseTests = ->
 formatTests = ->
   [
     test "formats descriptor with module", ->
-      assert.equal ( AtlasURL.format scopedDescriptor ), scopedURL
+      assert.equal ( AtlasURL.format SCOPED_DESCRIPTOR ), SCOPED_URL
     test "formats descriptor without module", ->
-      assert.equal ( AtlasURL.format applicationDescriptor ), applicationURL
+      assert.equal ( AtlasURL.format APPLICATION_DESCRIPTOR ), APPLICATION_URL
   ]
 
 codecTests = ->
   [
     test "encodes and decodes scoped module descriptor", ->
-      assertRoundTrip scopedDescriptor, scopedURL
+      assertRoundTrip SCOPED_DESCRIPTOR, SCOPED_URL
     test "encodes and decodes unscoped module descriptor", ->
-      assertRoundTrip unscopedDescriptor, unscopedURL
+      assertRoundTrip UNSCOPED_DESCRIPTOR, UNSCOPED_URL
   ]
 
 export default ->
