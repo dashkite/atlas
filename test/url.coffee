@@ -26,27 +26,28 @@ APPLICATION_DESCRIPTOR =
   resolver: "application"
   path: "/src/index.js"
 
-assertParsed = ( url, resolver, pathname ) ->
-  parsed = AtlasURL.parse url
-  assert.equal parsed.resolver, resolver
-  assert.equal parsed.pathname, pathname
+check =
+  parsed: ( url, resolver, pathname ) ->
+    parsed = AtlasURL.parse url
+    assert.equal parsed.resolver, resolver
+    assert.equal parsed.pathname, pathname
 
-assertRoundTrip = ( descriptor, expected ) ->
-  url = AtlasURL.encode descriptor
-  assert.equal url, expected
-  assert.deepEqual ( AtlasURL.decode url ), descriptor
+  roundTrip: ( descriptor, expected ) ->
+    url = AtlasURL.encode descriptor
+    assert.equal url, expected
+    assert.deepEqual ( AtlasURL.decode url ), descriptor
 
-parseTests = ->
+parse = ->
   [
     test "parses basic resolver key", ->
-      assertParsed APPLICATION_URL, "application", "/src/index.js"
+      check.parsed APPLICATION_URL, "application", "/src/index.js"
     test "parses parameterized resolver key", ->
-      assertParsed SCOPED_URL, "cdn@unpkg", "/@dashkite/joy@0.7.0/src/index.js"
+      check.parsed SCOPED_URL, "cdn@unpkg", "/@dashkite/joy@0.7.0/src/index.js"
     test "fails fast on malformed URLs", ->
       assert.throws -> AtlasURL.parse "not a url"
   ]
 
-formatTests = ->
+format = ->
   [
     test "formats descriptor with module", ->
       assert.equal ( AtlasURL.format SCOPED_DESCRIPTOR ), SCOPED_URL
@@ -54,17 +55,17 @@ formatTests = ->
       assert.equal ( AtlasURL.format APPLICATION_DESCRIPTOR ), APPLICATION_URL
   ]
 
-codecTests = ->
+codec = ->
   [
     test "encodes and decodes scoped module descriptor", ->
-      assertRoundTrip SCOPED_DESCRIPTOR, SCOPED_URL
+      check.roundTrip SCOPED_DESCRIPTOR, SCOPED_URL
     test "encodes and decodes unscoped module descriptor", ->
-      assertRoundTrip UNSCOPED_DESCRIPTOR, UNSCOPED_URL
+      check.roundTrip UNSCOPED_DESCRIPTOR, UNSCOPED_URL
   ]
 
 export default ->
   [
-    ...parseTests()
-    ...formatTests()
-    ...codecTests()
+    ...parse()
+    ...format()
+    ...codec()
   ]
