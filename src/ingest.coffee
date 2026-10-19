@@ -63,20 +63,31 @@ class ModuleUrlResolver
       throw new Error "No resolver found to encode target: #{ target }"
     key
 
-  encodeTarget: ( target ) ->
-    key = @matchKey target
-    @registry.encode @buildDescriptor target, key
+  encodeTarget: pipe [
+    ( target ) ->
+      target: target
+      key: @matchKey target
+    ( { target, key } ) ->
+      @buildDescriptor target, key
+    ( descriptor ) ->
+      @registry.encode descriptor
+  ]
 
   resolveInode: ( path ) ->
     ( await FS.stat Path.resolve @cwd, path ).ino
 
-  target: ( target ) ->
-    inode = await @resolveInode target.source.path
-    if @inodes.has inode
-      return @inodes.get inode
-    url = @encodeTarget target
-    @inodes.set inode, url
-    url
+  cacheTarget: ( inode, target ) ->
+    if !@inodes.has inode
+      @inodes.set inode, @encodeTarget target
+    @inodes.get inode
+
+  target: pipe [
+    ( target ) ->
+      inode: await @resolveInode target.source.path
+      target: target
+    ( { inode, target } ) ->
+      @cacheTarget inode, target
+  ]
 
   source: ( item ) ->
     if item.import.scope?
@@ -98,13 +109,17 @@ class ModuleGraphBuilder
       urls: ModuleUrlResolver.make cwd, registry
       graph: ModuleGraph.make()
 
+  encodePackage: pipe [
+    ( url ) -> @registry.decode url
+    ( parsed ) -> { parsed..., path: "" }
+    ( parsed ) -> @registry.encode parsed
+  ]
+
   resolvePackage: ( url ) ->
     if url == ENTRY_POINT
       ENTRY_POINT
     else
-      parsed = @registry.decode url
-      parsed.path = ""
-      @registry.encode parsed
+      @encodePackage url
 
   assignPackage: ( url ) ->
     @graph.setAttribute url, "packageId",
@@ -114,6 +129,11 @@ class ModuleGraphBuilder
   registerVertex: ( url ) ->
     @graph.addVertex url
     @assignPackage url
+    return
+
+  registerVertices: ( urls ) ->
+    @registerVertex urls.source
+    @registerVertex urls.target
     return
 
   recordSource: ( url, target ) ->
@@ -134,13 +154,19 @@ class ModuleGraphBuilder
       type: determineType specifier
     return
 
-  addDependency: ( item ) ->
-    urls = await @urls.dependency item
-    @registerVertex urls.source
-    @registerVertex urls.target
-    @recordSources item, urls
-    @recordEdge urls, item.import.specifier
-    return
+  addDependency: pipe [
+    ( item ) ->
+      item: item
+      urls: await @urls.dependency item
+    ( context ) ->
+      @registerVertices context.urls
+      context
+    ( context ) ->
+      @recordSources context.item, context.urls
+      context
+    ( { item, urls } ) ->
+      @recordEdge urls, item.import.specifier
+  ]
 
   build: ->
     @graph
