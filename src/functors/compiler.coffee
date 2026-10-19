@@ -71,11 +71,11 @@ initializeState = ( graph, incoming ) ->
     cache: new Map()
   }
 
-defaults =
+DEFAULTS =
   compact: true
 
 createContext = ( graph, options = {} ) ->
-  options = { defaults..., options... }
+  options = { DEFAULTS..., options... }
   analysis = analyzeGraph graph
   {
     analysis...
