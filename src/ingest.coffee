@@ -3,28 +3,28 @@ import ModuleGraph from "./categories/module-graph"
 import Resolvers from "./resolvers"
 import Path from "node:path"
 import FS from "node:fs/promises"
-import nodePreset from "./presets/node"
+import preset from "./presets/node"
 
 ENTRY_POINT = Symbol "atlas:entry-point"
 
-createModuleGraph = ->
+createGraph = ->
   Object.assign ModuleGraph.make(),
     sources: new Map()
 
 resolveCwd = ( options ) ->
   options.cwd ? process.cwd()
 
-resolveMetaResolver = ( options ) ->
-  resolvers = options.resolvers ? nodePreset
+resolveRegistry = ( options ) ->
+  resolvers = options.resolvers ? preset
   options.metaResolver ? Resolvers.Registry.make resolvers
 
-createIngestContext = ( dependencies, options = {} ) ->
+createContext = ( dependencies, options = {} ) ->
   {
     dependencies
     cwd: resolveCwd options
-    metaResolver: resolveMetaResolver options
-    graph: createModuleGraph()
-    inodeCache: new Map()
+    registry: resolveRegistry options
+    graph: createGraph()
+    inodes: new Map()
   }
 
 collectDependencies = ( context ) ->
@@ -33,14 +33,14 @@ collectDependencies = ( context ) ->
     items.push dependency
   { context..., dependencies: items }
 
-deriveModuleMetadata = ( module ) ->
+deriveMetadata = ( module ) ->
   {
     scope: module.scope
     name: module.name
     version: module.version
   }
 
-deriveDescriptorPath = ( target, cwd ) ->
+derivePath = ( target, cwd ) ->
   if target.module?
     "/#{ Path.relative target.module.path, target.source.path }"
   else if Path.isAbsolute target.source.path
@@ -51,66 +51,67 @@ deriveDescriptorPath = ( target, cwd ) ->
 buildDescriptor = ( target, key, cwd ) ->
   descriptor =
     resolver: key
-    path: deriveDescriptorPath target, cwd
+    path: derivePath target, cwd
   if target.module?
-    descriptor.module = deriveModuleMetadata target.module
+    descriptor.module = deriveMetadata target.module
   descriptor
 
-matchResolverKey = ( metaResolver, target, cwd ) ->
-  key = metaResolver.match { source: target.source.path, cwd }
+matchKey = ( registry, target, cwd ) ->
+  key = registry.match { source: target.source.path, cwd }
   if !key?
     target = JSON.stringify target
     throw new Error "No resolver found to encode target: #{ target }"
   key
 
-encodeTarget = ( target, metaResolver, cwd ) ->
-  key = matchResolverKey metaResolver, target, cwd
-  metaResolver.encode buildDescriptor target, key, cwd
+encodeTarget = ( target, registry, cwd ) ->
+  key = matchKey registry, target, cwd
+  registry.encode buildDescriptor target, key, cwd
 
-resolveFileInode = ( cwd, path ) ->
+resolveInode = ( cwd, path ) ->
   ( await FS.stat Path.resolve cwd, path ).ino
 
-resolveTargetUrl = ( target, context ) ->
-  inode = await resolveFileInode context.cwd, target.source.path
-  if context.inodeCache.has inode
-    return context.inodeCache.get inode
-  url = encodeTarget target, context.metaResolver, context.cwd
-  context.inodeCache.set inode, url
-  url
+Urls =
+  target: ( target, context ) ->
+    inode = await resolveInode context.cwd, target.source.path
+    if context.inodes.has inode
+      return context.inodes.get inode
+    url = encodeTarget target, context.registry, context.cwd
+    context.inodes.set inode, url
+    url
 
-resolveSourceUrl = ( item, context ) ->
-  if item.import.scope?
-    resolveTargetUrl item.import.scope, context
-  else
-    ENTRY_POINT
+  source: ( item, context ) ->
+    if item.import.scope?
+      Urls.target item.import.scope, context
+    else
+      ENTRY_POINT
 
-resolveDependencyUrls = ( item, context ) ->
-  source: await resolveSourceUrl item, context
-  target: await resolveTargetUrl item, context
+  dependency: ( item, context ) ->
+    source: await Urls.source item, context
+    target: await Urls.target item, context
 
-resolvePackageId = ( metaResolver, url ) ->
+  file: ( cwd, path ) ->
+    ( new URL "file://#{ Path.resolve cwd, path }" ).href
+
+resolvePackage = ( registry, url ) ->
   if url == ENTRY_POINT
     ENTRY_POINT
   else
-    parsed = metaResolver.decode url
+    parsed = registry.decode url
     parsed.path = ""
-    metaResolver.encode parsed
+    registry.encode parsed
 
-assignPackageId = ( graph, metaResolver, url ) ->
+assignPackage = ( graph, registry, url ) ->
   graph.setAttribute url, "packageId",
-    resolvePackageId metaResolver, url
+    resolvePackage registry, url
   return
 
-registerVertex = ( graph, metaResolver, url ) ->
+registerVertex = ( graph, registry, url ) ->
   graph.addVertex url
-  assignPackageId graph, metaResolver, url
+  assignPackage graph, registry, url
   return
-
-resolveFileUrl = ( cwd, path ) ->
-  ( new URL "file://#{ Path.resolve cwd, path }" ).href
 
 recordSource = ( { graph, cwd }, url, target ) ->
-  graph.sources.set url, resolveFileUrl cwd, target.source.path
+  graph.sources.set url, Urls.file cwd, target.source.path
   return
 
 recordSources = ( context, item, urls ) ->
@@ -125,26 +126,26 @@ isRelative = ( specifier ) ->
 isAlias = ( specifier ) ->
   specifier.startsWith "#"
 
-determineEdgeType = ( specifier ) ->
+determineType = ( specifier ) ->
   if ( isRelative specifier ) || ( isAlias specifier )
     "intra"
   else
     "inter"
 
-recordDependencyEdge = ( graph, urls, specifier ) ->
+recordEdge = ( graph, urls, specifier ) ->
   graph.addEdge
     source: urls.source
     target: urls.target
     label: specifier
-    type: determineEdgeType specifier
+    type: determineType specifier
   return
 
 processDependency = ( item, context ) ->
-  urls = await resolveDependencyUrls item, context
-  registerVertex context.graph, context.metaResolver, urls.source
-  registerVertex context.graph, context.metaResolver, urls.target
+  urls = await Urls.dependency item, context
+  registerVertex context.graph, context.registry, urls.source
+  registerVertex context.graph, context.registry, urls.target
   recordSources context, item, urls
-  recordDependencyEdge context.graph, urls, item.import.specifier
+  recordEdge context.graph, urls, item.import.specifier
   return
 
 processDependencies = ( context ) ->
@@ -156,7 +157,7 @@ extractGraph = ( context ) ->
   context.graph
 
 ingest = pipe [
-  createIngestContext
+  createContext
   collectDependencies
   processDependencies
   extractGraph
