@@ -9,19 +9,39 @@ normalizeConfig = ( config ) ->
   { template } = config
   template: if isFunction template then template else -> template
 
+appendVersion = ( name, version ) ->
+  if version then "#{name}@#{version}" else name
+
+formatSpecifier = ( { scope, name } ) ->
+  if scope then "#{scope}/#{name}" else name
+
+formatRelease = ( module ) ->
+  appendVersion ( formatSpecifier module ), module.version
+
+formatVersioned = ( { name, version } ) ->
+  appendVersion name, version
+
 formatSpecifiers = ( module ) ->
-  { scope, name, version } = module
-  specifier = if scope then "#{scope}/#{name}" else name
-  release = if version then "#{specifier}@#{version}" else specifier
-  versioned = if version then "#{name}@#{version}" else name
-  { module..., specifier, release, versioned }
+  {
+    module...
+    specifier: formatSpecifier module
+    release: formatRelease module
+    versioned: formatVersioned module
+  }
+
+# Convert string path to array for wildcard path expansion
+segmentPath = ( path ) ->
+  ( path.split "/" ).filter Boolean
+
+buildTemplateContext = ( descriptor ) ->
+  {
+    ( formatSpecifiers descriptor.module )...
+    path: segmentPath descriptor.path
+  }
 
 resolveTemplate = ( template, descriptor ) ->
-  data = formatSpecifiers descriptor.module
-  # Convert string path to array for wildcard path expansion
-  segments = ( descriptor.path.split "/" ).filter Boolean
   encodeTemplate ( template descriptor ),
-    { data..., path: segments }
+    buildTemplateContext descriptor
 
 class CDNResolver
   @make: ( config ) ->
