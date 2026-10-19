@@ -109,7 +109,7 @@ resolveRootManifestPath = ( directory ) ->
 
 readOptionalFile = ( path ) ->
   try
-    FS.readFile path
+    await FS.readFile path
   catch error
     if error.code != "ENOENT"
       throw error

@@ -38,6 +38,18 @@ Nested =
     await Nested.write directory
     directory
 
+NoManifest =
+  entry: "export const main = () => { console.log('hello'); };"
+
+  write: ( directory ) ->
+    FS.writeFile ( Path.join directory, "index.js" ), NoManifest.entry
+
+  create: ->
+    directory = await FS.mkdtemp Path.join OS.tmpdir(),
+      "atlas-bundle-no-manifest-"
+    await NoManifest.write directory
+    directory
+
 Zip =
   verify: ( buffer ) ->
     assert Buffer.isBuffer buffer
@@ -57,6 +69,15 @@ Zip =
     assert files.includes "package.json"
     content = await ( zip.file "src/shell/index.js" ).async "string"
     assert content == ENTRY_SOURCE
+
+  noManifest: ( buffer ) ->
+    assert Buffer.isBuffer buffer
+    zip = await JSZip.loadAsync buffer
+    files = Object.keys zip.files
+    assert files.includes "index.js"
+    assert !files.includes "package.json"
+    content = await ( zip.file "index.js" ).async "string"
+    assert content == NoManifest.entry
 
 cleanup = ( directory ) ->
   FS.rm directory, { recursive: true, force: true }
@@ -87,6 +108,14 @@ Cases =
     finally
       await cleanup directory
 
+  noManifest: ->
+    directory = await NoManifest.create()
+    try
+      buffer = await bundle "index.js", { cwd: directory }
+      await Zip.noManifest buffer
+    finally
+      await cleanup directory
+
 export default ->
   [
     test "creates a bundle zip with entry and package.json", Cases.bundle
@@ -94,4 +123,6 @@ export default ->
       Cases.relative
     test "creates a bundle zip with entry relative to source",
       Cases.source
+    test "creates a bundle zip when cwd has no package.json",
+      Cases.noManifest
   ]

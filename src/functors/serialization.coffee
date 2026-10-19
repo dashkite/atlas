@@ -15,14 +15,12 @@ Scopes =
       {}
 
   traverse: ( node, resolver ) ->
-    {
-      ( Scopes.record node, resolver )...
-      ( Scopes.build node, resolver )...
-    }
+    Object.assign ( Scopes.record node, resolver ),
+      Scopes.build node, resolver
 
   merge: ( resolver ) ->
     ( scopes, child ) ->
-      { scopes..., ( Scopes.traverse child, resolver )... }
+      Object.assign scopes, Scopes.traverse child, resolver
 
   build: ( node, resolver ) ->
     ( Array.from node.children.values() ).reduce ( Scopes.merge resolver ), {}

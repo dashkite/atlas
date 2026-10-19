@@ -26,6 +26,25 @@ APPLICATION_DESCRIPTOR =
   resolver: "application"
   path: "/src/index.js"
 
+SCOPED_PACKAGE_ROOT_URL = "atlas://cdn@unpkg/@dashkite/joy@0.7.0"
+UNSCOPED_PACKAGE_ROOT_URL = "atlas://node/foo@1.0.0"
+
+SCOPED_PACKAGE_ROOT_DESCRIPTOR =
+  resolver: "cdn@unpkg"
+  module:
+    scope: "@dashkite"
+    name: "joy"
+    version: "0.7.0"
+  path: ""
+
+UNSCOPED_PACKAGE_ROOT_DESCRIPTOR =
+  resolver: "node"
+  module:
+    scope: undefined
+    name: "foo"
+    version: "1.0.0"
+  path: ""
+
 check =
   parsed: ( url, resolver, pathname ) ->
     parsed = AtlasURL.parse url
@@ -61,6 +80,21 @@ codec = ->
       check.roundTrip SCOPED_DESCRIPTOR, SCOPED_URL
     test "encodes and decodes unscoped module descriptor", ->
       check.roundTrip UNSCOPED_DESCRIPTOR, UNSCOPED_URL
+    test "encodes and decodes scoped package-root descriptor", ->
+      check.roundTrip SCOPED_PACKAGE_ROOT_DESCRIPTOR, SCOPED_PACKAGE_ROOT_URL
+    test "encodes and decodes unscoped package-root descriptor", ->
+      check.roundTrip UNSCOPED_PACKAGE_ROOT_DESCRIPTOR,
+        UNSCOPED_PACKAGE_ROOT_URL
+    test "encodes and decodes package-root descriptor with omitted path", ->
+      desc =
+        resolver: "node"
+        module:
+          scope: undefined
+          name: "foo"
+          version: "1.0.0"
+      url = AtlasURL.encode desc
+      assert.equal url, UNSCOPED_PACKAGE_ROOT_URL
+      assert.deepEqual ( AtlasURL.decode url ), UNSCOPED_PACKAGE_ROOT_DESCRIPTOR
   ]
 
 export default ->

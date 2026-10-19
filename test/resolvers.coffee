@@ -133,10 +133,24 @@ Tests =
           resolver: "node", scope: undefined
           name: "foo", version: "1.0.0", path: "/build/index.js"
 
-    resolve: ->
-      resolver = Node.make()
-      url = resolver.resolve "atlas://node/@dashkite/foo@1.0.0/build/index.js"
-      assert typeof url == "string"
+    resolve:
+      scoped: ->
+        resolver = Node.make()
+        url = resolver.resolve "atlas://node/@dashkite/foo@1.0.0/build/index.js"
+        assert typeof url == "string"
+
+      packageRoot:
+        scoped: ->
+          resolver = Node.make()
+          url = resolver.resolve "atlas://node/@dashkite/foo@1.0.0"
+          assert typeof url == "string"
+          assert url.endsWith "node_modules/@dashkite/foo"
+
+        unscoped: ->
+          resolver = Node.make()
+          url = resolver.resolve "atlas://node/foo@1.0.0"
+          assert typeof url == "string"
+          assert url.endsWith "node_modules/foo"
 
   cdn:
     match: ->
@@ -179,6 +193,17 @@ Tests =
         url = resolver.resolve "atlas://cdn@unpkg/foo@1.0.0/build/index.js"
         assert.equal "https://unpkg.com/foo@1.0.0/build/index.js", url
 
+      packageRoot:
+        scoped: ->
+          resolver = Factories.cdn()
+          url = resolver.resolve "atlas://cdn@unpkg/@dashkite/foo@1.0.0"
+          assert.equal "https://unpkg.com/@dashkite/foo@1.0.0", url
+
+        unscoped: ->
+          resolver = Factories.cdn()
+          url = resolver.resolve "atlas://cdn@unpkg/foo@1.0.0"
+          assert.equal "https://unpkg.com/foo@1.0.0", url
+
   local:
     match: ->
       resolver = Factories.local()
@@ -213,12 +238,24 @@ Tests =
           resolver: "local@central-park", scope: undefined
           name: "foo", version: "1.0.0", path: "/build/node/src/index.js"
 
-    resolve: ->
-      resolver = Factories.local()
-      target =
-        "atlas://local@central-park/@scope/foo@1.0.0/build/node/src/index.js"
-      url = resolver.resolve target
-      assert typeof url == "string"
+    resolve:
+      scoped: ->
+        resolver = Factories.local()
+        target =
+          "atlas://local@central-park/@scope/foo@1.0.0/build/node/src/index.js"
+        url = resolver.resolve target
+        assert typeof url == "string"
+
+      packageRoot:
+        scoped: ->
+          resolver = Factories.local()
+          url = resolver.resolve "atlas://local@central-park/@scope/foo@1.0.0"
+          assert.equal "file:///root", url
+
+        unscoped: ->
+          resolver = Factories.local()
+          url = resolver.resolve "atlas://local@central-park/foo@1.0.0"
+          assert.equal "file:///root", url
 
   presets:
     node: ->
@@ -263,7 +300,11 @@ Suites =
       test "encodes dependency object", Tests.node.encode
       test "decodes atlas URL", Tests.node.decode.scoped
       test "decodes unscoped atlas URL", Tests.node.decode.unscoped
-      test "resolves to physical path", Tests.node.resolve
+      test "resolves to physical path", Tests.node.resolve.scoped
+      test "resolves scoped package-root URL to physical path",
+        Tests.node.resolve.packageRoot.scoped
+      test "resolves unscoped package-root URL to physical path",
+        Tests.node.resolve.packageRoot.unscoped
     ]
 
   cdn: ->
@@ -275,6 +316,10 @@ Suites =
       test "resolves using URL Codex template", Tests.cdn.resolve.scoped
       test "resolves unscoped using URL Codex template",
         Tests.cdn.resolve.unscoped
+      test "resolves scoped package-root URL using template",
+        Tests.cdn.resolve.packageRoot.scoped
+      test "resolves unscoped package-root URL using template",
+        Tests.cdn.resolve.packageRoot.unscoped
     ]
 
   local: ->
@@ -283,7 +328,11 @@ Suites =
       test "encodes dependency object", Tests.local.encode
       test "decodes scoped atlas URL", Tests.local.decode.scoped
       test "decodes unscoped atlas URL", Tests.local.decode.unscoped
-      test "resolves to physical path", Tests.local.resolve
+      test "resolves to physical path", Tests.local.resolve.scoped
+      test "resolves scoped package-root URL to physical path",
+        Tests.local.resolve.packageRoot.scoped
+      test "resolves unscoped package-root URL to physical path",
+        Tests.local.resolve.packageRoot.unscoped
     ]
 
   presets: ->

@@ -46,7 +46,7 @@ Path =
     if path.startsWith "/" then path.slice 1 else path
 
   format: ( path = [] ) ->
-    "/#{path.join "/"}"
+    if path.length > 0 then "/#{path.join "/"}" else ""
 
 extractSegments = ( { module, path } ) ->
   [
