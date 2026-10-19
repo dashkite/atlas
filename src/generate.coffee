@@ -75,6 +75,11 @@ analyzeDependencies = ( context ) ->
   }
   { context..., dependencies }
 
+prepareContext = pipe [
+  createContext
+  analyzeDependencies
+]
+
 applyBaseline = ( state ) ->
   tries = { state.tries..., baseline: baseline state.graph }
   { state..., tries }
@@ -120,18 +125,28 @@ applyFunctors = pipe [
   resolveAndSerialize
 ]
 
-executePipeline = ( context ) ->
-  { dependencies, options } = context
-  graph = await ingest dependencies, options
-  pipeline = applyFunctors graph, options.resolvers
-  { context..., pipeline }
+ingestDependencies = ( context ) ->
+  {
+    context...
+    graph: await ingest context.dependencies, context.options
+  }
+
+runFunctors = ( context ) ->
+  {
+    context...
+    pipeline: applyFunctors context.graph, context.options.resolvers
+  }
+
+executePipeline = pipe [
+  ingestDependencies
+  runFunctors
+]
 
 extractImportMap = ( context ) ->
   context.pipeline.importMap
 
 generate = pipe [
-  createContext
-  analyzeDependencies
+  prepareContext
   executePipeline
   dumpDiagnostics
   extractImportMap
