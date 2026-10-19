@@ -37,10 +37,10 @@ buildGraph = (components, edges) ->
     graph.addEdge edge
   graph
 
-buildLinearGraph = ->
+buildLinear = ->
   buildGraph LINEAR_COMPONENTS, LINEAR_EDGES
 
-buildIsolationGraph = ->
+buildIsolation = ->
   buildGraph ISOLATION_COMPONENTS, ISOLATION_EDGES
 
 verifyBinding = (index, path, key, expected) ->
@@ -71,18 +71,18 @@ verifyIsolation = (index) ->
 export default ->
   [
     test "baseline tree embedding (uncompacted)", ->
-      graph = buildLinearGraph()
+      graph = buildLinear()
       index = compile graph, compact: false
       verifyBaseline index
 
     test "topological compaction (unconflicted rebasing)", ->
-      graph = buildLinearGraph()
+      graph = buildLinear()
       index = compile graph
       verifyCompacted index
 
     test "topological isolation
       (allows parent hoisting with nested children)", ->
-      graph = buildIsolationGraph()
+      graph = buildIsolation()
       index = compile graph, compact: true
       verifyIsolation index
   ]
