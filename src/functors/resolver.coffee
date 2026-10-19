@@ -8,7 +8,7 @@ Package =
     else
       descriptor.module.name
 
-class Component
+class PackageComponent
   @make: ( graph, index, resolver ) ->
     Object.assign ( new @ ),
       graph: graph
@@ -28,7 +28,7 @@ class Component
         return label == component
     false
 
-class Directory
+class BundleDirectory
   @nest: ( directory, name ) ->
     if directory == ""
       "node_modules/#{name}"
@@ -61,7 +61,7 @@ class Directory
     @resolve ( path.slice 0, -1 ), path[ path.length - 1 ]
 
   nested: ( path, name ) ->
-    Directory.nest ( @parent path ), name
+    BundleDirectory.nest ( @parent path ), name
 
   compute: ( path, component ) ->
     if path.length == 0
@@ -80,17 +80,17 @@ class Directory
 class BundleResolver
   @make: ( graph, index, keys ) ->
     resolver = Resolvers.Registry.make keys
-    component = Component.make graph, index, resolver
+    component = PackageComponent.make graph, index, resolver
     Object.assign ( new @ ),
       graph: graph
       index: index
       resolver: resolver
-      directory: Directory.make component
+      directory: BundleDirectory.make component
       bundle: new Map()
 
   add: ( directory, url ) ->
     { path } = @resolver.decode url
-    @bundle.set ( Directory.join directory, path ), url
+    @bundle.set ( BundleDirectory.join directory, path ), url
     return
 
   collect: ( path, component ) ->
