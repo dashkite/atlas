@@ -7,7 +7,7 @@ import compact from "../../src/functors/compaction"
 # src/index.js has binding `a -> targetA`
 # src/helper.js has binding `a -> targetA`
 # Both should lift to `src`, and then to `app`, and then to `root`
-setupSourceNodes = (root, target) ->
+setupSource = (root, target) ->
   node = root.upsertPath [ "app", "src", "index.js" ]
   node.bindings.set "a", target
   node = root.upsertPath [ "app", "src", "helper.js" ]
@@ -18,14 +18,14 @@ setupSourceNodes = (root, target) ->
 # It lifts to `lib`
 # When `lib` tries to lift to `app`, `app` already has `a -> targetA`.
 # Since targetA != targetB, it must trap the binding at `lib`.
-setupLibraryNode = (root, target) ->
+setupLibrary = (root, target) ->
   node = root.upsertPath [ "app", "lib", "index.js" ]
   node.bindings.set "a", target
 
-setupTrie = (targetA, targetB) ->
+setupTrie = (targets) ->
   root = Trie.make()
-  setupSourceNodes root, targetA
-  setupLibraryNode root, targetB
+  setupSource root, targets.source
+  setupLibrary root, targets.library
   root
 
 verifyApplication = (root) ->
@@ -34,24 +34,25 @@ verifyApplication = (root) ->
   assert.equal ( application.bindings.has "a" ), false
   assert.equal ( source.bindings.has "a" ), false
 
-verifyLibrary = (root, targetB) ->
+verifyLibrary = (root, target) ->
   application = root.children.get "app"
   library = application.children.get "lib"
   index = library.children.get "index.js"
-  assert.equal ( library.bindings.get "a" ), targetB
+  assert.equal ( library.bindings.get "a" ), target
   assert.equal ( index.bindings.has "a" ), false
 
-verifyCompacted = (root, targetA, targetB) ->
-  assert.equal ( root.bindings.get "a" ), targetA
+verifyCompacted = (root, targets) ->
+  assert.equal ( root.bindings.get "a" ), targets.source
   verifyApplication root
-  verifyLibrary root, targetB
+  verifyLibrary root, targets.library
 
 testCompaction = ->
-  targetA = Trie.make "targetA"
-  targetB = Trie.make "targetB"
-  root = setupTrie targetA, targetB
+  targets =
+    source: Trie.make "targetA"
+    library: Trie.make "targetB"
+  root = setupTrie targets
   compacted = compact root
-  verifyCompacted compacted, targetA, targetB
+  verifyCompacted compacted, targets
 
 export default ->
   [
