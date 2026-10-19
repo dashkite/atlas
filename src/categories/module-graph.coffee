@@ -4,6 +4,7 @@ class ModuleGraph
       vertices: new Set()
       edges: []
       attributes: new Map()
+      sources: new Map()
 
   getVertices: ->
     @vertices
@@ -33,5 +34,12 @@ class ModuleGraph
 
   getAttribute: ( vertex, key ) ->
     ( @attributes.get vertex )?.get key
+
+  setSource: ( vertex, source ) ->
+    @sources.set vertex, source
+    @
+
+  getSource: ( vertex ) ->
+    @sources.get vertex
 
 export default ModuleGraph
