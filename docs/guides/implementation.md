@@ -11,7 +11,7 @@ Atlas is organized around two functor pipelines (`generate` and `bundle`) that s
 generate = pipe [
   createContext
   analyzeDependencies
-  executePipeline      # ingest -> baseline -> Compaction -> Compression -> Resolution -> Serialization
+  executePipeline      # ingest -> baseline -> compact -> compress -> resolve -> serialize
   dumpDiagnostics
   extractImportMap
 ]
@@ -20,7 +20,7 @@ generate = pipe [
 bundle = pipe [
   createContext
   analyzeDependencies
-  executeFunctors      # ingest -> Quotient -> Compiler -> BundleResolver
+  executeFunctors      # ingest -> quotient -> compile -> resolve
   dumpDiagnostics
   constructArchive     # BundleArchive -> ZIP Buffer
 ]

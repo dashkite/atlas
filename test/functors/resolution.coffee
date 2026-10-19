@@ -1,7 +1,7 @@
 import { test } from "@dashkite/amen"
 import assert from "@dashkite/assert"
 import Trie from "../../src/categories/trie"
-import Resolution from "../../src/functors/resolution"
+import resolve from "../../src/functors/resolution"
 import { Registry } from "../../src/resolvers/index"
 
 upsertMaeveNode = ( root ) ->
@@ -50,7 +50,7 @@ export default ->
     test "maps bindings to resolved HTTP/File URLs
       without restructuring topology", ->
         registerMockResolvers()
-        root = Resolution.apply createFixture(), [ "node", "app" ]
+        root = resolve createFixture(), [ "node", "app" ]
         assertTopology root
         application = findResolvedApplication root
         assertResolvedBinding application

@@ -79,15 +79,14 @@ compressNode = ( node ) ->
     compressPrefix node, prefix
   return
 
-Compression =
-  apply: ( trie ) ->
-    Compression.compress trie
-    trie
+compress = ( node ) ->
+  for child from node.children.values()
+    compress child
+  compressNode node
+  return
 
-  compress: ( node ) ->
-    for child from node.children.values()
-      Compression.compress child
-    compressNode node
-    return
+functor = ( trie ) ->
+  compress trie
+  trie
 
-export default Compression
+export default functor

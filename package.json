@@ -13,31 +13,34 @@
     ".": {
       "node": "./build/node/src/index.js"
     },
-    "./generators": {
-      "node": "./build/node/src/generators/index.js"
-    },
-    "./generators/*": {
-      "node": "./build/node/src/generators/*.js"
-    },
-    "./generators/*.js": {
-      "node": "./build/node/src/generators/*.js"
+    "./presets": {
+      "node": "./build/node/src/presets/index.js"
     },
     "./presets/*": {
       "node": "./build/node/src/presets/*.js"
     }
   },
   "imports": {
-    "#helpers/import-map": {
-      "node": "./build/node/src/helpers/import-map/index.js"
+    "#categories/*": {
+      "node": "./build/node/src/categories/*.js"
+    },
+    "#functors/*": {
+      "node": "./build/node/src/functors/*.js"
     },
     "#helpers/*": {
       "node": "./build/node/src/helpers/*.js"
     },
-    "#generators": {
-      "node": "./build/node/src/generators/index.js"
+    "#presets": {
+      "node": "./build/node/src/presets/index.js"
     },
-    "#generators/*": {
-      "node": "./build/node/src/generators/*.js"
+    "#presets/*": {
+      "node": "./build/node/src/presets/*.js"
+    },
+    "#resolvers": {
+      "node": "./build/node/src/resolvers/index.js"
+    },
+    "#resolvers/*": {
+      "node": "./build/node/src/resolvers/*.js"
     }
   },
   "files": [
@@ -50,7 +53,6 @@
     "release": "genie release"
   },
   "dependencies": {
-    "@dashkite/generic": "^0.9.32",
     "@dashkite/joy": "0.12.40",
     "@dashkite/polaris": "0.10.37",
     "@dashkite/url-codex": "link:../url-codex",

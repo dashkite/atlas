@@ -25,7 +25,7 @@ class ApplicationResolver
     true
 
   encode: ( descriptor ) ->
-    AtlasURL.format { descriptor..., module: undefined }
+    AtlasURL.encode { descriptor..., module: undefined }
 
   decode: pipe [
     AtlasURL.parse

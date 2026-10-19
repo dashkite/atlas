@@ -4,10 +4,10 @@ import { pipe } from "@dashkite/joy"
 import analyze from "./helpers/analyze"
 import ingest from "./ingest"
 import baseline from "./functors/baseline"
-import Compaction from "./functors/compaction"
-import Compression from "./functors/compression"
-import Resolution from "./functors/resolution"
-import Serialization from "./functors/serialization"
+import compact from "./functors/compaction"
+import compress from "./functors/compression"
+import resolve from "./functors/resolution"
+import serialize from "./functors/serialization"
 import nodePreset from "./presets/node"
 
 DIAGNOSTIC_FILES = [
@@ -78,10 +78,10 @@ applyBaseline = ( state ) ->
   { state..., baselineTrie: baseline state.moduleGraph }
 
 applyCompaction = ( state ) ->
-  { state..., compactedTrie: Compaction.apply state.baselineTrie }
+  { state..., compactedTrie: compact state.baselineTrie }
 
 applyCompression = ( state ) ->
-  { state..., compressedTrie: Compression.apply state.compactedTrie }
+  { state..., compressedTrie: compress state.compactedTrie }
 
 buildTries = pipe [
   applyBaseline
@@ -92,13 +92,13 @@ buildTries = pipe [
 applyResolution = ( state ) ->
   {
     state...
-    resolvedTrie: Resolution.apply state.compressedTrie, state.resolvers
+    resolvedTrie: resolve state.compressedTrie, state.resolvers
   }
 
 applySerialization = ( state ) ->
   {
     state...
-    importMap: Serialization.apply state.resolvedTrie, state.resolvers
+    importMap: serialize state.resolvedTrie, state.resolvers
   }
 
 resolveAndSerialize = pipe [

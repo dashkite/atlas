@@ -97,10 +97,8 @@ resolvePackageId = ( metaResolver, url ) ->
     metaResolver.encode parsed
 
 assignPackageId = ( graph, metaResolver, url ) ->
-  graph.setAttribute url, [
-    "packageId"
+  graph.setAttribute url, "packageId",
     resolvePackageId metaResolver, url
-  ]
   return
 
 registerVertex = ( graph, metaResolver, url ) ->

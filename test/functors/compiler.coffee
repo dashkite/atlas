@@ -1,7 +1,7 @@
 import { test } from "@dashkite/amen"
 import assert from "@dashkite/assert"
 import ComponentGraph from "../../src/categories/component-graph"
-import Compiler from "../../src/functors/compiler"
+import compile from "../../src/functors/compiler"
 
 LINEAR_COMPONENTS = [
   ["pkg-root", ["file:///index.js"]]
@@ -72,17 +72,17 @@ export default ->
   [
     test "baseline tree embedding (uncompacted)", ->
       graph = buildLinearGraph()
-      index = Compiler.apply graph, false
+      index = compile graph, compact: false
       verifyBaseline index
 
     test "topological compaction (unconflicted rebasing)", ->
       graph = buildLinearGraph()
-      index = Compiler.apply graph, true
+      index = compile graph
       verifyCompacted index
 
     test "topological isolation
       (allows parent hoisting with nested children)", ->
       graph = buildIsolationGraph()
-      index = Compiler.apply graph, true
+      index = compile graph, compact: true
       verifyIsolation index
   ]

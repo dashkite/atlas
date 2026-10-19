@@ -54,11 +54,10 @@ projectEdges = ( context ) ->
     addUniqueEdge context.output, seen, projectEdge context.components, edge
   context.output
 
-Quotient =
-  apply: pipe [
-    createContext
-    registerComponents
-    projectEdges
-  ]
+functor = pipe [
+  createContext
+  registerComponents
+  projectEdges
+]
 
-export default Quotient
+export default functor

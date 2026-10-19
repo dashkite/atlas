@@ -14,7 +14,7 @@ class TreeIndex
   getVertices: ->
     @vertices
 
-  bind: ( path, [ label, target ] ) ->
+  bind: ( path, label, target ) ->
     key = serializePath path
     if !@bindings.has key
       @bindings.set key, new Map()

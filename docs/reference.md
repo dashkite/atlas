@@ -38,7 +38,7 @@ Analyzes, ingests, and compiles the dependency graph for the given entry points 
   - **`cwd`** *(String, default: `process.cwd()`)*: The target package root directory. Used as `esbuild`'s `absWorkingDir`, to locate the root `package.json` placed at the root of the ZIP archive, and to compute each entry point's archive-relative path (`Path.relative(cwd, Path.resolve(source, entry))`).
   - **`source`** *(String, default: `options.cwd`)*: Base directory used to resolve input `entries` (`Path.resolve(cwd, options.source ? ".")`). While entries are located using `source`, their destination paths inside the ZIP archive remain relative to `cwd` so that package subpath imports (`#...`), relative imports (`../...`), and AWS Lambda handler paths remain consistent with the package root.
   - **`resolvers`** *(Array\<String\>, default: `presets/node`)*: Ordered array of registered resolver keys.
-  - **`compact`** *(Boolean, optional)*: Controls topological compaction in the `Compiler` functor.
+  - **`compact`** *(Boolean, default: `true`)*: Controls topological compaction in the compiler functor (`functors/compiler`).
   - **`external`** *(Array\<String\>, default: `[]`)*: Additional module specifiers to mark as external during `esbuild` analysis.
 
 ```coffeescript
@@ -126,3 +126,15 @@ Matches dependencies residing within `node_modules` and resolves canonical `atla
 
 - **`@dashkite/atlas/presets/node`**: Registers default `application`, `local@default` (`root: process.cwd()`), and `node` resolvers, and exports `["application", "local@default", "node"]`.
 - **`@dashkite/atlas/presets/browser`**: Registers default `application`, `local@default`, `cdn@unpkg`, `cdn@jsdelivr`, and `cdn@esm` resolvers, and exports `["application", "local@default", "cdn@unpkg"]`.
+
+---
+
+## AtlasURL
+
+`AtlasURL` provides inverse encoding and decoding functions for canonical `atlas://` URLs:
+
+- $AtlasURL.encode: [descriptor] \to url$ — Formats a dependency descriptor (`{ resolver, module, path }`) into a canonical `atlas://` URL string.
+- $AtlasURL.decode: [url] \to descriptor$ — Decodes a canonical `atlas://` module URL string into `{ resolver, module: { scope, name, version }, path }`, checking the scoped URL Codex pathname template (`"/{scope}/{versioned}/{path*}"`) first and falling back to the unscoped template (`"/{versioned}/{path*}"`).
+- $AtlasURL.parse: [url] \to \{ resolver, pathname \}$ — Parses the resolver key (`username@hostname` or `hostname`) and raw `pathname` from an `atlas://` URL string.
+- $AtlasURL.format: [descriptor] \to url$ — Alias for `AtlasURL.encode`.
+

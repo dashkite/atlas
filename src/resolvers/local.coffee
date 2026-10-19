@@ -2,10 +2,7 @@ import AtlasURL from "../url"
 import Path from "node:path"
 import micromatch from "micromatch"
 import { pathToFileURL } from "node:url"
-import * as Codex from "@dashkite/url-codex"
 
-SCOPED_TEMPLATE = "/{scope}/{versioned}/{path*}"
-UNSCOPED_TEMPLATE = "/{versioned}/{path*}"
 DEFAULT_PATTERNS = [ "../**/*", "packages/**/*" ]
 
 normalizeConfig = ( config ) ->
@@ -28,30 +25,6 @@ matchPattern = ( path, patterns, directory ) ->
   path = normalizeRelativePath path, directory
   micromatch.isMatch path, patterns, { contains: true }
 
-decodePathname = ( pathname ) ->
-  if pathname.startsWith "/@"
-    Codex.decode SCOPED_TEMPLATE, pathname
-  else
-    Codex.decode UNSCOPED_TEMPLATE, pathname
-
-parseModule = ( scope, versioned ) ->
-  parts = versioned.split "@"
-  scope: scope
-  name: parts[0]
-  version: parts[1]
-
-formatPath = ( path ) ->
-  "/" + ( path ? [] ).join "/"
-
-decodeUrl = ( url ) ->
-  parsed = AtlasURL.parse url
-  result = decodePathname parsed.pathname
-  {
-    resolver: parsed.resolver
-    module: parseModule result.scope, result.versioned
-    path: formatPath result.path
-  }
-
 resolvePath = ( root, descriptor ) ->
   path = Path.resolve root, descriptor.path.slice 1
   ( pathToFileURL path ).href
@@ -64,10 +37,10 @@ class LocalResolver
     matchPattern context.source, @patterns, ( context.cwd ? @root )
 
   encode: ( descriptor ) ->
-    AtlasURL.format descriptor
+    AtlasURL.encode descriptor
 
   decode: ( url ) ->
-    decodeUrl url
+    AtlasURL.decode url
 
   parse: ( url ) ->
     @decode url

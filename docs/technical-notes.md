@@ -44,16 +44,16 @@ The `ingest` stage consumes the dependency reactor from `analyze` and constructs
 Once `ingest` produces a `ModuleGraph`, Atlas applies category-theoretic functor pipelines depending on the target output:
 
 #### 1. Import Map Generation (`generate`)
-1. **`baseline`**: Projects the `ModuleGraph` into a baseline scope trie containing exact module-scoped mappings.
-2. **`Compaction`**: Safely lifts common mappings toward parent scopes or the root `imports` block without introducing shadowing conflicts.
-3. **`Compression`**: Collapses file-level mappings sharing common directory prefixes into trailing-slash directory prefix mappings.
-4. **`Resolution`**: Translates canonical `atlas://` target and scope URLs into runtime URLs (`https://...` or `file://...`) via `metaResolver.resolve`.
-5. **`Serialization`**: Formats the resolved trie into a standard WHATWG `{ imports, scopes }` JSON object.
+1. **`baseline` (`functors/baseline`)**: Projects the `ModuleGraph` into a baseline scope trie containing exact module-scoped mappings.
+2. **`compact` (`functors/compaction`)**: Safely lifts common mappings toward parent scopes or the root `imports` block without introducing shadowing conflicts.
+3. **`compress` (`functors/compression`)**: Collapses file-level mappings sharing common directory prefixes into trailing-slash directory prefix mappings.
+4. **`resolve` (`functors/resolution`)**: Translates canonical `atlas://` target and scope URLs into runtime URLs (`https://...` or `file://...`) via `metaResolver.resolve`.
+5. **`serialize` (`functors/serialization`)**: Formats the resolved trie into a standard WHATWG `{ imports, scopes }` JSON object.
 
 #### 2. Application Bundling (`bundle`)
-1. **`Quotient`**: Contracts intra-package edges (`./`, `../`, `#`) so each package version forms a single strongly connected component in a `ComponentGraph`.
-2. **`Compiler`**: Embeds the `ComponentGraph` into a hierarchical `TreeIndex` (performing topological hoisting/compaction when conflict-free, and isolating conflicting versions into nested scopes).
-3. **`BundleResolver`**: Projects the `TreeIndex` and `ModuleGraph` into a physical `Map<destinationPath, atlasUrl>` placing external packages under `node_modules/` and workspace packages under `local/`.
+1. **`quotient` (`functors/quotient`)**: Contracts intra-package edges (`./`, `../`, `#`) so each package version forms a single strongly connected component in a `ComponentGraph`.
+2. **`compile` (`functors/compiler`)**: Embeds the `ComponentGraph` into a hierarchical `TreeIndex` (performing topological hoisting/compaction by default when `options.compact` is enabled, and isolating conflicting versions into nested scopes).
+3. **`resolve` (`functors/resolver`)**: Projects the `TreeIndex` and `ModuleGraph` into a physical `Map<destinationPath, atlasUrl>` placing external and local packages into their resolved `node_modules/` hierarchy.
 4. **`BundleArchive`**: Packages the entry points (at `Path.relative(cwd, Path.resolve(source, entry))`), the root `package.json`, all resolved dependency files, and their nearest `package.json` manifests into a compressed ZIP `Buffer`.
 
 ### The Shadowing Problem

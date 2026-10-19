@@ -1,25 +1,10 @@
-import { pipe } from "@dashkite/joy"
 import Resolvers from "../resolvers"
 
 toBindingsMap = ( bindings ) ->
   Object.fromEntries bindings
 
-collectSegments = ( node ) ->
-  if node.parent?
-    [ ( collectSegments node.parent )..., node.segment ]
-  else
-    []
-
-formatUrl = ( segments ) ->
-  "atlas://#{ segments.join "/" }"
-
-getFullUrl = pipe [
-  collectSegments
-  formatUrl
-]
-
 resolveScopeUrl = ( node, resolver ) ->
-  resolver.resolve getFullUrl node
+  resolver.resolve node.getAddress()
 
 recordScope = ( node, resolver ) ->
   if node.bindings.size > 0
@@ -40,9 +25,8 @@ mergeChildScopes = ( resolver ) ->
 buildScopes = ( node, resolver ) ->
   ( Array.from node.children.values() ).reduce ( mergeChildScopes resolver ), {}
 
-Serialization =
-  apply: ( trie, keys ) ->
-    imports: toBindingsMap trie.bindings
-    scopes: buildScopes trie, Resolvers.Registry.make keys
+functor = ( trie, keys ) ->
+  imports: toBindingsMap trie.bindings
+  scopes: buildScopes trie, Resolvers.Registry.make keys
 
-export default Serialization
+export default functor

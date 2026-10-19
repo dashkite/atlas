@@ -2,29 +2,6 @@ import { pipe } from "@dashkite/joy"
 import AtlasURL from "../url"
 import Path from "node:path"
 import { pathToFileURL } from "node:url"
-import { decode } from "@dashkite/url-codex"
-
-TEMPLATE =
-  scoped: "/{scope}/{versioned}/{path*}"
-  unscoped: "/{versioned}/{path*}"
-
-decodePathname = ( pathname ) ->
-  match = decode TEMPLATE.scoped, pathname
-  if match?.scope.startsWith "@"
-    match
-  else
-    decode TEMPLATE.unscoped, pathname
-
-parseModule = ( { scope, versioned } ) ->
-  [ name, version ] = versioned.split "@"
-  { scope, name, version }
-
-buildDescriptor = ( resolver, decoded ) ->
-  {
-    resolver
-    module: parseModule decoded
-    path: "/" + decoded.path.join "/"
-  }
 
 formatModuleName = ( { scope, name } ) ->
   if scope then "#{scope}/#{name}" else name
@@ -52,13 +29,10 @@ class NodeResolver
     context.source.includes "node_modules"
 
   encode: ( descriptor ) ->
-    AtlasURL.format descriptor
+    AtlasURL.encode descriptor
 
-  decode: pipe [
-    AtlasURL.parse
-    ( { resolver, pathname } ) ->
-      buildDescriptor resolver, decodePathname pathname
-  ]
+  decode: ( url ) ->
+    AtlasURL.decode url
 
   parse: ( url ) ->
     @decode url

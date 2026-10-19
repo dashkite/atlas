@@ -16,4 +16,13 @@ class Trie
       node = node.children.get segment
     node
 
+  getSegments: ->
+    if @parent?
+      [ @parent.getSegments()..., @segment ]
+    else
+      []
+
+  getAddress: ->
+    "atlas://#{ @getSegments().join "/" }"
+
 export default Trie

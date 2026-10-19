@@ -1,7 +1,7 @@
 import { test } from "@dashkite/amen"
 import assert from "@dashkite/assert"
 import Trie from "../../src/categories/trie"
-import Serialization from "../../src/functors/serialization"
+import serialize from "../../src/functors/serialization"
 import { Registry } from "../../src/resolvers/index"
 
 createFixture = ->
@@ -38,7 +38,7 @@ export default ->
     test "serializes Trie to WHATWG importmap JSON format", ->
       root = createFixture()
       registerResolver()
-      map = Serialization.apply root, [ "node" ]
+      map = serialize root, [ "node" ]
       verifyImports map
       verifyScopes map
   ]

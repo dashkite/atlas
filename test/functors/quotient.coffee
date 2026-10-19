@@ -1,7 +1,7 @@
 import { test } from "@dashkite/amen"
 import assert from "@dashkite/assert"
 import ModuleGraph from "../../src/categories/module-graph"
-import Quotient from "../../src/functors/quotient"
+import quotient from "../../src/functors/quotient"
 
 APP_INDEX = "file:///app/index.js"
 APP_HELPER = "file:///app/helper.js"
@@ -22,7 +22,7 @@ ENCHANT_INDEX = "#{ ENCHANT_PACKAGE }/build/node/src/index.js"
 addPackageModules = ( graph, id, uris ) ->
   for uri in uris
     graph.addVertex uri
-    graph.setAttribute uri, [ "packageId", id ]
+    graph.setAttribute uri, "packageId", id
   return
 
 addInterEdge = ( graph, source, target, label ) ->
@@ -86,10 +86,10 @@ export default ->
   [
     test "contracts intra-component edges into discrete components", ->
       graph = buildContractsGraph()
-      verifyDiscreteComponents Quotient.apply graph
+      verifyDiscreteComponents quotient graph
 
     test "contracts disjoint entry points of the same package
     into a single component", ->
       graph = buildDisjointGraph()
-      verifyDisjointComponents Quotient.apply graph
+      verifyDisjointComponents quotient graph
   ]

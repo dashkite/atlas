@@ -12,17 +12,16 @@ promoteBindings = ( node, parent ) ->
       promoteBinding node, parent, entry
   return
 
-Compaction =
-  apply: ( trie ) ->
-    Compaction.compact trie, null
-    trie
+compact = ( node, parent ) ->
+  # Post-order traversal: visit children first
+  for child from node.children.values()
+    compact child, node
 
-  compact: ( node, parent ) ->
-    # Post-order traversal: visit children first
-    for child from node.children.values()
-      Compaction.compact child, node
+  promoteBindings node, parent
+  return
 
-    promoteBindings node, parent
-    return
+functor = ( trie ) ->
+  compact trie, null
+  trie
 
-export default Compaction
+export default functor

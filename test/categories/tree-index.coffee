@@ -26,8 +26,8 @@ export default ->
       index = TreeIndex.make()
       path = [ "pkg-A" ]
 
-      index.bind path, [ "maeve", "pkg-maeve" ]
-      index.bind path, [ "cerulean", "pkg-cerulean" ]
+      index.bind path, "maeve", "pkg-maeve"
+      index.bind path, "cerulean", "pkg-cerulean"
 
       bindings = index.getBindings path
       assert.equal bindings.size, 2
@@ -35,15 +35,15 @@ export default ->
 
     test "retrieves distinct paths", ->
       index = TreeIndex.make()
-      index.bind [ "pkg-A" ], [ "maeve", "pkg-maeve" ]
-      index.bind [ "pkg-A", "pkg-B" ], [ "cerulean", "pkg-cerulean" ]
+      index.bind [ "pkg-A" ], "maeve", "pkg-maeve"
+      index.bind [ "pkg-A", "pkg-B" ], "cerulean", "pkg-cerulean"
       paths = index.getPaths()
       assert.equal paths.length, 2
 
     test "retains bindings across distinct paths", ->
       index = TreeIndex.make()
-      index.bind [ "pkg-A" ], [ "maeve", "pkg-maeve" ]
-      index.bind [ "pkg-A", "pkg-B" ], [ "cerulean", "pkg-cerulean" ]
+      index.bind [ "pkg-A" ], "maeve", "pkg-maeve"
+      index.bind [ "pkg-A", "pkg-B" ], "cerulean", "pkg-cerulean"
       assert.equal ( bindingFor index, [ "pkg-A" ], "maeve" ), "pkg-maeve"
       assert.equal ( bindingFor index, [ "pkg-A", "pkg-B" ], "cerulean" ),
         "pkg-cerulean"

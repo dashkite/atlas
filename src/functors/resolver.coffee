@@ -72,15 +72,10 @@ class BundleResolver
     @cache.set key, directory
     directory
 
-  processModule: pipe [
-    ( directory, url ) ->
-      { directory, url, descriptor: @resolver.decode url }
-    ( { directory, url, descriptor } ) ->
-      { url, file: formatOutputFile directory, descriptor.path }
-    ( { file, url } ) ->
-      @bundle.set file, url
-      return
-  ]
+  processModule: ( directory, url ) ->
+    { path } = @resolver.decode url
+    @bundle.set ( formatOutputFile directory, path ), url
+    return
 
   processComponent: ( path, component ) ->
     directory = @resolveDirectory path, component
@@ -98,5 +93,8 @@ class BundleResolver
       @processPath path
     @bundle
 
-export default BundleResolver
+functor = ( graph, index, keys ) ->
+  ( BundleResolver.make graph, index, keys ).resolve()
+
+export default functor
 export { BundleResolver }

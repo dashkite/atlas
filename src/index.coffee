@@ -1,35 +1,17 @@
+import generate from "./generate"
 import bundle from "./bundle"
 import analyze from "./helpers/analyze"
 import ingest from "./ingest"
-import ModuleGraph from "./categories/module-graph"
-import ComponentGraph from "./categories/component-graph"
-import TreeIndex from "./categories/tree-index"
-import Path from "./categories/path"
-import Quotient from "./functors/quotient"
-import Compiler from "./functors/compiler"
-import BundleResolver from "./functors/resolver"
 import AtlasURL from "./url"
-import Resolvers, { App, NPM, Metarepo } from "./resolvers"
-
-import generate from "./generate"
+import Resolvers from "./resolvers"
 
 export default {
   generate
   bundle
   analyze
   ingest
-  ModuleGraph
-  ComponentGraph
-  TreeIndex
-  Path
-  Quotient
-  Compiler
-  BundleResolver
   AtlasURL
   Resolvers
-  App
-  NPM
-  Metarepo
 }
 
 export {
@@ -37,16 +19,7 @@ export {
   bundle
   analyze
   ingest
-  ModuleGraph
-  ComponentGraph
-  TreeIndex
-  Path
-  Quotient
-  Compiler
-  BundleResolver
   AtlasURL
   Resolvers
-  App
-  NPM
-  Metarepo
 }
+

@@ -15,7 +15,7 @@ createMetaResolver = ->
   Registry.make ["test1"]
 
 export default -> [
-  test "Registry & Meta Resolver", -> [
+  test "Registry & Meta Resolver", [
     test "registers and retrieves resolvers", ->
       Registry.register "test@param", { foo: "bar" }
       resolver = Registry.get "test@param"
@@ -52,7 +52,7 @@ export default -> [
         "Resolver test2 not in configured keys"
   ]
 
-  test "Application Resolver", -> [
+  test "Application Resolver", [
     test "matches intra-package paths unconditionally", ->
       resolver = Application.make()
       assert resolver.match { source: "src/index.coffee", cwd: "/root" }
@@ -89,7 +89,7 @@ export default -> [
       assert typeof url == "string"
   ]
 
-  test "Node Resolver", -> [
+  test "Node Resolver", [
     test "matches paths containing node_modules", ->
       resolver = Node.make()
       assert resolver.match {
@@ -120,13 +120,23 @@ export default -> [
       assert.equal descriptor.module.version, "1.0.0"
       assert.equal descriptor.path, "/build/index.js"
 
+    test "decodes unscoped atlas URL", ->
+      resolver = Node.make()
+      descriptor =
+        resolver.decode "atlas://node/foo@1.0.0/build/index.js"
+      assert.equal descriptor.resolver, "node"
+      assert.equal descriptor.module.scope, undefined
+      assert.equal descriptor.module.name, "foo"
+      assert.equal descriptor.module.version, "1.0.0"
+      assert.equal descriptor.path, "/build/index.js"
+
     test "resolves to physical path", ->
       resolver = Node.make()
       url = resolver.resolve "atlas://node/@dashkite/foo@1.0.0/build/index.js"
       assert typeof url == "string"
   ]
 
-  test "CDN Resolver", -> [
+  test "CDN Resolver", [
     test "matches paths containing node_modules", ->
       resolver = CDN.make
         template: "https://unpkg.com/{scope?}/{versioned}/{path*}"
@@ -153,6 +163,17 @@ export default -> [
       assert.equal descriptor.resolver, "cdn@unpkg"
       assert.equal descriptor.module.scope, "@dashkite"
 
+    test "decodes unscoped atlas URL", ->
+      resolver = CDN.make
+        template: "https://unpkg.com/{scope?}/{versioned}/{path*}"
+      descriptor =
+        resolver.decode "atlas://cdn@unpkg/foo@1.0.0/build/index.js"
+      assert.equal descriptor.resolver, "cdn@unpkg"
+      assert.equal descriptor.module.scope, undefined
+      assert.equal descriptor.module.name, "foo"
+      assert.equal descriptor.module.version, "1.0.0"
+      assert.equal descriptor.path, "/build/index.js"
+
     test "resolves using URL Codex template", ->
       resolver = CDN.make
         template: "https://unpkg.com/{scope?}/{versioned}/{path*}"
@@ -167,7 +188,7 @@ export default -> [
       assert.equal "https://unpkg.com/foo@1.0.0/build/index.js", url
   ]
 
-  test "Local Resolver", -> [
+  test "Local Resolver", [
     test "matches configured deep glob patterns", ->
       resolver = Local.make root: "/root", patterns: [ "**/.tempo/repos/**/*" ]
       assert resolver.match {
@@ -187,6 +208,26 @@ export default -> [
         "atlas://local@central-park/@scope/foo@1.0.0/build/node/src/index.js"
       assert.equal expected, url
 
+    test "decodes scoped and unscoped atlas URLs", ->
+      resolver = Local.make root: "/root", patterns: [ "**/.tempo/repos/**/*" ]
+      scopedUrl =
+        "atlas://local@central-park/@scope/foo@1.0.0/build/node/src/index.js"
+      scoped = resolver.decode scopedUrl
+      assert.equal scoped.resolver, "local@central-park"
+      assert.equal scoped.module.scope, "@scope"
+      assert.equal scoped.module.name, "foo"
+      assert.equal scoped.module.version, "1.0.0"
+      assert.equal scoped.path, "/build/node/src/index.js"
+
+      unscopedUrl =
+        "atlas://local@central-park/foo@1.0.0/build/node/src/index.js"
+      unscoped = resolver.decode unscopedUrl
+      assert.equal unscoped.resolver, "local@central-park"
+      assert.equal unscoped.module.scope, undefined
+      assert.equal unscoped.module.name, "foo"
+      assert.equal unscoped.module.version, "1.0.0"
+      assert.equal unscoped.path, "/build/node/src/index.js"
+
     test "resolves to physical path", ->
       resolver = Local.make root: "/root", patterns: [ "**/.tempo/repos/**/*" ]
       target =
@@ -195,7 +236,7 @@ export default -> [
       assert typeof url == "string"
   ]
 
-  test "Resolver Presets", -> [
+  test "Resolver Presets", [
     test "Node preset exports keys", ->
       keys = presets.node
       assert Array.isArray keys
@@ -206,6 +247,6 @@ export default -> [
       keys = presets.browser
       assert Array.isArray keys
       assert keys.includes "application"
-      assert.ok keys.some (key) -> key.startsWith "cdn"
+      assert keys.some (key) -> key.startsWith "cdn"
   ]
 ]

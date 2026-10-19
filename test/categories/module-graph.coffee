@@ -55,4 +55,12 @@ export default ->
       assert.equal edges[ 0 ].label, "maeve"
       assert.equal edges[ 0 ].source, "file:///app/index.js"
       assert.equal edges[ 0 ].target, "file:///node_modules/maeve/index.js"
+
+    test "sets and retrieves vertex attributes", ->
+      graph = ModuleGraph.make()
+      vertex = "file:///app/index.js"
+      graph.addVertex vertex
+      graph.setAttribute vertex, "packageId", "atlas://application"
+      assert.equal ( graph.getAttribute vertex, "packageId" ),
+        "atlas://application"
   ]

@@ -1,7 +1,7 @@
 import { test } from "@dashkite/amen"
 import assert from "@dashkite/assert"
 import Trie from "../../src/categories/trie"
-import Compaction from "../../src/functors/compaction"
+import compact from "../../src/functors/compaction"
 
 # 1. Non-colliding lift
 # src/index.js has binding `a -> targetA`
@@ -50,7 +50,7 @@ testCompaction = ->
   targetA = Trie.make "targetA"
   targetB = Trie.make "targetB"
   root = setupTrie targetA, targetB
-  compacted = Compaction.apply root
+  compacted = compact root
   verifyCompacted compacted, targetA, targetB
 
 export default ->

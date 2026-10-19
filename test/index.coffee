@@ -18,6 +18,7 @@ SUITES = [
   [ "ComponentGraph", "categories/component-graph" ]
   [ "Path", "categories/path" ]
   [ "TreeIndex", "categories/tree-index" ]
+  [ "Trie", "categories/trie" ]
 
   [ "Quotient Functor", "functors/quotient" ]
   [ "Compiler Functor", "functors/compiler" ]

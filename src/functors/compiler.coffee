@@ -52,7 +52,7 @@ createQueueItem = ( component, path ) ->
 initializeQueue = ( index, roots ) ->
   queue = []
   for root in roots
-    index.bind Path.root, [ root, root ]
+    index.bind Path.root, root, root
     index.addVertex root
     queue.push createQueueItem root, Path.root
   queue
@@ -62,16 +62,25 @@ analyzeGraph = ( graph ) ->
   outgoing: buildEdgeIndex graph, "source"
   conflicted: findConflictedLabels graph.getEdges()
 
-createContext = ( graph, compact = true ) ->
-  analysis = analyzeGraph graph
+initializeState = ( graph, incoming ) ->
   index = TreeIndex.make()
   {
-    analysis...
     index: index
-    queue: initializeQueue index, ( findRoots graph, analysis.incoming )
-    compact: compact
+    queue: initializeQueue index, ( findRoots graph, incoming )
     visited: new Set()
     cache: new Map()
+  }
+
+defaults =
+  compact: true
+
+createContext = ( graph, options = {} ) ->
+  options = { defaults..., options... }
+  analysis = analyzeGraph graph
+  {
+    analysis...
+    ( initializeState graph, analysis.incoming )...
+    compact: options.compact
   }
 
 resolvePath = ( target, item, context ) ->
@@ -84,7 +93,7 @@ embedEdge = ( context, edge, item ) ->
   target = edge.target
   destination = resolvePath target, item, context
   context.index.addVertex target
-  context.index.bind destination, [ edge.label, target ]
+  context.index.bind destination, edge.label, target
   context.queue.push createQueueItem target, destination
   return
 
@@ -102,10 +111,9 @@ embedTree = ( context ) ->
     processItem item, context
   context.index
 
-Compiler =
-  apply: pipe [
-    createContext
-    embedTree
-  ]
+functor = pipe [
+  createContext
+  embedTree
+]
 
-export default Compiler
+export default functor

@@ -1,4 +1,9 @@
 import { URL } from "node:url"
+import { pipe } from "@dashkite/joy"
+import * as Codex from "@dashkite/url-codex"
+
+SCOPED_TEMPLATE = "/{scope}/{versioned}/{path*}"
+UNSCOPED_TEMPLATE = "/{versioned}/{path*}"
 
 extractResolver = ( parsed ) ->
   if parsed.username
@@ -44,13 +49,44 @@ formatPathname = ( descriptor ) ->
   segments = extractSegments descriptor
   if segments.length > 0 then "/#{segments.join "/"}" else ""
 
-export default
-  parse: ( url ) ->
-    parsed = new URL url
-    {
-      resolver: extractResolver parsed
-      pathname: parsed.pathname
-    }
+decodePathname = ( pathname ) ->
+  if pathname.startsWith "/@"
+    Codex.decode SCOPED_TEMPLATE, pathname
+  else
+    Codex.decode UNSCOPED_TEMPLATE, pathname
 
-  format: ( descriptor ) ->
-    "atlas://#{formatAuthority descriptor.resolver}#{formatPathname descriptor}"
+parseModule = ( { scope, versioned } ) ->
+  [ name, version ] = versioned.split "@"
+  { scope, name, version }
+
+formatDecodedPath = ( path = [] ) ->
+  "/#{path.join "/"}"
+
+buildDescriptor = ( resolver, decoded ) ->
+  {
+    resolver
+    module: parseModule decoded
+    path: formatDecodedPath decoded.path
+  }
+
+parse = ( url ) ->
+  parsed = new URL url
+  {
+    resolver: extractResolver parsed
+    pathname: parsed.pathname
+  }
+
+format = ( descriptor ) ->
+  "atlas://#{formatAuthority descriptor.resolver}#{formatPathname descriptor}"
+
+encode = ( descriptor ) ->
+  format descriptor
+
+decode = pipe [
+  parse
+  ( { resolver, pathname } ) ->
+    buildDescriptor resolver, decodePathname pathname
+]
+
+export default { parse, format, encode, decode }
+export { parse, format, encode, decode }

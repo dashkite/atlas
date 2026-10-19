@@ -2,7 +2,7 @@ import { test } from "@dashkite/amen"
 import assert from "@dashkite/assert"
 import ComponentGraph from "../../src/categories/component-graph"
 import TreeIndex from "../../src/categories/tree-index"
-import BundleResolver from "../../src/functors/resolver"
+import resolve from "../../src/functors/resolver"
 import preset from "../../src/presets/node"
 
 createGraph = (components) ->
@@ -23,8 +23,8 @@ createFlatIndex = ->
   index = TreeIndex.make()
   index.addVertex "pkg-root"
   index.addVertex "pkg-A"
-  index.bind [], [ "pkg-root", "pkg-root" ]
-  index.bind [], [ "a", "pkg-A" ]
+  index.bind [], "pkg-root", "pkg-root"
+  index.bind [], "a", "pkg-A"
   index
 
 assertFlatBundle = (bundle) ->
@@ -45,9 +45,9 @@ createNestedIndex = ->
   index.addVertex "pkg-root"
   index.addVertex "pkg-A"
   index.addVertex "pkg-B"
-  index.bind [], [ "pkg-root", "pkg-root" ]
-  index.bind [], [ "a", "pkg-A" ]
-  index.bind [ "pkg-A" ], [ "b", "pkg-B" ]
+  index.bind [], "pkg-root", "pkg-root"
+  index.bind [], "a", "pkg-A"
+  index.bind [ "pkg-A" ], "b", "pkg-B"
   index
 
 assertNestedBundle = (bundle) ->
@@ -62,14 +62,12 @@ export default ->
     test "projects flat tree index into physical node_modules", ->
       graph = createFlatGraph()
       index = createFlatIndex()
-      resolver = BundleResolver.make graph, index, preset
-      bundle = resolver.resolve()
+      bundle = resolve graph, index, preset
       assertFlatBundle bundle
 
     test "projects deeply nested hierarchical tree index", ->
       graph = createNestedGraph()
       index = createNestedIndex()
-      resolver = BundleResolver.make graph, index, preset
-      bundle = resolver.resolve()
+      bundle = resolve graph, index, preset
       assertNestedBundle bundle
   ]

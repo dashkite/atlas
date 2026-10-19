@@ -25,7 +25,7 @@ class ModuleGraph
   getInterEdges: ->
     @edges.filter ( edge ) -> edge.type == "inter"
 
-  setAttribute: ( vertex, [ key, value ] ) ->
+  setAttribute: ( vertex, key, value ) ->
     if !@attributes.has vertex
       @attributes.set vertex, new Map()
     ( @attributes.get vertex ).set key, value

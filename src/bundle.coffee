@@ -4,9 +4,9 @@ import JSZip from "jszip"
 import { pipe } from "@dashkite/joy"
 import analyze from "./helpers/analyze"
 import ingest from "./ingest"
-import Quotient from "./functors/quotient"
-import Compiler from "./functors/compiler"
-import BundleResolver from "./functors/resolver"
+import quotient from "./functors/quotient"
+import compile from "./functors/compiler"
+import resolve from "./functors/resolver"
 import preset from "./presets/node"
 
 ZIP_OPTIONS =
@@ -221,10 +221,9 @@ createPipeline = ( graph, components, index, map ) ->
   { graph, components, index, map }
 
 applyFunctors = ( graph, options ) ->
-  components = Quotient.apply graph
-  index = Compiler.apply components, options.compact
-  resolver = BundleResolver.make components, index, options.resolvers
-  map = resolver.resolve()
+  components = quotient graph
+  index = compile components, options
+  map = resolve components, index, options.resolvers
   createPipeline graph, components, index, map
 
 executeFunctors = ( context ) ->

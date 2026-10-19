@@ -1,7 +1,7 @@
 import { test } from "@dashkite/amen"
 import assert from "@dashkite/assert"
 import Trie from "../../src/categories/trie"
-import Compression from "../../src/functors/compression"
+import compress from "../../src/functors/compression"
 
 setupMaeveNode = ( root ) ->
   root.upsertPath [
@@ -49,7 +49,7 @@ export default ->
   [
     test "collapses exact file mappings into directory prefix mappings", ->
       { root, maeve } = createFixture()
-      root = Compression.apply root
+      root = compress root
       app = root.children.get "app"
       assertPrefixBinding app, maeve
       assertPrunedBindings app
