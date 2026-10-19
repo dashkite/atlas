@@ -1,96 +1,112 @@
 import { pipe } from "@dashkite/joy"
 import Resolvers from "../resolvers"
 
-formatPackageName = ( descriptor ) ->
-  if descriptor.module.scope
-    "#{descriptor.module.scope}/#{descriptor.module.name}"
-  else
-    descriptor.module.name
-
-formatNestedDirectory = ( directory, name ) ->
-  if directory == ""
-    "node_modules/#{name}"
-  else
-    "#{directory}/node_modules/#{name}"
-
-formatOutputFile = ( directory, path ) ->
-  path =
-    if path.startsWith "/"
-      path.slice 1
+Package =
+  format: ( descriptor ) ->
+    if descriptor.module.scope
+      "#{descriptor.module.scope}/#{descriptor.module.name}"
     else
-      path
-  if directory == ""
-    path
-  else
-    "#{directory}/#{path}"
+      descriptor.module.name
 
-class BundleResolver
-  @make: ( graph, index, keys ) ->
+class Component
+  @make: ( graph, index, resolver ) ->
     Object.assign ( new @ ),
       graph: graph
       index: index
-      resolver: Resolvers.Registry.make keys
-      bundle: new Map()
-      cache: new Map()
+      resolver: resolver
 
-  getComponentPackageName: pipe [
+  name: pipe [
     ( component ) -> @graph.getModules component
     ( modules ) -> ( Array.from modules )[ 0 ]
     ( module ) -> @resolver.decode module
-    formatPackageName
+    Package.format
   ]
 
-  isRootComponent: ( component ) ->
+  isRoot: ( component ) ->
     for [ label, target ] from @index.getBindings []
       if target == component
         return label == component
     false
 
-  resolveRootDirectory: ( component ) ->
-    if @isRootComponent component
+class Directory
+  @nest: ( directory, name ) ->
+    if directory == ""
+      "node_modules/#{name}"
+    else
+      "#{directory}/node_modules/#{name}"
+
+  @join: ( directory, path ) ->
+    path =
+      if path.startsWith "/"
+        path.slice 1
+      else
+        path
+    if directory == ""
+      path
+    else
+      "#{directory}/#{path}"
+
+  @make: ( component ) ->
+    Object.assign ( new @ ),
+      component: component
+      cache: new Map()
+
+  root: ( component ) ->
+    if @component.isRoot component
       ""
     else
-      "node_modules/#{@getComponentPackageName component}"
+      "node_modules/#{@component.name component}"
 
-  resolveParentDirectory: ( path ) ->
-    @resolveDirectory ( path.slice 0, -1 ), path[ path.length - 1 ]
+  parent: ( path ) ->
+    @resolve ( path.slice 0, -1 ), path[ path.length - 1 ]
 
-  resolveNestedDirectory: ( path, name ) ->
-    formatNestedDirectory ( @resolveParentDirectory path ), name
+  nested: ( path, name ) ->
+    Directory.nest ( @parent path ), name
 
-  computeDirectory: ( path, component ) ->
+  compute: ( path, component ) ->
     if path.length == 0
-      @resolveRootDirectory component
+      @root component
     else
-      @resolveNestedDirectory path, @getComponentPackageName component
+      @nested path, @component.name component
 
-  resolveDirectory: ( path, component ) ->
+  resolve: ( path, component ) ->
     key = "#{component}::#{JSON.stringify path}"
     if @cache.has key
       return @cache.get key
-    directory = @computeDirectory path, component
+    directory = @compute path, component
     @cache.set key, directory
     directory
 
-  processModule: ( directory, url ) ->
+class BundleResolver
+  @make: ( graph, index, keys ) ->
+    resolver = Resolvers.Registry.make keys
+    component = Component.make graph, index, resolver
+    Object.assign ( new @ ),
+      graph: graph
+      index: index
+      resolver: resolver
+      directory: Directory.make component
+      bundle: new Map()
+
+  add: ( directory, url ) ->
     { path } = @resolver.decode url
-    @bundle.set ( formatOutputFile directory, path ), url
+    @bundle.set ( Directory.join directory, path ), url
     return
 
-  processComponent: ( path, component ) ->
-    directory = @resolveDirectory path, component
+  collect: ( path, component ) ->
+    directory = @directory.resolve path, component
     for url from @graph.getModules component
-      @processModule directory, url
+      @add directory, url
     return
 
-  processPath: ( path ) ->
+  visit: ( path ) ->
     for component from ( @index.getBindings path ).values()
-      @processComponent path, component
+      @collect path, component
     return
 
   resolve: ->
     for path in @index.getPaths()
-      @processPath path
+      @visit path
     @bundle
 
 functor = ( graph, index, keys ) ->
