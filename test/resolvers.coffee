@@ -3,10 +3,10 @@ import { test } from "@dashkite/amen"
 import { Registry, Application, Node, CDN, Local } from "../src/resolvers/index"
 import presets from "../src/presets/index"
 
-unpkgTemplate = "https://unpkg.com/{scope?}/{versioned}/{path*}"
+UNPKG_TEMPLATE = "https://unpkg.com/{scope?}/{versioned}/{path*}"
 
 createCdnResolver = ->
-  CDN.make template: unpkgTemplate
+  CDN.make template: UNPKG_TEMPLATE
 
 createLocalResolver = ->
   Local.make root: "/root", patterns: [ "**/.tempo/repos/**/*" ]
