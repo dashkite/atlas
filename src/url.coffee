@@ -19,54 +19,57 @@ formatAuthority = ( resolver ) ->
   else
     encodeURIComponent head
 
-formatPackageSpecifier = ( module ) ->
+formatSpecifier = ( module ) ->
   if module.scope
     "#{module.scope}/#{module.name}"
   else
     module.name
 
-formatModuleIdentifier = ( module ) ->
-  if !( module? )
-    return
-  specifier = formatPackageSpecifier module
-  if module.version?
-    "#{specifier}@#{module.version}"
-  else
-    specifier
+Module =
+  format: ( module ) ->
+    if !( module? )
+      return
+    specifier = formatSpecifier module
+    if module.version?
+      "#{specifier}@#{module.version}"
+    else
+      specifier
 
-normalizePath = ( path ) ->
-  if !( path? )
-    return
-  if path.startsWith "/" then path.slice 1 else path
+  parse: ( { scope, versioned } ) ->
+    [ name, version ] = versioned.split "@"
+    { scope, name, version }
+
+Path =
+  normalize: ( path ) ->
+    if !( path? )
+      return
+    if path.startsWith "/" then path.slice 1 else path
+
+  format: ( path = [] ) ->
+    "/#{path.join "/"}"
 
 extractSegments = ( { module, path } ) ->
   [
-    formatModuleIdentifier module
-    normalizePath path
+    Module.format module
+    Path.normalize path
   ].filter Boolean
 
-formatPathname = ( descriptor ) ->
-  segments = extractSegments descriptor
-  if segments.length > 0 then "/#{segments.join "/"}" else ""
+Pathname =
+  format: ( descriptor ) ->
+    segments = extractSegments descriptor
+    if segments.length > 0 then "/#{segments.join "/"}" else ""
 
-decodePathname = ( pathname ) ->
-  if pathname.startsWith "/@"
-    Codex.decode SCOPED_TEMPLATE, pathname
-  else
-    Codex.decode UNSCOPED_TEMPLATE, pathname
-
-parseModule = ( { scope, versioned } ) ->
-  [ name, version ] = versioned.split "@"
-  { scope, name, version }
-
-formatDecodedPath = ( path = [] ) ->
-  "/#{path.join "/"}"
+  decode: ( pathname ) ->
+    if pathname.startsWith "/@"
+      Codex.decode SCOPED_TEMPLATE, pathname
+    else
+      Codex.decode UNSCOPED_TEMPLATE, pathname
 
 buildDescriptor = ( resolver, decoded ) ->
   {
     resolver
-    module: parseModule decoded
-    path: formatDecodedPath decoded.path
+    module: Module.parse decoded
+    path: Path.format decoded.path
   }
 
 parse = ( url ) ->
@@ -77,7 +80,7 @@ parse = ( url ) ->
   }
 
 format = ( descriptor ) ->
-  "atlas://#{formatAuthority descriptor.resolver}#{formatPathname descriptor}"
+  "atlas://#{formatAuthority descriptor.resolver}#{Pathname.format descriptor}"
 
 encode = ( descriptor ) ->
   format descriptor
@@ -85,7 +88,7 @@ encode = ( descriptor ) ->
 decode = pipe [
   parse
   ( { resolver, pathname } ) ->
-    buildDescriptor resolver, decodePathname pathname
+    buildDescriptor resolver, Pathname.decode pathname
 ]
 
 export default { parse, format, encode, decode }
