@@ -4,7 +4,7 @@ import Trie from "../../src/categories/trie"
 import resolve from "../../src/functors/resolution"
 import { Registry } from "../../src/resolvers/index"
 
-upsertMaeveNode = ( root ) ->
+upsertMaeve = ( root ) ->
   root.upsertPath [
     "node"
     "@dashkite"
@@ -15,12 +15,12 @@ upsertMaeveNode = ( root ) ->
 
 createFixture = ->
   root = Trie.make()
-  maeve = upsertMaeveNode root
+  maeve = upsertMaeve root
   application = root.upsertPath [ "app", "src", "index.js" ]
   application.bindings.set "maeve", maeve
   root
 
-registerMockResolvers = ->
+registerResolvers = ->
   Registry.register "node",
     decode: ( _url ) -> { resolver: "node" }
     resolve: ( _url ) ->
@@ -33,11 +33,11 @@ assertTopology = ( root ) ->
   # Verify topology is intact
   assert ( root.children.has "app" ), "Topology should remain intact"
 
-findResolvedApplication = ( root ) ->
+findApplication = ( root ) ->
   ( ( root.children.get "app" ).children.get "src" )
     .children.get "index.js"
 
-assertResolvedBinding = ( application ) ->
+assertBinding = ( application ) ->
   url = application.bindings.get "maeve"
   assert url?, "Binding should exist"
   # Target was ["npm", "@dashkite", "maeve@1.0.0", "src", "index.js"]
@@ -49,9 +49,9 @@ export default ->
   [
     test "maps bindings to resolved HTTP/File URLs
       without restructuring topology", ->
-        registerMockResolvers()
+        registerResolvers()
         root = resolve createFixture(), [ "node", "app" ]
         assertTopology root
-        application = findResolvedApplication root
-        assertResolvedBinding application
+        application = findApplication root
+        assertBinding application
   ]
