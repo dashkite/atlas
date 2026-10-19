@@ -3,19 +3,19 @@ import AtlasURL from "../url"
 import Path from "node:path"
 import { pathToFileURL } from "node:url"
 
-formatModuleName = ( { scope, name } ) ->
+formatName = ( { scope, name } ) ->
   if scope then "#{scope}/#{name}" else name
 
-normalizeModulePath = ( path ) ->
+normalizePath = ( path ) ->
   path.slice 1
 
 # We resolve to node_modules in the root. If it's a monorepo, Node
 # resolution handles it. But for a physical URL, we just point to
 # node_modules/name/path
-resolveModulePath = ( root, { module, path } ) ->
+resolvePath = ( root, { module, path } ) ->
   Path.resolve root, "node_modules",
-    ( formatModuleName module ),
-    ( normalizeModulePath path )
+    ( formatName module ),
+    ( normalizePath path )
 
 toFileURL = ( path ) ->
   ( pathToFileURL path ).href
@@ -39,7 +39,7 @@ class NodeResolver
 
   resolve: pipe [
     ( url ) -> @decode url
-    ( descriptor ) -> resolveModulePath @root, descriptor
+    ( descriptor ) -> resolvePath @root, descriptor
     toFileURL
   ]
 
