@@ -1,16 +1,16 @@
 import AtlasURL from "../url"
 
-validateKey = (key, keys) ->
+validate = (key, keys) ->
   if !( key in keys )
     throw new Error "Resolver #{key} not in configured keys"
 
-lookupResolver = (key) ->
+lookup = (key) ->
   resolver = ResolverRegistry.get key
   if !resolver?
     throw new Error "Resolver #{key} not found in registry"
   resolver
 
-extractKey = (url) ->
+extract = (url) ->
   parsed = AtlasURL.parse url
   parsed.resolver
 
@@ -26,33 +26,33 @@ class ResolverRegistry
   @make: (keys) ->
     Object.assign ( new @ ), { keys }
 
-  getResolver: (key) ->
-    validateKey key, @keys
-    lookupResolver key
+  get: (key) ->
+    validate key, @keys
+    lookup key
 
-  getResolverForUrl: (url) ->
-    @getResolver extractKey url
+  locate: (url) ->
+    @get extract url
 
   match: (context) ->
     for key in @keys
-      resolver = lookupResolver key
+      resolver = lookup key
       if resolver.match context
         return key
     null
 
   encode: (descriptor) ->
-    resolver = @getResolver descriptor.resolver
+    resolver = @get descriptor.resolver
     resolver.encode descriptor
 
   decode: (url) ->
-    resolver = @getResolverForUrl url
+    resolver = @locate url
     resolver.decode url
 
   parse: (url) ->
     @decode url
 
   resolve: (url) ->
-    resolver = @getResolverForUrl url
+    resolver = @locate url
     resolver.resolve url
 
 export default ResolverRegistry
