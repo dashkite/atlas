@@ -5,40 +5,42 @@ import { ENTRY_POINT } from "../ingest"
 getAuthority = ( url ) ->
   if url.username then "#{url.username}@#{url.hostname}" else url.hostname
 
-getPathSegments = ( url ) ->
-  if url.pathname.length > 1 then url.pathname[1..].split "/" else []
+Package =
+  isExternal: ( id ) ->
+    ( id? ) &&
+      ( id != ENTRY_POINT ) &&
+      ( !( id.startsWith "atlas://application" ) )
 
-getUrlSegments = ( url ) ->
-  [ ( getAuthority url ), ( getPathSegments url )... ]
+  segment: ( url ) ->
+    ( Segments.fromUrl url ).join "/"
 
-getPackageSegment = ( url ) ->
-  ( getUrlSegments url ).join "/"
+  segments: ( segments, url ) ->
+    [ ( Package.segment url ), ( Segments.remaining segments, url )... ]
 
-getRemainingSegments = ( segments, url ) ->
-  segments.slice ( getPathSegments url ).length
+Segments =
+  fromPath: ( url ) ->
+    if url.pathname.length > 1 then url.pathname[1..].split "/" else []
 
-isExternalPackage = ( id ) ->
-  ( id? ) &&
-    ( id != ENTRY_POINT ) &&
-    ( !( id.startsWith "atlas://application" ) )
+  fromUrl: ( url ) ->
+    [ ( getAuthority url ), ( Segments.fromPath url )... ]
 
-parsePackageSegments = ( segments, url ) ->
-  [ ( getPackageSegment url ), ( getRemainingSegments segments, url )... ]
+  remaining: ( segments, url ) ->
+    segments.slice ( Segments.fromPath url ).length
 
-parseUrlSegments = ( url, id ) ->
-  if isExternalPackage id
-    parsePackageSegments ( getPathSegments url ), new URL id
-  else
-    getUrlSegments url
+  resolve: ( url, id ) ->
+    if Package.isExternal id
+      Package.segments ( Segments.fromPath url ), new URL id
+    else
+      Segments.fromUrl url
 
-parseSegments = ( endpoint, id ) ->
-  if endpoint == ENTRY_POINT
-    []
-  else
-    parseUrlSegments ( new URL endpoint ), id
+  parse: ( endpoint, id ) ->
+    if endpoint == ENTRY_POINT
+      []
+    else
+      Segments.resolve ( new URL endpoint ), id
 
 resolve = ( root, graph, endpoint ) ->
-  root.upsertPath parseSegments endpoint,
+  root.upsertPath Segments.parse endpoint,
     graph.getAttribute endpoint, "packageId"
 
 bindEdge = ( root, graph, { source, target, label } ) ->
