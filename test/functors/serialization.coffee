@@ -13,7 +13,7 @@ createFixture = ->
   root
 
 resolver =
-  decode: (_url) ->
+  decode: ( _url ) ->
     module:
       scope: "@dashkite"
       name: "maeve"
@@ -38,10 +38,10 @@ createMultiScopeFixture = ->
     "https://cdn.example.com/foo@2.0.0/index.js"
   root
 
-verifyImports = (map) ->
+verifyImports = ( map ) ->
   assert.equal map.imports["helper"], "/src/helper.js"
 
-verifyScopes = (map) ->
+verifyScopes = ( map ) ->
   key = "https://cdn.example.com/@dashkite/maeve@1.0.0/"
   assert map.scopes?, "Scopes block should exist"
   assert map.scopes[key]?, "Scope key should exist"
