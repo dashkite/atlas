@@ -77,6 +77,11 @@ Entry =
     relative = Path.relative cwd, absolute
     { relative, absolute }
 
+  normalize: ( entries ) ->
+    if !entries?
+      throw new Error "Entries argument is required"
+    [ entries ].flat()
+
 Diagnostics =
   serialize: ( value ) ->
     replacer = ( key, item ) ->
@@ -109,15 +114,15 @@ Diagnostics =
     await Diagnostics.write directory, "bundle-map.json", map
     return
 
-dumpDiagnostics = ( context ) ->
-  if process.env.DEBUG
-    try
-      directory = Diagnostics.directory context.entries
-      await Diagnostics.pipeline directory, context.pipeline
-      await Diagnostics.bundle directory, context.pipeline.map
-    catch error
-      console.warn error
-  context
+  dump: ( context ) ->
+    if process.env.DEBUG
+      try
+        directory = Diagnostics.directory context.entries
+        await Diagnostics.pipeline directory, context.pipeline
+        await Diagnostics.bundle directory, context.pipeline.map
+      catch error
+        console.warn error
+    context
 
 class BundleArchive
   @make: ( options, graph ) ->
@@ -128,6 +133,13 @@ class BundleArchive
       graph: graph
       destinations: new Set()
       packages: new Set()
+
+  @construct: ( context ) ->
+    archive = BundleArchive.make context.options, context.pipeline.graph
+    await archive.addEntries context.entries
+    await archive.addManifest()
+    await archive.addMap context.pipeline.map
+    archive.generate()
 
   addFile: ( destination, path ) ->
     if !@destinations.has destination
@@ -183,58 +195,50 @@ class BundleArchive
   generate: ->
     @zip.generateAsync ZIP_OPTIONS
 
-constructArchive = ( context ) ->
-  archive = BundleArchive.make context.options, context.pipeline.graph
-  await archive.addEntries context.entries
-  await archive.addManifest()
-  await archive.addMap context.pipeline.map
-  archive.generate()
+Options =
+  normalize: ( options ) ->
+    cwd = options.cwd ? process.cwd()
+    source = Path.resolve cwd, ( options.source ? "." )
+    external = [ "@aws-sdk/*", ( options.external ? [])... ]
+    resolvers = options.resolvers ? preset
+    { options..., cwd, source, external, resolvers }
 
-normalizeEntries = ( entries ) ->
-  if !entries?
-    throw new Error "Entries argument is required"
-  [ entries ].flat()
+Context =
+  create: ( entries, options = {}) ->
+    entries: Entry.normalize entries
+    options: Options.normalize options
 
-normalizeOptions = ( options ) ->
-  cwd = options.cwd ? process.cwd()
-  source = Path.resolve cwd, ( options.source ? "." )
-  external = [ "@aws-sdk/*", ( options.external ? [])... ]
-  resolvers = options.resolvers ? preset
-  { options..., cwd, source, external, resolvers }
+Dependencies =
+  analyze: ( context ) ->
+    dependencies = analyze context.entries, {
+      context.options...
+      platform: "node"
+      conditions: [ "node" ]
+    }
+    { context..., dependencies }
 
-createContext = ( entries, options = {}) ->
-  entries: normalizeEntries entries
-  options: normalizeOptions options
+  ingest: ( dependencies, options ) ->
+    ingest dependencies, options
 
-analyzeDependencies = ( context ) ->
-  dependencies = analyze context.entries, {
-    context.options...
-    platform: "node"
-    conditions: [ "node" ]
-  }
-  { context..., dependencies }
+Functors =
+  apply: ( graph, options ) ->
+    components = quotient graph
+    index = compile components, options
+    map = resolve components, index, options.resolvers
+    { graph, components, index, map }
 
-ingestDependencies = ( dependencies, options ) ->
-  ingest dependencies, options
-
-applyFunctors = ( graph, options ) ->
-  components = quotient graph
-  index = compile components, options
-  map = resolve components, index, options.resolvers
-  { graph, components, index, map }
-
-executeFunctors = ( context ) ->
-  { dependencies, options } = context
-  graph = await ingestDependencies dependencies, options
-  pipeline = applyFunctors graph, options
-  { context..., pipeline }
+  execute: ( context ) ->
+    { dependencies, options } = context
+    graph = await Dependencies.ingest dependencies, options
+    pipeline = Functors.apply graph, options
+    { context..., pipeline }
 
 bundle = pipe [
-  createContext
-  analyzeDependencies
-  executeFunctors
-  dumpDiagnostics
-  constructArchive
+  Context.create
+  Dependencies.analyze
+  Functors.execute
+  Diagnostics.dump
+  BundleArchive.construct
 ]
 
 export default bundle

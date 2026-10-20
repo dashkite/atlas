@@ -17,11 +17,11 @@ generate = pipe [
 
 # Application Bundling Pipeline (src/bundle.coffee)
 bundle = pipe [
-  createContext
-  analyzeDependencies
-  executeFunctors      # ingest -> quotient -> compile -> resolve
-  dumpDiagnostics
-  constructArchive     # BundleArchive -> ZIP Buffer
+  Context.create
+  Dependencies.analyze
+  Functors.execute     # ingest -> quotient -> compile -> resolve
+  Diagnostics.dump
+  BundleArchive.construct # BundleArchive -> ZIP Buffer
 ]
 ```
 
