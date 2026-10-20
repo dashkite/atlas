@@ -45,16 +45,23 @@ UNSCOPED_PACKAGE_ROOT_DESCRIPTOR =
     version: "1.0.0"
   path: ""
 
+OMITTED_PATH_DESCRIPTOR =
+  resolver: "node"
+  module:
+    scope: undefined
+    name: "foo"
+    version: "1.0.0"
+
 check =
   parsed: ( url, resolver, pathname ) ->
     parsed = AtlasURL.parse url
     assert.equal parsed.resolver, resolver
     assert.equal parsed.pathname, pathname
 
-  roundTrip: ( descriptor, expected ) ->
+  roundTrip: ( descriptor, expected, decoded = descriptor ) ->
     url = AtlasURL.encode descriptor
     assert.equal url, expected
-    assert.deepEqual ( AtlasURL.decode url ), descriptor
+    assert.deepEqual ( AtlasURL.decode url ), decoded
 
 parse = ->
   [
@@ -74,27 +81,30 @@ format = ->
       assert.equal ( AtlasURL.format APPLICATION_DESCRIPTOR ), APPLICATION_URL
   ]
 
-codec = ->
+moduleCodec = ->
   [
     test "encodes and decodes scoped module descriptor", ->
       check.roundTrip SCOPED_DESCRIPTOR, SCOPED_URL
     test "encodes and decodes unscoped module descriptor", ->
       check.roundTrip UNSCOPED_DESCRIPTOR, UNSCOPED_URL
+  ]
+
+packageRootCodec = ->
+  [
     test "encodes and decodes scoped package-root descriptor", ->
       check.roundTrip SCOPED_PACKAGE_ROOT_DESCRIPTOR, SCOPED_PACKAGE_ROOT_URL
     test "encodes and decodes unscoped package-root descriptor", ->
       check.roundTrip UNSCOPED_PACKAGE_ROOT_DESCRIPTOR,
         UNSCOPED_PACKAGE_ROOT_URL
+  ]
+
+codec = ->
+  [
+    ...moduleCodec()
+    ...packageRootCodec()
     test "encodes and decodes package-root descriptor with omitted path", ->
-      descriptor =
-        resolver: "node"
-        module:
-          scope: undefined
-          name: "foo"
-          version: "1.0.0"
-      url = AtlasURL.encode descriptor
-      assert.equal url, UNSCOPED_PACKAGE_ROOT_URL
-      assert.deepEqual ( AtlasURL.decode url ), UNSCOPED_PACKAGE_ROOT_DESCRIPTOR
+      check.roundTrip OMITTED_PATH_DESCRIPTOR, UNSCOPED_PACKAGE_ROOT_URL,
+        UNSCOPED_PACKAGE_ROOT_DESCRIPTOR
   ]
 
 export default ->
