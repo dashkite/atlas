@@ -27,14 +27,14 @@ registerResolver = ->
 createMultiScopeFixture = ->
   root = Trie.make()
   root.bindings.set "helper", "/src/helper.js"
-  nodeA = root.upsertPath [ "node", "@dashkite", "maeve@1.0.0" ]
-  nodeA.bindings.set "./",
+  parent = root.upsertPath [ "node", "@dashkite", "maeve@1.0.0" ]
+  parent.bindings.set "./",
     "https://cdn.example.com/@dashkite/maeve@1.0.0/lib/index.js"
-  child = nodeA.upsertPath [ "node", "nested@0.1.0" ]
+  child = parent.upsertPath [ "node", "nested@0.1.0" ]
   child.bindings.set "./",
     "https://cdn.example.com/nested@0.1.0/index.js"
-  nodeB = root.upsertPath [ "node", "foo@2.0.0" ]
-  nodeB.bindings.set "./",
+  sibling = root.upsertPath [ "node", "foo@2.0.0" ]
+  sibling.bindings.set "./",
     "https://cdn.example.com/foo@2.0.0/index.js"
   root
 
@@ -49,18 +49,19 @@ verifyScopes = ( map ) ->
     "https://cdn.example.com/@dashkite/maeve@1.0.0/lib/index.js"
 
 verifyMultiScopes = ( map ) ->
-  keyA = "https://cdn.example.com/@dashkite/maeve@1.0.0/"
-  keyChild = "https://cdn.example.com/@dashkite/maeve@1.0.0/node/nested@0.1.0/"
-  keyB = "https://cdn.example.com/foo@2.0.0/"
+  keys =
+    parent: "https://cdn.example.com/@dashkite/maeve@1.0.0/"
+    child: "https://cdn.example.com/@dashkite/maeve@1.0.0/node/nested@0.1.0/"
+    sibling: "https://cdn.example.com/foo@2.0.0/"
   assert map.scopes?, "Scopes block should exist"
-  assert map.scopes[ keyA ]?, "Scope keyA should exist"
-  assert map.scopes[ keyChild ]?, "Scope keyChild should exist"
-  assert map.scopes[ keyB ]?, "Scope keyB should exist"
-  assert.equal map.scopes[ keyA ][ "./" ],
+  assert map.scopes[ keys.parent ]?, "Parent scope key should exist"
+  assert map.scopes[ keys.child ]?, "Child scope key should exist"
+  assert map.scopes[ keys.sibling ]?, "Sibling scope key should exist"
+  assert.equal map.scopes[ keys.parent ][ "./" ],
     "https://cdn.example.com/@dashkite/maeve@1.0.0/lib/index.js"
-  assert.equal map.scopes[ keyChild ][ "./" ],
+  assert.equal map.scopes[ keys.child ][ "./" ],
     "https://cdn.example.com/nested@0.1.0/index.js"
-  assert.equal map.scopes[ keyB ][ "./" ],
+  assert.equal map.scopes[ keys.sibling ][ "./" ],
     "https://cdn.example.com/foo@2.0.0/index.js"
 
 export default ->
@@ -80,11 +81,11 @@ export default ->
     test "preserves immutability of input Trie", ->
       root = createMultiScopeFixture()
       registerResolver()
-      bindingsBefore = new Map root.bindings
-      childrenBefore = new Map root.children
+      bindings = new Map root.bindings
+      children = new Map root.children
       serialize root, [ "node" ]
       assert.deepEqual ( Array.from root.bindings.entries()),
-        Array.from bindingsBefore.entries()
+        Array.from bindings.entries()
       assert.deepEqual ( Array.from root.children.entries()),
-        Array.from childrenBefore.entries()
+        Array.from children.entries()
   ]
