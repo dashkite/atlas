@@ -217,14 +217,11 @@ analyzeDependencies = ( context ) ->
 ingestDependencies = ( dependencies, options ) ->
   ingest dependencies, options
 
-createPipeline = ( graph, components, index, map ) ->
-  { graph, components, index, map }
-
 applyFunctors = ( graph, options ) ->
   components = quotient graph
   index = compile components, options
   map = resolve components, index, options.resolvers
-  createPipeline graph, components, index, map
+  { graph, components, index, map }
 
 executeFunctors = ( context ) ->
   { dependencies, options } = context
