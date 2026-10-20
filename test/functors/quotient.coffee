@@ -25,7 +25,7 @@ addPackageModules = ( graph, id, uris ) ->
     graph.setAttribute uri, "packageId", id
   return
 
-addInterEdge = ( graph, source, target, label ) ->
+addInterEdge = ( graph, { source, target, label }) ->
   graph.addEdge
     source: source
     target: target
@@ -36,7 +36,10 @@ buildContractsGraph = ->
   graph = ModuleGraph.make()
   addPackageModules graph, "app", APP_MODULES
   addPackageModules graph, "maeve", MAEVE_MODULES
-  addInterEdge graph, APP_INDEX, MAEVE_INDEX, "maeve"
+  addInterEdge graph,
+    source: APP_INDEX
+    target: MAEVE_INDEX
+    label: "maeve"
   graph
 
 findComponent = ( graph, uri ) ->
@@ -68,12 +71,21 @@ verifyDiscreteComponents = ( graph ) ->
   verifyAppModules graph, app
   verifyEdges graph, app, maeve
 
+addDisjointEdges = ( graph ) ->
+  addInterEdge graph,
+    source: ENCHANT_INDEX
+    target: MAEVE_COMMON
+    label: "@dashkite/maeve/common"
+  addInterEdge graph,
+    source: ENCHANT_INDEX
+    target: MAEVE_SUBLIME
+    label: "@dashkite/maeve/sublime"
+
 buildDisjointGraph = ->
   graph = ModuleGraph.make()
   addPackageModules graph, MAEVE_PACKAGE, [ MAEVE_COMMON, MAEVE_SUBLIME ]
   addPackageModules graph, ENCHANT_PACKAGE, [ ENCHANT_INDEX ]
-  addInterEdge graph, ENCHANT_INDEX, MAEVE_COMMON, "@dashkite/maeve/common"
-  addInterEdge graph, ENCHANT_INDEX, MAEVE_SUBLIME, "@dashkite/maeve/sublime"
+  addDisjointEdges graph
   graph
 
 verifyDisjointComponents = ( graph ) ->
