@@ -67,7 +67,7 @@ class ModuleUrlResolver
     ( target ) ->
       target: target
       key: @matchKey target
-    ( { target, key } ) ->
+    ({ target, key }) ->
       @buildDescriptor target, key
     ( descriptor ) ->
       @registry.encode descriptor
@@ -85,7 +85,7 @@ class ModuleUrlResolver
     ( target ) ->
       inode: await @resolveInode target.source.path
       target: target
-    ( { inode, target } ) ->
+    ({ inode, target }) ->
       @cacheTarget inode, target
   ]
 
@@ -164,14 +164,14 @@ class ModuleGraphBuilder
     ( context ) ->
       @recordSources context.item, context.urls
       context
-    ( { item, urls } ) ->
+    ({ item, urls }) ->
       @recordEdge urls, item.import.specifier
   ]
 
   build: ->
     @graph
 
-createContext = ( dependencies, options = {} ) ->
+createContext = ( dependencies, options = {}) ->
   cwd = resolveCwd options
   registry = resolveRegistry options
   {
@@ -190,7 +190,7 @@ processDependencies = ( context ) ->
     await context.builder.addDependency item
   context
 
-extractGraph = ( { builder } ) ->
+extractGraph = ({ builder }) ->
   builder.build()
 
 ingest = pipe [
