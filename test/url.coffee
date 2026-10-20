@@ -81,35 +81,36 @@ format = ->
       assert.equal ( AtlasURL.format APPLICATION_DESCRIPTOR ), APPLICATION_URL
   ]
 
-moduleCodec = ->
-  [
-    test "encodes and decodes scoped module descriptor", ->
-      check.roundTrip SCOPED_DESCRIPTOR, SCOPED_URL
-    test "encodes and decodes unscoped module descriptor", ->
-      check.roundTrip UNSCOPED_DESCRIPTOR, UNSCOPED_URL
-  ]
+Codec =
+  module: ->
+    [
+      test "encodes and decodes scoped module descriptor", ->
+        check.roundTrip SCOPED_DESCRIPTOR, SCOPED_URL
+      test "encodes and decodes unscoped module descriptor", ->
+        check.roundTrip UNSCOPED_DESCRIPTOR, UNSCOPED_URL
+    ]
 
-packageRootCodec = ->
-  [
-    test "encodes and decodes scoped package-root descriptor", ->
-      check.roundTrip SCOPED_PACKAGE_ROOT_DESCRIPTOR, SCOPED_PACKAGE_ROOT_URL
-    test "encodes and decodes unscoped package-root descriptor", ->
-      check.roundTrip UNSCOPED_PACKAGE_ROOT_DESCRIPTOR,
-        UNSCOPED_PACKAGE_ROOT_URL
-  ]
+  root: ->
+    [
+      test "encodes and decodes scoped package-root descriptor", ->
+        check.roundTrip SCOPED_PACKAGE_ROOT_DESCRIPTOR, SCOPED_PACKAGE_ROOT_URL
+      test "encodes and decodes unscoped package-root descriptor", ->
+        check.roundTrip UNSCOPED_PACKAGE_ROOT_DESCRIPTOR,
+          UNSCOPED_PACKAGE_ROOT_URL
+    ]
 
-codec = ->
-  [
-    ...moduleCodec()
-    ...packageRootCodec()
-    test "encodes and decodes package-root descriptor with omitted path", ->
-      check.roundTrip OMITTED_PATH_DESCRIPTOR, UNSCOPED_PACKAGE_ROOT_URL,
-        UNSCOPED_PACKAGE_ROOT_DESCRIPTOR
-  ]
+  omitted: ->
+    [
+      test "encodes and decodes package-root descriptor with omitted path", ->
+        check.roundTrip OMITTED_PATH_DESCRIPTOR, UNSCOPED_PACKAGE_ROOT_URL,
+          UNSCOPED_PACKAGE_ROOT_DESCRIPTOR
+    ]
 
 export default ->
   [
     ...parse()
     ...format()
-    ...codec()
+    ...Codec.module()
+    ...Codec.root()
+    ...Codec.omitted()
   ]
