@@ -12,7 +12,8 @@
       "write_file(**)",
       "command(git log)",
       "command(git branch*)",
-      "command(git grep*)"
+      "command(git grep*)",
+      "command(npx genie lint*)"
     ]
   }
 }
