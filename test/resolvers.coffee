@@ -45,7 +45,7 @@ Tests =
       Registry.register "test2", match: -> true
       Registry.register "test3", match: -> false
       resolver = Registry.make [ "test1", "test2", "test3" ]
-      assert.equal ( resolver.match { source: "foo", cwd: "/root" } ), "test2"
+      assert.equal ( resolver.match { source: "foo", cwd: "/root" }), "test2"
 
     encode: ->
       resolver = Factories.meta()
