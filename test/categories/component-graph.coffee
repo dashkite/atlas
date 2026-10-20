@@ -16,7 +16,7 @@ assertModules = ( graph, component, expected ) ->
     assert modules.has file
   return
 
-createGraphWithComponents = ->
+createGraph = ->
   graph = ComponentGraph.make()
   graph.addComponent "pkg-A", [ "file:///app/index.js" ]
   graph.addComponent "pkg-B", [
@@ -46,7 +46,7 @@ export default ->
       assertModules graph, "pkg-A", files
 
     test "adds inter-component edges", ->
-      graph = createGraphWithComponents()
+      graph = createGraph()
       edge =
         source: "pkg-A"
         target: "pkg-B"
