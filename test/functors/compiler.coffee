@@ -43,19 +43,22 @@ buildLinear = ->
 buildIsolation = ->
   buildGraph ISOLATION_COMPONENTS, ISOLATION_EDGES
 
-verifyBinding = ( index, path, key, expected ) ->
+verifyBinding = ( index, { path, key, expected }) ->
   bindings = index.getBindings path
   assert.equal ( bindings.get key ), expected
 
 verifyBaseline = ( index ) ->
-  verifyBinding index, [], "pkg-root", "pkg-root"
-  verifyBinding index, [ "pkg-root" ], "a", "pkg-A"
-  verifyBinding index, [ "pkg-root", "pkg-A" ], "b", "pkg-B"
+  verifyBinding index, path: [], key: "pkg-root", expected: "pkg-root"
+  verifyBinding index, path: [ "pkg-root" ], key: "a", expected: "pkg-A"
+  verifyBinding index,
+    path: [ "pkg-root", "pkg-A" ]
+    key: "b"
+    expected: "pkg-B"
 
 verifyCompacted = ( index ) ->
-  verifyBinding index, [], "pkg-root", "pkg-root"
-  verifyBinding index, [], "a", "pkg-A"
-  verifyBinding index, [], "b", "pkg-B"
+  verifyBinding index, path: [], key: "pkg-root", expected: "pkg-root"
+  verifyBinding index, path: [], key: "a", expected: "pkg-A"
+  verifyBinding index, path: [], key: "b", expected: "pkg-B"
 
 ###
 Collision on label "b": pkg-B-v1 and pkg-B-v2 cannot hoist.
@@ -64,11 +67,11 @@ The conflicting dependencies (pkg-B-v1, pkg-B-v2) will be hierarchically
 embedded.
 ###
 verifyIsolation = ( index ) ->
-  verifyBinding index, [], "pkg-root", "pkg-root"
-  verifyBinding index, [], "a", "pkg-A"
-  verifyBinding index, [], "c", "pkg-C"
-  verifyBinding index, [ "pkg-A" ], "b", "pkg-B-v1"
-  verifyBinding index, [ "pkg-C" ], "b", "pkg-B-v2"
+  verifyBinding index, path: [], key: "pkg-root", expected: "pkg-root"
+  verifyBinding index, path: [], key: "a", expected: "pkg-A"
+  verifyBinding index, path: [], key: "c", expected: "pkg-C"
+  verifyBinding index, path: [ "pkg-A" ], key: "b", expected: "pkg-B-v1"
+  verifyBinding index, path: [ "pkg-C" ], key: "b", expected: "pkg-B-v2"
 
 export default ->
   [
