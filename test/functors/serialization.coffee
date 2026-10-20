@@ -14,17 +14,25 @@ SCOPE_TARGETS =
   child: "https://cdn.example.com/nested@0.1.0/index.js"
   sibling: "https://cdn.example.com/foo@2.0.0/index.js"
 
-bindScopePath = ( node, path, target ) ->
+bindScope = ( node, path, target ) ->
   scope = node.upsertPath path
   scope.bindings.set "./", target
   scope
 
-createFixture = ->
-  root = Trie.make()
-  root.bindings.set "helper", "/src/helper.js"
-  bindScopePath root, [ "node", "@dashkite", "maeve@1.0.0" ],
-    SCOPE_TARGETS.parent
-  root
+fixtures =
+  base: ->
+    root = Trie.make()
+    root.bindings.set "helper", "/src/helper.js"
+    bindScope root, [ "node", "@dashkite", "maeve@1.0.0" ],
+      SCOPE_TARGETS.parent
+    root
+
+  nested: ->
+    root = fixtures.base()
+    parent = root.upsertPath [ "node", "@dashkite", "maeve@1.0.0" ]
+    bindScope parent, [ "node", "nested@0.1.0" ], SCOPE_TARGETS.child
+    bindScope root, [ "node", "foo@2.0.0" ], SCOPE_TARGETS.sibling
+    root
 
 resolver =
   decode: ( _url ) ->
@@ -38,61 +46,56 @@ resolver =
 registerResolver = ->
   Registry.register "node", resolver
 
-createMultiScopeFixture = ->
-  root = createFixture()
-  parent = root.upsertPath [ "node", "@dashkite", "maeve@1.0.0" ]
-  bindScopePath parent, [ "node", "nested@0.1.0" ], SCOPE_TARGETS.child
-  bindScopePath root, [ "node", "foo@2.0.0" ], SCOPE_TARGETS.sibling
-  root
+verify =
+  imports: ( map ) ->
+    assert.equal map.imports["helper"], "/src/helper.js"
 
-verifyImports = ( map ) ->
-  assert.equal map.imports["helper"], "/src/helper.js"
+  binding: ( scopes, key, target ) ->
+    assert scopes[ key ]?, "Scope key #{ key } should exist"
+    assert.equal scopes[ key ][ "./" ], target
 
-verifyScopeBinding = ( scopes, scopeKey, expectedTarget ) ->
-  assert scopes[ scopeKey ]?, "Scope key #{ scopeKey } should exist"
-  assert.equal scopes[ scopeKey ][ "./" ], expectedTarget
+  scopes: ( map ) ->
+    assert map.scopes?, "Scopes block should exist"
+    verify.binding map.scopes, SCOPE_KEYS.parent, SCOPE_TARGETS.parent
 
-verifyScopes = ( map ) ->
-  assert map.scopes?, "Scopes block should exist"
-  verifyScopeBinding map.scopes, SCOPE_KEYS.parent, SCOPE_TARGETS.parent
+  nested: ( map ) ->
+    assert map.scopes?, "Scopes block should exist"
+    verify.binding map.scopes, SCOPE_KEYS.parent, SCOPE_TARGETS.parent
+    verify.binding map.scopes, SCOPE_KEYS.child, SCOPE_TARGETS.child
+    verify.binding map.scopes, SCOPE_KEYS.sibling, SCOPE_TARGETS.sibling
 
-verifyMultiScopes = ( map ) ->
-  assert map.scopes?, "Scopes block should exist"
-  verifyScopeBinding map.scopes, SCOPE_KEYS.parent, SCOPE_TARGETS.parent
-  verifyScopeBinding map.scopes, SCOPE_KEYS.child, SCOPE_TARGETS.child
-  verifyScopeBinding map.scopes, SCOPE_KEYS.sibling, SCOPE_TARGETS.sibling
+cases =
+  format: ->
+    root = fixtures.base()
+    registerResolver()
+    map = serialize root, [ "node" ]
+    verify.imports map
+    verify.scopes map
 
-testImportmapFormat = ->
-  root = createFixture()
-  registerResolver()
-  map = serialize root, [ "node" ]
-  verifyImports map
-  verifyScopes map
+  scopes: ->
+    root = fixtures.nested()
+    registerResolver()
+    map = serialize root, [ "node" ]
+    verify.imports map
+    verify.nested map
 
-testMultiScopeSerialization = ->
-  root = createMultiScopeFixture()
-  registerResolver()
-  map = serialize root, [ "node" ]
-  verifyImports map
-  verifyMultiScopes map
-
-testTrieImmutability = ->
-  root = createMultiScopeFixture()
-  registerResolver()
-  bindings = new Map root.bindings
-  children = new Map root.children
-  serialize root, [ "node" ]
-  assert.deepEqual ( Array.from root.bindings.entries()),
-    Array.from bindings.entries()
-  assert.deepEqual ( Array.from root.children.entries()),
-    Array.from children.entries()
+  immutability: ->
+    root = fixtures.nested()
+    registerResolver()
+    bindings = new Map root.bindings
+    children = new Map root.children
+    serialize root, [ "node" ]
+    assert.deepEqual ( Array.from root.bindings.entries()),
+      Array.from bindings.entries()
+    assert.deepEqual ( Array.from root.children.entries()),
+      Array.from children.entries()
 
 export default ->
   [
     test "serializes Trie to WHATWG importmap JSON format",
-      testImportmapFormat
+      cases.format
     test "serializes nested and sibling scopes correctly",
-      testMultiScopeSerialization
+      cases.scopes
     test "preserves immutability of input Trie",
-      testTrieImmutability
+      cases.immutability
   ]
