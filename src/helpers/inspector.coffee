@@ -28,10 +28,12 @@ class BundleInspector
   getFiles: ->
     @files
 
-  # Return all paths that look like they belong to packageName's root directory.
-  # We look for "node_modules/packageName/..." and group them by the prefix.
-  # For example, "node_modules/a/node_modules/pkg/index.js" ->
-  # prefix is "node_modules/a/node_modules/pkg"
+  ###
+  Return all paths that look like they belong to packageName's root directory.
+  We look for "node_modules/packageName/..." and group them by the prefix.
+  For example, "node_modules/a/node_modules/pkg/index.js" ->
+  prefix is "node_modules/a/node_modules/pkg"
+  ###
   findInstancesOf: pipe [
     ( name ) -> "node_modules/#{name}"
     ( marker ) -> @files.map ( file ) -> extractPrefix file, marker
