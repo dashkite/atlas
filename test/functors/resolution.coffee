@@ -34,7 +34,7 @@ assertTopology = ( root ) ->
   assert ( root.children.has "app" ), "Topology should remain intact"
 
 findApplication = ( root ) ->
-  ( ( root.children.get "app" ).children.get "src" )
+  (( root.children.get "app" ).children.get "src" )
     .children.get "index.js"
 
 assertBinding = ( application ) ->
