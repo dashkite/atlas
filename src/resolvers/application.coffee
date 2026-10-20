@@ -13,7 +13,7 @@ toFileURL = ( path ) ->
   ( pathToFileURL path ).href
 
 class ApplicationResolver
-  @make: ( config = {} ) ->
+  @make: ( config = {}) ->
     Object.assign ( new @ ),
       root: config.root ? process.cwd()
 
@@ -39,7 +39,7 @@ class ApplicationResolver
 
   resolve: pipe [
     ( url ) -> @decode url
-    ( { path } ) -> normalizePath path
+    ({ path }) -> normalizePath path
     ( path ) -> Path.resolve @root, path
     toFileURL
   ]
