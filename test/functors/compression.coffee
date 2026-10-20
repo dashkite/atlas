@@ -19,7 +19,7 @@ setupTargets = ( root ) ->
   sublime = maeve.upsertPath [ "sublime", "index.js" ]
   { maeve, common, sublime }
 
-setupBindings = ( root, { common, sublime } ) ->
+setupBindings = ( root, { common, sublime }) ->
   app = root.upsertPath [ "app" ]
   app.bindings.set "@dashkite/maeve/common.js", common
   app.bindings.set "@dashkite/maeve/sublime/index.js", sublime
