@@ -10,7 +10,7 @@ resolveOptions = ( options ) ->
     source: Path.resolve cwd, ( options.source ? "." )
     platform: platform
     conditions: options.conditions ? [ platform ]
-    external: [ "esbuild", ( options.external ? [] )... ]
+    external: [ "esbuild", ( options.external ? [])... ]
   }
 
 buildOptions = ( entry, options ) ->
@@ -30,7 +30,7 @@ buildMetafile = ( entry, options ) ->
 # Skip external dependencies explicitly marked by esbuild, or disabled ones
 isIncluded = ( dependency ) ->
   ( dependency.external != true ) &&
-    ( !( dependency.path.startsWith "(disabled):" ) )
+    ( !( dependency.path.startsWith "(disabled):" ))
 
 createDependency = ( dependency, path, modules ) ->
   source: path: Path.normalize dependency.path
@@ -52,7 +52,7 @@ generateDependencies = ( entries, options ) ->
   return
 
 # Returns an async generator yielding dependency objects
-analyze = ( entries, options = {} ) ->
+analyze = ( entries, options = {}) ->
   generateDependencies entries, resolveOptions options
 
 export default analyze
