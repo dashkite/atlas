@@ -24,8 +24,8 @@ determinesPrefixRelationships = ->
     second: [ "pkg-A", "pkg-B" ]
     third: [ "pkg-C" ]
   assert Path.isPrefix paths.first, paths.second
-  assert !(Path.isPrefix paths.second, paths.first)
-  assert !(Path.isPrefix paths.first, paths.third)
+  assert !( Path.isPrefix paths.second, paths.first )
+  assert !( Path.isPrefix paths.first, paths.third )
   assert Path.isPrefix Path.root, paths.first
 
 export default ->
