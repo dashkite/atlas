@@ -39,7 +39,7 @@ clean = ->
       recursive: true
       force: true
 
-suite = ( [ name, path ] ) ->
+suite = ([ name, path ]) ->
   test name, await tests path
 
 load = ->
