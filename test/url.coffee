@@ -86,13 +86,13 @@ codec = ->
       check.roundTrip UNSCOPED_PACKAGE_ROOT_DESCRIPTOR,
         UNSCOPED_PACKAGE_ROOT_URL
     test "encodes and decodes package-root descriptor with omitted path", ->
-      desc =
+      descriptor =
         resolver: "node"
         module:
           scope: undefined
           name: "foo"
           version: "1.0.0"
-      url = AtlasURL.encode desc
+      url = AtlasURL.encode descriptor
       assert.equal url, UNSCOPED_PACKAGE_ROOT_URL
       assert.deepEqual ( AtlasURL.decode url ), UNSCOPED_PACKAGE_ROOT_DESCRIPTOR
   ]
