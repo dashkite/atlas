@@ -271,81 +271,71 @@ Tests =
       assert keys.some ( key ) -> key.startsWith "cdn"
 
 Suites =
-  registry: ->
-    test "Registry & Meta Resolver", [
-      test "registers and retrieves resolvers", Tests.registry.retrieval
-      test "Meta Resolver aggregates match", Tests.meta.match
-      test "Meta Resolver validates keys on encode", Tests.meta.encode
-      test "Meta Resolver validates keys on decode", Tests.meta.decode
-      test "Meta Resolver validates keys on resolve", Tests.meta.resolve
-    ]
+  registry:
+    "registers and retrieves resolvers": Tests.registry.retrieval
+    "Meta Resolver aggregates match": Tests.meta.match
+    "Meta Resolver validates keys on encode": Tests.meta.encode
+    "Meta Resolver validates keys on decode": Tests.meta.decode
+    "Meta Resolver validates keys on resolve": Tests.meta.resolve
 
-  application: ->
-    test "Application Resolver", [
-      test "matches intra-package paths unconditionally",
-        Tests.application.match
-      test "rejects paths containing node_modules",
-        Tests.application.reject.modules
-      test "rejects paths escaping cwd (..)",
-        Tests.application.reject.escaping
-      test "encodes target to virtual root", Tests.application.encode
-      test "decodes atlas URL", Tests.application.decode
-      test "resolves to physical path", Tests.application.resolve
-    ]
+  application:
+    "matches intra-package paths unconditionally": Tests.application.match
+    "rejects paths containing node_modules": Tests.application.reject.modules
+    "rejects paths escaping cwd (..)": Tests.application.reject.escaping
+    "encodes target to virtual root": Tests.application.encode
+    "decodes atlas URL": Tests.application.decode
+    "resolves to physical path": Tests.application.resolve
 
-  node: ->
-    test "Node Resolver", [
-      test "matches paths containing node_modules", Tests.node.match
-      test "rejects paths lacking node_modules", Tests.node.reject
-      test "encodes dependency object", Tests.node.encode
-      test "decodes atlas URL", Tests.node.decode.scoped
-      test "decodes unscoped atlas URL", Tests.node.decode.unscoped
-      test "resolves to physical path", Tests.node.resolve.scoped
-      test "resolves scoped package-root URL to physical path",
-        Tests.node.resolve.packageRoot.scoped
-      test "resolves unscoped package-root URL to physical path",
-        Tests.node.resolve.packageRoot.unscoped
-    ]
+  node:
+    "matches paths containing node_modules": Tests.node.match
+    "rejects paths lacking node_modules": Tests.node.reject
+    "encodes dependency object": Tests.node.encode
+    "decodes atlas URL": Tests.node.decode.scoped
+    "decodes unscoped atlas URL": Tests.node.decode.unscoped
+    "resolves to physical path": Tests.node.resolve.scoped
+    "resolves scoped package-root URL to physical path":
+      Tests.node.resolve.packageRoot.scoped
+    "resolves unscoped package-root URL to physical path":
+      Tests.node.resolve.packageRoot.unscoped
 
-  cdn: ->
-    test "CDN Resolver", [
-      test "matches paths containing node_modules", Tests.cdn.match
-      test "encodes dependency object", Tests.cdn.encode
-      test "decodes atlas URL", Tests.cdn.decode.scoped
-      test "decodes unscoped atlas URL", Tests.cdn.decode.unscoped
-      test "resolves using URL Codex template", Tests.cdn.resolve.scoped
-      test "resolves unscoped using URL Codex template",
-        Tests.cdn.resolve.unscoped
-      test "resolves scoped package-root URL using template",
-        Tests.cdn.resolve.packageRoot.scoped
-      test "resolves unscoped package-root URL using template",
-        Tests.cdn.resolve.packageRoot.unscoped
-    ]
+  cdn:
+    "matches paths containing node_modules": Tests.cdn.match
+    "encodes dependency object": Tests.cdn.encode
+    "decodes atlas URL": Tests.cdn.decode.scoped
+    "decodes unscoped atlas URL": Tests.cdn.decode.unscoped
+    "resolves using URL Codex template": Tests.cdn.resolve.scoped
+    "resolves unscoped using URL Codex template": Tests.cdn.resolve.unscoped
+    "resolves scoped package-root URL using template":
+      Tests.cdn.resolve.packageRoot.scoped
+    "resolves unscoped package-root URL using template":
+      Tests.cdn.resolve.packageRoot.unscoped
 
-  local: ->
-    test "Local Resolver", [
-      test "matches configured deep glob patterns", Tests.local.match
-      test "encodes dependency object", Tests.local.encode
-      test "decodes scoped atlas URL", Tests.local.decode.scoped
-      test "decodes unscoped atlas URL", Tests.local.decode.unscoped
-      test "resolves to physical path", Tests.local.resolve.scoped
-      test "resolves scoped package-root URL to physical path",
-        Tests.local.resolve.packageRoot.scoped
-      test "resolves unscoped package-root URL to physical path",
-        Tests.local.resolve.packageRoot.unscoped
-    ]
+  local:
+    "matches configured deep glob patterns": Tests.local.match
+    "encodes dependency object": Tests.local.encode
+    "decodes scoped atlas URL": Tests.local.decode.scoped
+    "decodes unscoped atlas URL": Tests.local.decode.unscoped
+    "resolves to physical path": Tests.local.resolve.scoped
+    "resolves scoped package-root URL to physical path":
+      Tests.local.resolve.packageRoot.scoped
+    "resolves unscoped package-root URL to physical path":
+      Tests.local.resolve.packageRoot.unscoped
 
-  presets: ->
-    test "Resolver Presets", [
-      test "Node preset exports keys", Tests.presets.node
-      test "Browser preset exports keys", Tests.presets.browser
-    ]
+  presets:
+    "Node preset exports keys": Tests.presets.node
+    "Browser preset exports keys": Tests.presets.browser
+
+runSuite = ( title, cases ) ->
+  checks =
+    for description, check of cases
+      test description, check
+  test title, checks
 
 export default -> [
-  Suites.registry()
-  Suites.application()
-  Suites.node()
-  Suites.cdn()
-  Suites.local()
-  Suites.presets()
+  runSuite "Registry & Meta Resolver", Suites.registry
+  runSuite "Application Resolver", Suites.application
+  runSuite "Node Resolver", Suites.node
+  runSuite "CDN Resolver", Suites.cdn
+  runSuite "Local Resolver", Suites.local
+  runSuite "Resolver Presets", Suites.presets
 ]
