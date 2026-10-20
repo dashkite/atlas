@@ -78,15 +78,25 @@ class BundleDirectory
     directory
 
 class BundleResolver
-  @make: ( graph, index, keys ) ->
-    resolver = Resolvers.Registry.make keys
-    component = PackageComponent.make graph, index, resolver
-    Object.assign ( new @ ),
+  @make: pipe [
+    ( graph, index, keys ) ->
       graph: graph
       index: index
-      resolver: resolver
-      directory: BundleDirectory.make component
-      bundle: new Map()
+      resolver: Resolvers.Registry.make keys
+    ( state ) ->
+      {
+        state...
+        component:
+          PackageComponent.make state.graph, state.index, state.resolver
+      }
+    ({ component, state... }) ->
+      {
+        state...
+        directory: BundleDirectory.make component
+        bundle: new Map()
+      }
+    ( state ) -> Object.assign ( new @ ), state
+  ]
 
   add: ( directory, url ) ->
     { path } = @resolver.decode url
