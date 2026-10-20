@@ -5,7 +5,7 @@ import TreeIndex from "../../src/categories/tree-index"
 import resolve from "../../src/functors/resolver"
 import preset from "../../src/presets/node"
 
-createGraph = (components) ->
+createGraph = ( components ) ->
   graph = ComponentGraph.make()
   for name, files of components
     graph.addComponent name, files
@@ -28,7 +28,7 @@ flat =
     index.bind [], "a", "pkg-A"
     index
 
-  assert: (bundle) ->
+  assert: ( bundle ) ->
     assert.equal ( bundle.get "index.js" ), "atlas://application/index.js"
     assert.equal ( bundle.get "node_modules/a/index.js" ),
       "atlas://node/a/index.js"
@@ -52,7 +52,7 @@ nested =
     index.bind [ "pkg-A" ], "b", "pkg-B"
     index
 
-  assert: (bundle) ->
+  assert: ( bundle ) ->
     assert.equal ( bundle.get "index.js" ), "atlas://application/index.js"
     assert.equal ( bundle.get "node_modules/a/index.js" ),
       "atlas://node/a/index.js"
