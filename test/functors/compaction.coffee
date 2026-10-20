@@ -3,21 +3,25 @@ import assert from "@dashkite/assert"
 import Trie from "../../src/categories/trie"
 import compact from "../../src/functors/compaction"
 
-# 1. Non-colliding lift
-# src/index.js has binding `a -> targetA`
-# src/helper.js has binding `a -> targetA`
-# Both should lift to `src`, and then to `app`, and then to `root`
+###
+1. Non-colliding lift
+src/index.js has binding `a -> targetA`
+src/helper.js has binding `a -> targetA`
+Both should lift to `src`, and then to `app`, and then to `root`
+###
 setupSource = ( root, target ) ->
   node = root.upsertPath [ "app", "src", "index.js" ]
   node.bindings.set "a", target
   node = root.upsertPath [ "app", "src", "helper.js" ]
   node.bindings.set "a", target
 
-# 2. Colliding lift
-# lib/index.js has binding `a -> targetB`
-# It lifts to `lib`
-# When `lib` tries to lift to `app`, `app` already has `a -> targetA`.
-# Since targetA != targetB, it must trap the binding at `lib`.
+###
+2. Colliding lift
+lib/index.js has binding `a -> targetB`
+It lifts to `lib`
+When `lib` tries to lift to `app`, `app` already has `a -> targetA`.
+Since targetA != targetB, it must trap the binding at `lib`.
+###
 setupLibrary = ( root, target ) ->
   node = root.upsertPath [ "app", "lib", "index.js" ]
   node.bindings.set "a", target
