@@ -57,10 +57,12 @@ verifyCompacted = ( index ) ->
   verifyBinding index, [], "a", "pkg-A"
   verifyBinding index, [], "b", "pkg-B"
 
-# Collision on label "b": pkg-B-v1 and pkg-B-v2 cannot hoist.
-# However, pkg-A and pkg-C have no collisions, so they MUST hoist to root.
-# The conflicting dependencies (pkg-B-v1, pkg-B-v2) will be hierarchically
-# embedded.
+###
+Collision on label "b": pkg-B-v1 and pkg-B-v2 cannot hoist.
+However, pkg-A and pkg-C have no collisions, so they MUST hoist to root.
+The conflicting dependencies (pkg-B-v1, pkg-B-v2) will be hierarchically
+embedded.
+###
 verifyIsolation = ( index ) ->
   verifyBinding index, [], "pkg-root", "pkg-root"
   verifyBinding index, [], "a", "pkg-A"
