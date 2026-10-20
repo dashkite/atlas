@@ -14,7 +14,7 @@ setupFileSystem = ->
   await FS.link original, linked
   { directory, original, linked }
 
-createDependencies = (original, linked) ->
+createDependencies = ( original, linked ) ->
   [
     { import: { specifier: "a", scope: null }, source: { path: original } }
     { import: { specifier: "b", scope: null }, source: { path: linked } }
@@ -23,17 +23,17 @@ createDependencies = (original, linked) ->
 setupMockResolver = ->
   Registry.register "mock",
     match: -> true
-    encode: (descriptor) ->
+    encode: ( descriptor ) ->
       "atlas://mock/mock@1.0.0/" + Path.basename descriptor.path
-    decode: (_url) ->
+    decode: ( _url ) ->
       { resolver: "mock", module: { name: "mock", version: "1.0.0" } }
 
-assertDeduplicated = (graph) ->
+assertDeduplicated = ( graph ) ->
   urls = Array.from graph.sources.keys()
   assert urls.includes "atlas://mock/mock@1.0.0/original.js"
-  assert !(urls.includes "atlas://mock/mock@1.0.0/linked.js")
+  assert !( urls.includes "atlas://mock/mock@1.0.0/linked.js" )
 
-cleanup = (directory) ->
+cleanup = ( directory ) ->
   FS.rm directory, recursive: true, force: true
 
 export default ->
