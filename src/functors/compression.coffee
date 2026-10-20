@@ -52,7 +52,7 @@ generatePrefixes = ( label ) ->
   prefixes = []
   if limit >= 1
     for i in [ 1..limit ] by 1
-      prefixes.push ( ( parts.slice 0, i ).join "/" ) + "/"
+      prefixes.push (( parts.slice 0, i ).join "/" ) + "/"
   prefixes
 
 collectPrefixes = ( bindings ) ->
