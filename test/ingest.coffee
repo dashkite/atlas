@@ -16,8 +16,8 @@ setupFileSystem = ->
 
 createDependencies = ( original, linked ) ->
   [
-    { import: { specifier: "a", scope: null }, source: { path: original } }
-    { import: { specifier: "b", scope: null }, source: { path: linked } }
+    { import: { specifier: "a", scope: null }, source: { path: original }}
+    { import: { specifier: "b", scope: null }, source: { path: linked }}
   ]
 
 setupMockResolver = ->
@@ -26,7 +26,7 @@ setupMockResolver = ->
     encode: ( descriptor ) ->
       "atlas://mock/mock@1.0.0/" + Path.basename descriptor.path
     decode: ( _url ) ->
-      { resolver: "mock", module: { name: "mock", version: "1.0.0" } }
+      { resolver: "mock", module: { name: "mock", version: "1.0.0" }}
 
 assertDeduplicated = ( graph ) ->
   urls = Array.from graph.sources.keys()
