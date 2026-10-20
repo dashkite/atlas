@@ -83,8 +83,8 @@ export default ->
       bindingsBefore = new Map root.bindings
       childrenBefore = new Map root.children
       serialize root, [ "node" ]
-      assert.deepEqual ( Array.from root.bindings.entries() ),
+      assert.deepEqual ( Array.from root.bindings.entries()),
         Array.from bindingsBefore.entries()
-      assert.deepEqual ( Array.from root.children.entries() ),
+      assert.deepEqual ( Array.from root.children.entries()),
         Array.from childrenBefore.entries()
   ]
