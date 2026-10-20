@@ -134,12 +134,27 @@ class BundleArchive
       destinations: new Set()
       packages: new Set()
 
-  @construct: ( context ) ->
-    archive = BundleArchive.make context.options, context.pipeline.graph
-    await archive.addEntries context.entries
-    await archive.addManifest()
-    await archive.addMap context.pipeline.map
-    archive.generate()
+  @construct: pipe [
+    ( context ) ->
+      context: context
+      archive: BundleArchive.make context.options, context.pipeline.graph
+    ({ context, archive }) ->
+      await archive.populate context
+      archive
+    ( archive ) ->
+      archive.generate()
+  ]
+
+  populate: pipe [
+    ( context ) ->
+      await @addEntries context.entries
+      context
+    ( context ) ->
+      await @addManifest()
+      context
+    ( context ) ->
+      @addMap context.pipeline.map
+  ]
 
   addFile: ( destination, path ) ->
     if !@destinations.has destination
@@ -208,6 +223,11 @@ Context =
     entries: Entry.normalize entries
     options: Options.normalize options
 
+  prepare: pipe [
+    ( entries, options ) -> Context.create entries, options
+    ( context ) -> Dependencies.analyze context
+  ]
+
 Dependencies =
   analyze: ( context ) ->
     dependencies = analyze context.entries, {
@@ -221,21 +241,33 @@ Dependencies =
     ingest dependencies, options
 
 Functors =
-  apply: ( graph, options ) ->
-    components = quotient graph
-    index = compile components, options
-    map = resolve components, index, options.resolvers
-    { graph, components, index, map }
+  apply: pipe [
+    ( graph, options ) ->
+      { graph, options, components: quotient graph }
+    ( state ) ->
+      { state..., index: compile state.components, state.options }
+    ({ graph, options, components, index }) ->
+      graph: graph
+      components: components
+      index: index
+      map: resolve components, index, options.resolvers
+  ]
 
-  execute: ( context ) ->
-    { dependencies, options } = context
-    graph = await Dependencies.ingest dependencies, options
-    pipeline = Functors.apply graph, options
-    { context..., pipeline }
+  execute: pipe [
+    ( context ) ->
+      {
+        context...
+        graph: await Dependencies.ingest context.dependencies, context.options
+      }
+    ({ graph, context... }) ->
+      {
+        context...
+        pipeline: Functors.apply graph, context.options
+      }
+  ]
 
 bundle = pipe [
-  Context.create
-  Dependencies.analyze
+  Context.prepare
   Functors.execute
   Diagnostics.dump
   BundleArchive.construct
