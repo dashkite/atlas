@@ -10,7 +10,7 @@ Scopes =
 
   record: ( node, resolver ) ->
     if node.bindings.size > 0
-      { [ ( Scopes.resolve node, resolver ) ]: toMap node.bindings }
+      {[( Scopes.resolve node, resolver )]: toMap node.bindings }
     else
       {}
 
@@ -23,7 +23,7 @@ Scopes =
       Object.assign scopes, Scopes.traverse child, resolver
 
   build: ( node, resolver ) ->
-    ( Array.from node.children.values() ).reduce ( Scopes.merge resolver ), {}
+    ( Array.from node.children.values()).reduce ( Scopes.merge resolver ), {}
 
 functor = ( trie, keys ) ->
   imports: toMap trie.bindings
