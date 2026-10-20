@@ -9,7 +9,7 @@ Fixtures =
   default: ->
     entry = Path.resolve process.cwd(), "build/node/src/index.js"
     await FS.access entry
-    options = { cwd: process.cwd() }
+    options = { cwd: process.cwd()}
     generate entry, { options..., resolvers }
 
   withSource: ->
