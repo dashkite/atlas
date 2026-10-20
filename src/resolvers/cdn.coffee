@@ -1,51 +1,53 @@
 import AtlasURL from "../url"
-import { encode as encodeTemplate } from "@dashkite/url-codex"
+import * as Codex from "@dashkite/url-codex"
 import { isFunction } from "@dashkite/joy/type"
 
-normalizeConfig = ( config ) ->
+normalize = ( config ) ->
   if !config?.template?
     throw new Error "CDN resolver requires a URL Codex template string or
       function in configuration"
   { template } = config
   template: if isFunction template then template else -> template
 
-appendVersion = ( name, version ) ->
-  if version then "#{name}@#{version}" else name
-
-formatSpecifier = ({ scope, name }) ->
-  if scope then "#{scope}/#{name}" else name
-
-formatRelease = ( module ) ->
-  appendVersion ( formatSpecifier module ), module.version
-
-formatVersioned = ({ name, version }) ->
-  appendVersion name, version
-
-formatSpecifiers = ( module ) ->
-  {
-    module...
-    specifier: formatSpecifier module
-    release: formatRelease module
-    versioned: formatVersioned module
-  }
-
 # Convert string path to array for wildcard path expansion
-segmentPath = ( path ) ->
+segment = ( path ) ->
   ( path.split "/" ).filter Boolean
 
-buildTemplateContext = ( descriptor ) ->
-  {
-    ( formatSpecifiers descriptor.module )...
-    path: segmentPath descriptor.path
-  }
+Format =
+  tag: ( name, version ) ->
+    if version then "#{name}@#{version}" else name
 
-resolveTemplate = ( template, descriptor ) ->
-  encodeTemplate ( template descriptor ),
-    buildTemplateContext descriptor
+  specifier: ({ scope, name }) ->
+    if scope then "#{scope}/#{name}" else name
+
+  release: ( module ) ->
+    Format.tag ( Format.specifier module ), module.version
+
+  versioned: ({ name, version }) ->
+    Format.tag name, version
+
+  module: ( module ) ->
+    {
+      module...
+      specifier: Format.specifier module
+      release: Format.release module
+      versioned: Format.versioned module
+    }
+
+Template =
+  context: ( descriptor ) ->
+    {
+      ( Format.module descriptor.module )...
+      path: segment descriptor.path
+    }
+
+  resolve: ( template, descriptor ) ->
+    Codex.encode ( template descriptor ),
+      Template.context descriptor
 
 class CDNResolver
   @make: ( config ) ->
-    Object.assign ( new @ ), normalizeConfig config
+    Object.assign ( new @ ), normalize config
 
   match: ( context ) ->
     context.source.includes "node_modules"
@@ -60,7 +62,7 @@ class CDNResolver
     @decode url
 
   resolve: ( url ) ->
-    resolveTemplate @template, @decode url
+    Template.resolve @template, @decode url
 
 export default CDNResolver
 export { CDNResolver }
