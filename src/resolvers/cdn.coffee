@@ -12,13 +12,13 @@ normalizeConfig = ( config ) ->
 appendVersion = ( name, version ) ->
   if version then "#{name}@#{version}" else name
 
-formatSpecifier = ( { scope, name } ) ->
+formatSpecifier = ({ scope, name }) ->
   if scope then "#{scope}/#{name}" else name
 
 formatRelease = ( module ) ->
   appendVersion ( formatSpecifier module ), module.version
 
-formatVersioned = ( { name, version } ) ->
+formatVersioned = ({ name, version }) ->
   appendVersion name, version
 
 formatSpecifiers = ( module ) ->
