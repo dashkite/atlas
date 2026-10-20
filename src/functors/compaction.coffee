@@ -1,4 +1,4 @@
-promoteBinding = ( node, parent, [ label, target ] ) ->
+promoteBinding = ( node, parent, [ label, target ]) ->
   if !parent.bindings.has label
     parent.bindings.set label, target
     node.bindings.delete label
