@@ -35,7 +35,7 @@ Module =
     else
       specifier
 
-  parse: ( { scope, versioned } ) ->
+  parse: ({ scope, versioned }) ->
     [ name, version ] = versioned.split "@"
     { scope, name, version }
 
@@ -45,10 +45,10 @@ Path =
       return
     if path.startsWith "/" then path.slice 1 else path
 
-  format: ( path = [] ) ->
+  format: ( path = []) ->
     if path.length > 0 then "/#{path.join "/"}" else ""
 
-extractSegments = ( { module, path } ) ->
+extractSegments = ({ module, path }) ->
   [
     Module.format module
     Path.normalize path
@@ -87,7 +87,7 @@ encode = ( descriptor ) ->
 
 decode = pipe [
   parse
-  ( { resolver, pathname } ) ->
+  ({ resolver, pathname }) ->
     buildDescriptor resolver, Pathname.decode pathname
 ]
 
