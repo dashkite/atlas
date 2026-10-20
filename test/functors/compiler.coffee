@@ -4,9 +4,9 @@ import ComponentGraph from "../../src/categories/component-graph"
 import compile from "../../src/functors/compiler"
 
 LINEAR_COMPONENTS = [
-  ["pkg-root", ["file:///index.js"]]
-  ["pkg-A", ["file:///node_modules/a/index.js"]]
-  ["pkg-B", ["file:///node_modules/b/index.js"]]
+  [ "pkg-root", [ "file:///index.js" ]]
+  [ "pkg-A", [ "file:///node_modules/a/index.js" ]]
+  [ "pkg-B", [ "file:///node_modules/b/index.js" ]]
 ]
 
 LINEAR_EDGES = [
@@ -15,11 +15,11 @@ LINEAR_EDGES = [
 ]
 
 ISOLATION_COMPONENTS = [
-  ["pkg-root", ["file:///index.js"]]
-  ["pkg-A", ["file:///node_modules/a/index.js"]]
-  ["pkg-C", ["file:///node_modules/c/index.js"]]
-  ["pkg-B-v1", ["file:///node_modules/a/node_modules/b/index.js"]]
-  ["pkg-B-v2", ["file:///node_modules/c/node_modules/b/index.js"]]
+  [ "pkg-root", [ "file:///index.js" ]]
+  [ "pkg-A", [ "file:///node_modules/a/index.js" ]]
+  [ "pkg-C", [ "file:///node_modules/c/index.js" ]]
+  [ "pkg-B-v1", [ "file:///node_modules/a/node_modules/b/index.js" ]]
+  [ "pkg-B-v2", [ "file:///node_modules/c/node_modules/b/index.js" ]]
 ]
 
 ISOLATION_EDGES = [
@@ -29,9 +29,9 @@ ISOLATION_EDGES = [
   { source: "pkg-C", target: "pkg-B-v2", label: "b" }
 ]
 
-buildGraph = (components, edges) ->
+buildGraph = ( components, edges ) ->
   graph = ComponentGraph.make()
-  for [name, files] in components
+  for [ name, files ] in components
     graph.addComponent name, files
   for edge in edges
     graph.addEdge edge
@@ -43,16 +43,16 @@ buildLinear = ->
 buildIsolation = ->
   buildGraph ISOLATION_COMPONENTS, ISOLATION_EDGES
 
-verifyBinding = (index, path, key, expected) ->
+verifyBinding = ( index, path, key, expected ) ->
   bindings = index.getBindings path
   assert.equal ( bindings.get key ), expected
 
-verifyBaseline = (index) ->
+verifyBaseline = ( index ) ->
   verifyBinding index, [], "pkg-root", "pkg-root"
-  verifyBinding index, ["pkg-root"], "a", "pkg-A"
-  verifyBinding index, ["pkg-root", "pkg-A"], "b", "pkg-B"
+  verifyBinding index, [ "pkg-root" ], "a", "pkg-A"
+  verifyBinding index, [ "pkg-root", "pkg-A" ], "b", "pkg-B"
 
-verifyCompacted = (index) ->
+verifyCompacted = ( index ) ->
   verifyBinding index, [], "pkg-root", "pkg-root"
   verifyBinding index, [], "a", "pkg-A"
   verifyBinding index, [], "b", "pkg-B"
@@ -61,12 +61,12 @@ verifyCompacted = (index) ->
 # However, pkg-A and pkg-C have no collisions, so they MUST hoist to root.
 # The conflicting dependencies (pkg-B-v1, pkg-B-v2) will be hierarchically
 # embedded.
-verifyIsolation = (index) ->
+verifyIsolation = ( index ) ->
   verifyBinding index, [], "pkg-root", "pkg-root"
   verifyBinding index, [], "a", "pkg-A"
   verifyBinding index, [], "c", "pkg-C"
-  verifyBinding index, ["pkg-A"], "b", "pkg-B-v1"
-  verifyBinding index, ["pkg-C"], "b", "pkg-B-v2"
+  verifyBinding index, [ "pkg-A" ], "b", "pkg-B-v1"
+  verifyBinding index, [ "pkg-C" ], "b", "pkg-B-v2"
 
 export default ->
   [
