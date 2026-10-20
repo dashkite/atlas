@@ -139,7 +139,7 @@ Tests =
         url = resolver.resolve "atlas://node/@dashkite/foo@1.0.0/build/index.js"
         assert typeof url == "string"
 
-      packageRoot:
+      root:
         scoped: ->
           resolver = Node.make()
           url = resolver.resolve "atlas://node/@dashkite/foo@1.0.0"
@@ -193,7 +193,7 @@ Tests =
         url = resolver.resolve "atlas://cdn@unpkg/foo@1.0.0/build/index.js"
         assert.equal "https://unpkg.com/foo@1.0.0/build/index.js", url
 
-      packageRoot:
+      root:
         scoped: ->
           resolver = Factories.cdn()
           url = resolver.resolve "atlas://cdn@unpkg/@dashkite/foo@1.0.0"
@@ -246,7 +246,7 @@ Tests =
         url = resolver.resolve target
         assert typeof url == "string"
 
-      packageRoot:
+      root:
         scoped: ->
           resolver = Factories.local()
           url = resolver.resolve "atlas://local@central-park/@scope/foo@1.0.0"
@@ -294,9 +294,9 @@ Suites =
     "decodes unscoped atlas URL": Tests.node.decode.unscoped
     "resolves to physical path": Tests.node.resolve.scoped
     "resolves scoped package-root URL to physical path":
-      Tests.node.resolve.packageRoot.scoped
+      Tests.node.resolve.root.scoped
     "resolves unscoped package-root URL to physical path":
-      Tests.node.resolve.packageRoot.unscoped
+      Tests.node.resolve.root.unscoped
 
   cdn:
     "matches paths containing node_modules": Tests.cdn.match
@@ -306,9 +306,9 @@ Suites =
     "resolves using URL Codex template": Tests.cdn.resolve.scoped
     "resolves unscoped using URL Codex template": Tests.cdn.resolve.unscoped
     "resolves scoped package-root URL using template":
-      Tests.cdn.resolve.packageRoot.scoped
+      Tests.cdn.resolve.root.scoped
     "resolves unscoped package-root URL using template":
-      Tests.cdn.resolve.packageRoot.unscoped
+      Tests.cdn.resolve.root.unscoped
 
   local:
     "matches configured deep glob patterns": Tests.local.match
@@ -317,25 +317,25 @@ Suites =
     "decodes unscoped atlas URL": Tests.local.decode.unscoped
     "resolves to physical path": Tests.local.resolve.scoped
     "resolves scoped package-root URL to physical path":
-      Tests.local.resolve.packageRoot.scoped
+      Tests.local.resolve.root.scoped
     "resolves unscoped package-root URL to physical path":
-      Tests.local.resolve.packageRoot.unscoped
+      Tests.local.resolve.root.unscoped
 
   presets:
     "Node preset exports keys": Tests.presets.node
     "Browser preset exports keys": Tests.presets.browser
 
-runSuite = ( title, cases ) ->
+run = ( title, cases ) ->
   checks =
     for description, check of cases
       test description, check
   test title, checks
 
 export default -> [
-  runSuite "Registry & Meta Resolver", Suites.registry
-  runSuite "Application Resolver", Suites.application
-  runSuite "Node Resolver", Suites.node
-  runSuite "CDN Resolver", Suites.cdn
-  runSuite "Local Resolver", Suites.local
-  runSuite "Resolver Presets", Suites.presets
+  run "Registry & Meta Resolver", Suites.registry
+  run "Application Resolver", Suites.application
+  run "Node Resolver", Suites.node
+  run "CDN Resolver", Suites.cdn
+  run "Local Resolver", Suites.local
+  run "Resolver Presets", Suites.presets
 ]
