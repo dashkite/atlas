@@ -9,20 +9,20 @@ Package =
   isExternal: ( id ) ->
     ( id? ) &&
       ( id != ENTRY_POINT ) &&
-      ( !( id.startsWith "atlas://application" ) )
+      ( !( id.startsWith "atlas://application" ))
 
   segment: ( url ) ->
     ( Segments.fromUrl url ).join "/"
 
   segments: ( segments, url ) ->
-    [ ( Package.segment url ), ( Segments.remaining segments, url )... ]
+    [( Package.segment url ), ( Segments.remaining segments, url )... ]
 
 Segments =
   fromPath: ( url ) ->
     if url.pathname.length > 1 then url.pathname[1..].split "/" else []
 
   fromUrl: ( url ) ->
-    [ ( getAuthority url ), ( Segments.fromPath url )... ]
+    [( getAuthority url ), ( Segments.fromPath url )... ]
 
   remaining: ( segments, url ) ->
     segments.slice ( Segments.fromPath url ).length
@@ -43,7 +43,7 @@ resolve = ( root, graph, endpoint ) ->
   root.upsertPath Segments.parse endpoint,
     graph.getAttribute endpoint, "packageId"
 
-bindEdge = ( root, graph, { source, target, label } ) ->
+bindEdge = ( root, graph, { source, target, label }) ->
   ( resolve root, graph, source ).bindings.set label,
     resolve root, graph, target
   return
