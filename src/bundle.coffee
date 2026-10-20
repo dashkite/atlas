@@ -198,11 +198,11 @@ normalizeEntries = ( entries ) ->
 normalizeOptions = ( options ) ->
   cwd = options.cwd ? process.cwd()
   source = Path.resolve cwd, ( options.source ? "." )
-  external = [ "@aws-sdk/*", ( options.external ? [] )... ]
+  external = [ "@aws-sdk/*", ( options.external ? [])... ]
   resolvers = options.resolvers ? preset
   { options..., cwd, source, external, resolvers }
 
-createContext = ( entries, options = {} ) ->
+createContext = ( entries, options = {}) ->
   entries: normalizeEntries entries
   options: normalizeOptions options
 
