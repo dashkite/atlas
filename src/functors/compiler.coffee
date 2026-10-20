@@ -7,7 +7,7 @@ buildEdgeIndex = ( graph, endpoint ) ->
   for vertex from graph.getVertices()
     index.set vertex, []
   for edge in graph.getEdges()
-    ( index.get edge[ endpoint ] ).push edge
+    ( index.get edge[ endpoint ]).push edge
   index
 
 collectLabelTargets = ( edges ) ->
@@ -74,7 +74,7 @@ initializeState = ( graph, incoming ) ->
 DEFAULTS =
   compact: true
 
-createContext = ( graph, options = {} ) ->
+createContext = ( graph, options = {}) ->
   options = { DEFAULTS..., options... }
   analysis = analyzeGraph graph
   {
