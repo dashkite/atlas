@@ -73,21 +73,25 @@ verifyIsolation = ( index ) ->
   verifyBinding index, path: [ "pkg-A" ], key: "b", expected: "pkg-B-v1"
   verifyBinding index, path: [ "pkg-C" ], key: "b", expected: "pkg-B-v2"
 
+testBaseline = ->
+  graph = buildLinear()
+  index = compile graph, compact: false
+  verifyBaseline index
+
+testCompaction = ->
+  graph = buildLinear()
+  index = compile graph
+  verifyCompacted index
+
+testIsolation = ->
+  graph = buildIsolation()
+  index = compile graph, compact: true
+  verifyIsolation index
+
 export default ->
   [
-    test "baseline tree embedding (uncompacted)", ->
-      graph = buildLinear()
-      index = compile graph, compact: false
-      verifyBaseline index
-
-    test "topological compaction (unconflicted rebasing)", ->
-      graph = buildLinear()
-      index = compile graph
-      verifyCompacted index
-
+    test "baseline tree embedding (uncompacted)", testBaseline
+    test "topological compaction (unconflicted rebasing)", testCompaction
     test "topological isolation
-      (allows parent hoisting with nested children)", ->
-      graph = buildIsolation()
-      index = compile graph, compact: true
-      verifyIsolation index
+      (allows parent hoisting with nested children)", testIsolation
   ]
