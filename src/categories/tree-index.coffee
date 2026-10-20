@@ -27,6 +27,6 @@ class TreeIndex
     ( @bindings.get key ) ? new Map()
 
   getPaths: ->
-    ( Array.from @bindings.keys() ).map deserializePath
+    ( Array.from @bindings.keys()).map deserializePath
 
 export default TreeIndex
