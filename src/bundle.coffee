@@ -15,109 +15,109 @@ ZIP_OPTIONS =
   compressionOptions:
     level: 9
 
-checkManifest = ( directory ) ->
-  path = Path.join directory, "package.json"
-  try
-    await FS.access path
-    path
-  catch error
-    if error.code != "ENOENT"
-      throw error
+Manifest =
+  check: ( directory ) ->
+    path = Path.join directory, "package.json"
+    try
+      await FS.access path
+      path
+    catch error
+      if error.code != "ENOENT"
+        throw error
+      null
+
+  scan: ( directory ) ->
+    current = directory
+    while current && ( current != Path.dirname current )
+      manifest = await Manifest.check current
+      if manifest?
+        return manifest
+      current = Path.dirname current
     null
 
-scanManifest = ( directory ) ->
-  current = directory
-  while current && ( current != Path.dirname current )
-    manifest = await checkManifest current
-    if manifest?
-      return manifest
-    current = Path.dirname current
-  null
+  find: ( path ) ->
+    path = await FS.realpath path
+    Manifest.scan Path.dirname path
 
-findPackageManifest = ( path ) ->
-  path = await FS.realpath path
-  scanManifest Path.dirname path
+  read: ( directory ) ->
+    path = Path.resolve directory, "package.json"
+    try
+      await FS.readFile path
+    catch error
+      if error.code != "ENOENT"
+        throw error
+      null
 
-extractPackageName = ( remainder ) ->
-  parts = remainder.split "/"
-  if remainder.startsWith "@"
-    ( parts.slice 0, 2 ).join "/"
-  else
-    parts[ 0 ]
-
-derivePackageBundleDirectory = ( path ) ->
-  marker = "node_modules/"
-  index = path.lastIndexOf marker
-  if index == -1
-    ""
-  else
-    Path.join ( path.slice 0, index + marker.length ),
-      extractPackageName ( path.slice index + marker.length )
-
-resolveSourceDiskPath = ( source, graph ) ->
-  url = graph.sources.get source
-  ( new URL url ).pathname
-
-serializeDiagnostics = ( value ) ->
-  replacer = ( key, item ) ->
-    if item instanceof Set
-      Array.from item
-    else if item instanceof Map
-      Object.fromEntries item
+Package =
+  name: ( remainder ) ->
+    parts = remainder.split "/"
+    if remainder.startsWith "@"
+      ( parts.slice 0, 2 ).join "/"
     else
-      item
-  JSON.stringify value, replacer, 2
+      parts[ 0 ]
 
-writeDiagnosticFile = ( directory, filename, data ) ->
-  path = Path.join directory, filename
-  content = serializeDiagnostics data
-  FS.writeFile path, content
+  directory: ( path ) ->
+    marker = "node_modules/"
+    index = path.lastIndexOf marker
+    if index == -1
+      ""
+    else
+      prefix = index + marker.length
+      Path.join ( path.slice 0, prefix ),
+        Package.name path.slice prefix
 
-deriveDiagnosticsDirectory = ( entries ) ->
-  basename = Path.basename entries[ 0 ], Path.extname entries[ 0 ]
-  Path.join process.cwd(), ".atlas", "bundle", basename
+Source =
+  path: ( source, graph ) ->
+    url = graph.sources.get source
+    ( new URL url ).pathname
 
-writePipelineDiagnostics = ( directory, pipeline ) ->
-  { graph, components, index } = pipeline
-  await FS.mkdir directory, recursive: true
-  await writeDiagnosticFile directory, "module-graph.json", graph
-  await writeDiagnosticFile directory, "component-graph.json", components
-  await writeDiagnosticFile directory, "tree-index.json", index
-  return
+Entry =
+  resolve: ( cwd, source, entry ) ->
+    absolute = Path.resolve source, entry
+    relative = Path.relative cwd, absolute
+    { relative, absolute }
 
-writeBundleDiagnostics = ( directory, map ) ->
-  await writeDiagnosticFile directory, "bundle-map.json", map
-  return
+Diagnostics =
+  serialize: ( value ) ->
+    replacer = ( key, item ) ->
+      if item instanceof Set
+        Array.from item
+      else if item instanceof Map
+        Object.fromEntries item
+      else
+        item
+    JSON.stringify value, replacer, 2
+
+  write: ( directory, filename, data ) ->
+    path = Path.join directory, filename
+    content = Diagnostics.serialize data
+    FS.writeFile path, content
+
+  directory: ( entries ) ->
+    basename = Path.basename entries[ 0 ], Path.extname entries[ 0 ]
+    Path.join process.cwd(), ".atlas", "bundle", basename
+
+  pipeline: ( directory, pipeline ) ->
+    { graph, components, index } = pipeline
+    await FS.mkdir directory, recursive: true
+    await Diagnostics.write directory, "module-graph.json", graph
+    await Diagnostics.write directory, "component-graph.json", components
+    await Diagnostics.write directory, "tree-index.json", index
+    return
+
+  bundle: ( directory, map ) ->
+    await Diagnostics.write directory, "bundle-map.json", map
+    return
 
 dumpDiagnostics = ( context ) ->
   if process.env.DEBUG
     try
-      directory = deriveDiagnosticsDirectory context.entries
-      await writePipelineDiagnostics directory, context.pipeline
-      await writeBundleDiagnostics directory, context.pipeline.map
+      directory = Diagnostics.directory context.entries
+      await Diagnostics.pipeline directory, context.pipeline
+      await Diagnostics.bundle directory, context.pipeline.map
     catch error
       console.warn error
   context
-
-resolveEntryPaths = ( cwd, source, entry ) ->
-  absolute = Path.resolve source, entry
-  relative = Path.relative cwd, absolute
-  { relative, absolute }
-
-resolveRootManifestPath = ( directory ) ->
-  Path.resolve directory, "package.json"
-
-readOptionalFile = ( path ) ->
-  try
-    await FS.readFile path
-  catch error
-    if error.code != "ENOENT"
-      throw error
-    null
-
-readRootManifest = ( directory ) ->
-  path = resolveRootManifestPath directory
-  readOptionalFile path
 
 class BundleArchive
   @make: ( options, graph ) ->
@@ -137,7 +137,7 @@ class BundleArchive
     return
 
   addEntry: ( entry ) ->
-    { relative, absolute } = resolveEntryPaths @cwd, @source, entry
+    { relative, absolute } = Entry.resolve @cwd, @source, entry
     await @addFile relative, absolute
     return
 
@@ -146,38 +146,38 @@ class BundleArchive
       await @addEntry entry
     return
 
-  addRootManifest: ->
-    content = await readRootManifest @cwd
+  addManifest: ->
+    content = await Manifest.read @cwd
     if content?
       @zip.file "package.json", content
       @destinations.add "package.json"
     return
 
-  addPackageManifest: ( directory, path ) ->
-    manifest = await findPackageManifest path
+  addPackage: ( directory, path ) ->
+    manifest = await Manifest.find path
     if !manifest?
       throw new Error "Package manifest not found for #{ path }"
     destination = Path.join directory, "package.json"
     await @addFile destination, manifest
     return
 
-  addDependencyManifest: ( destination, path ) ->
-    directory = derivePackageBundleDirectory destination
+  ensurePackage: ( destination, path ) ->
+    directory = Package.directory destination
     if directory != ""
       if !@packages.has directory
         @packages.add directory
-        await @addPackageManifest directory, path
+        await @addPackage directory, path
     return
 
-  addBundleEntry: ( destination, source ) ->
-    path = resolveSourceDiskPath source, @graph
-    await @addDependencyManifest destination, path
+  addDependency: ( destination, source ) ->
+    path = Source.path source, @graph
+    await @ensurePackage destination, path
     await @addFile destination, path
     return
 
-  addBundleMap: ( map ) ->
+  addMap: ( map ) ->
     for [ destination, source ] from map
-      await @addBundleEntry destination, source
+      await @addDependency destination, source
     return
 
   generate: ->
@@ -186,8 +186,8 @@ class BundleArchive
 constructArchive = ( context ) ->
   archive = BundleArchive.make context.options, context.pipeline.graph
   await archive.addEntries context.entries
-  await archive.addRootManifest()
-  await archive.addBundleMap context.pipeline.map
+  await archive.addManifest()
+  await archive.addMap context.pipeline.map
   archive.generate()
 
 normalizeEntries = ( entries ) ->
