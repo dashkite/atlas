@@ -30,7 +30,7 @@ resolvePath = ( root, descriptor ) ->
   ( pathToFileURL path ).href
 
 class LocalResolver
-  @make: ( config = {} ) ->
+  @make: ( config = {}) ->
     Object.assign ( new @ ), normalizeConfig config
 
   match: ( context ) ->
