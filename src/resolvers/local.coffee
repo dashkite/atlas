@@ -1,3 +1,4 @@
+import { pipe } from "@dashkite/joy"
 import AtlasURL from "../url"
 import Path from "node:path"
 import micromatch from "micromatch"
@@ -16,6 +17,9 @@ relative = ( path, directory ) ->
     Path.relative directory, path
   else
     path
+
+toFileURL = ( path ) ->
+  ( pathToFileURL path ).href
 
 class LocalResolver
   @make: ( config = {}) ->
@@ -39,10 +43,11 @@ class LocalResolver
   parse: ( url ) ->
     @decode url
 
-  resolve: ( url ) ->
-    { path } = @decode url
-    resolved = Path.resolve @root, path.slice 1
-    ( pathToFileURL resolved ).href
+  resolve: pipe [
+    ( url ) -> @decode url
+    ({ path }) -> Path.resolve @root, path.slice 1
+    toFileURL
+  ]
 
 export default LocalResolver
 export { LocalResolver }
