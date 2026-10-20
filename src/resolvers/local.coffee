@@ -5,36 +5,30 @@ import { pathToFileURL } from "node:url"
 
 DEFAULT_PATTERNS = [ "../**/*", "packages/**/*" ]
 
-normalizeConfig = ( config ) ->
+normalize = ( config ) ->
   if !config.root?
     throw new Error "Local resolver requires 'root' in configuration"
   root: config.root
   patterns: config.patterns ? DEFAULT_PATTERNS
 
-normalizeRelativePath = ( path, directory ) ->
+relative = ( path, directory ) ->
   if Path.isAbsolute path
     Path.relative directory, path
   else
     path
 
-matchPattern = ( path, patterns, directory ) ->
-  if path.includes "node_modules"
-    return false
-  if patterns.length == 0
-    return false
-  path = normalizeRelativePath path, directory
-  micromatch.isMatch path, patterns, { contains: true }
-
-resolvePath = ( root, descriptor ) ->
-  path = Path.resolve root, descriptor.path.slice 1
-  ( pathToFileURL path ).href
-
 class LocalResolver
   @make: ( config = {}) ->
-    Object.assign ( new @ ), normalizeConfig config
+    Object.assign ( new @ ), normalize config
 
   match: ( context ) ->
-    matchPattern context.source, @patterns, ( context.cwd ? @root )
+    { source } = context
+    if source.includes "node_modules"
+      return false
+    if @patterns.length == 0
+      return false
+    path = relative source, ( context.cwd ? @root )
+    micromatch.isMatch path, @patterns, { contains: true }
 
   encode: ( descriptor ) ->
     AtlasURL.encode descriptor
@@ -46,7 +40,9 @@ class LocalResolver
     @decode url
 
   resolve: ( url ) ->
-    resolvePath @root, @decode url
+    { path } = @decode url
+    resolved = Path.resolve @root, path.slice 1
+    ( pathToFileURL resolved ).href
 
 export default LocalResolver
 export { LocalResolver }
