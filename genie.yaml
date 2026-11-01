@@ -3,7 +3,7 @@ coffee:
     - node
 
 audit:
-  advance: true
+  autonomous: true
   max:
     duration:
       hours: 8
