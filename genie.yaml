@@ -4,6 +4,3 @@ coffee:
 
 audit:
   autonomous: true
-  max:
-    duration:
-      hours: 8
