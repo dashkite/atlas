@@ -57,9 +57,9 @@ verifyAppModules = ( graph, id ) ->
 verifyEdges = ( graph, source, target ) ->
   edges = graph.getEdges()
   assert.equal edges.length, 1
-  assert.equal edges[0].source, source
-  assert.equal edges[0].target, target
-  assert.equal edges[0].label, "maeve"
+  assert.equal edges[ 0 ].source, source
+  assert.equal edges[ 0 ].target, target
+  assert.equal edges[ 0 ].label, "maeve"
 
 verifyDiscreteComponents = ( graph ) ->
   vertices = graph.getVertices()
