@@ -4,3 +4,5 @@ coffee:
 
 audit:
   autonomous: true
+  agent:
+    concurrency: 8
