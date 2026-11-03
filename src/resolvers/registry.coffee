@@ -18,10 +18,10 @@ class ResolverRegistry
   @resolvers: {}
 
   @register: ( key, resolver ) ->
-    @resolvers[key] = resolver
+    @resolvers[ key ] = resolver
 
   @get: ( key ) ->
-    @resolvers[key]
+    @resolvers[ key ]
 
   @make: ( keys ) ->
     Object.assign ( new @ ), { keys }
