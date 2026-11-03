@@ -7,3 +7,4 @@ build
 logs/
 
 pnpm-lock.yaml
+.agents/teamwork/
