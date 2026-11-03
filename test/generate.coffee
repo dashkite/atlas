@@ -1,22 +1,19 @@
 import { test } from "@dashkite/amen"
 import assert from "@dashkite/assert"
 import generate from "../src/generate"
-import Path from "node:path"
-import FS from "node:fs/promises"
 import resolvers from "../src/presets/browser"
 
 Fixtures =
   default: ->
-    entry = Path.resolve process.cwd(), "build/node/src/index.js"
-    await FS.access entry
-    options = { cwd: process.cwd()}
-    generate entry, { options..., resolvers }
+    generate [ "build/node/src/index.js" ],
+      cwd: process.cwd()
+      resolvers
 
   withSource: ->
-    source = Path.resolve process.cwd(), "build/node/src"
-    await FS.access Path.join source, "index.js"
-    options = { cwd: process.cwd(), source: "build/node/src" }
-    generate "index.js", { options..., resolvers }
+    generate [ "index.js" ],
+      cwd: process.cwd()
+      source: "build/node/src"
+      resolvers
 
 Assert =
   structure: ( map ) ->
@@ -27,11 +24,12 @@ Assert =
       "Imports should be populated"
 
   url: ( value ) ->
-    if !value.startsWith "http"
-      return
-    url = new URL value
-    assert !( url.pathname.includes "//" ),
-      "URL pathname should not contain double slashes: #{value}"
+    if value.startsWith "http"
+      url = new URL value
+      assert !( url.pathname.includes "//" ),
+        "URL pathname should not contain double slashes: #{value}"
+      assert !( value.includes "//src" )
+    return
 
   urls: ( map ) ->
     for key, value of map.imports

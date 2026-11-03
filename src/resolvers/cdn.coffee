@@ -1,15 +1,29 @@
+import Ajv from "ajv"
 import AtlasURL from "../url"
 import * as Codex from "@dashkite/url-codex"
-import { isFunction } from "@dashkite/joy/type"
+import { isFunction, isString } from "@dashkite/joy/type"
 
-normalize = ( config ) ->
-  if !config?.template?
-    throw new Error "CDN resolver requires a URL Codex template string or
-      function in configuration"
-  { template } = config
-  template: if isFunction template then template else -> template
+ajv = new Ajv()
 
-# Convert string path to array for wildcard path expansion
+validateConfiguration = ajv.compile
+  type: "object"
+  required: [ "template" ]
+
+isValidTemplate = ( template ) ->
+  ( isFunction template ) || (( isString template ) && ( template.length > 0 ))
+
+isValidConfiguration = ( configuration ) ->
+  ( validateConfiguration configuration ) &&
+  ( isValidTemplate configuration.template )
+
+normalize = ( configuration ) ->
+  if isValidConfiguration configuration
+    { template } = configuration
+    template: if isFunction template then template else -> template
+  else
+    throw new Error "CDN resolver requires a URL Codex template string or " +
+      "function in configuration"
+
 segment = ( path ) ->
   ( path.split "/" ).filter Boolean
 
@@ -23,15 +37,12 @@ Format =
   release: ( module ) ->
     Format.tag ( Format.specifier module ), module.version
 
-  versioned: ({ name, version }) ->
-    Format.tag name, version
-
   module: ( module ) ->
     {
       module...
       specifier: Format.specifier module
       release: Format.release module
-      versioned: Format.versioned module
+      versioned: Format.tag module.name, module.version
     }
 
 Template =
@@ -46,8 +57,8 @@ Template =
       Template.context descriptor
 
 class CDNResolver
-  @make: ( config ) ->
-    Object.assign ( new @ ), normalize config
+  @make: ( configuration ) ->
+    Object.assign ( new @ ), normalize configuration
 
   match: ( context ) ->
     context.source.includes "node_modules"

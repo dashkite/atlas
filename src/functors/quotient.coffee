@@ -1,4 +1,3 @@
-import { pipe } from "@dashkite/joy"
 import ComponentGraph from "../categories/component-graph"
 
 groupVertex = ( graph, groups, vertex ) ->
@@ -9,7 +8,6 @@ groupVertex = ( graph, groups, vertex ) ->
   return
 
 groupVertices = ( graph ) ->
-  # 1. Edge Contraction: Equivalence Classes via packageId
   groups = new Map()
   for vertex from graph.getVertices()
     groupVertex graph, groups, vertex
@@ -18,7 +16,6 @@ groupVertices = ( graph ) ->
 registerComponent = ( graph, components, group ) ->
   [ id, modules ] = group
   modules.sort()
-  # Deterministic component ID based on packageId
   for module in modules
     components.set module, id
   graph.addComponent id, modules
@@ -30,34 +27,27 @@ projectEdge = ( components, edge ) ->
   label: edge.label
 
 addUniqueEdge = ( graph, seen, edge ) ->
-  # Deduplicate edges with the same source, target, and label
   key = "#{edge.source}::#{edge.target}::#{edge.label}"
   if !seen.has key
     seen.add key
     graph.addEdge edge
   return
 
-createContext = ( input ) ->
-  input: input
-  output: ComponentGraph.make()
-
-registerComponents = ( context ) ->
+registerComponents = ( input, output ) ->
   components = new Map()
-  for group from groupVertices context.input
-    registerComponent context.output, components, group
-  { context..., components }
+  for group from groupVertices input
+    registerComponent output, components, group
+  components
 
-projectEdges = ( context ) ->
-  # 2. Map Inter-Component Edges
+projectEdges = ( input, output, components ) ->
   seen = new Set()
-  for edge in context.input.getInterEdges()
-    addUniqueEdge context.output, seen, projectEdge context.components, edge
-  context.output
+  for edge in input.getInterEdges()
+    addUniqueEdge output, seen, projectEdge components, edge
+  output
 
-functor = pipe [
-  createContext
-  registerComponents
-  projectEdges
-]
+functor = ( input ) ->
+  output = ComponentGraph.make()
+  components = registerComponents input, output
+  projectEdges input, output, components
 
 export default functor

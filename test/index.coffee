@@ -3,52 +3,56 @@ import print from "@dashkite/amen-console"
 import FS from "node:fs/promises"
 import Path from "node:path"
 
-tests = ( path, parameters... ) ->
-  module = await import( "./#{path}" )
-  module.default parameters...
-
-SUITES = [
-  [ "AtlasURL", "url" ]
-  [ "Ingest", "ingest" ]
-  [ "Inspector", "inspector" ]
-  [ "Bundle", "bundle" ]
-  [ "Generate", "generate" ]
-
-  [ "ModuleGraph", "categories/module-graph" ]
-  [ "ComponentGraph", "categories/component-graph" ]
-  [ "Path", "categories/path" ]
-  [ "TreeIndex", "categories/tree-index" ]
-  [ "Trie", "categories/trie" ]
-
-  [ "Quotient Functor", "functors/quotient" ]
-  [ "Compiler Functor", "functors/compiler" ]
-  [ "Resolver Functor", "functors/resolver" ]
-  [ "Resolvers", "resolvers" ]
-  [ "Baseline Functor", "functors/baseline" ]
-  [ "Compaction Functor", "functors/compaction" ]
-  [ "Compression Functor", "functors/compression" ]
-  [ "Resolution Functor", "functors/resolution" ]
-  [ "Serialization", "functors/serialization" ]
-]
+import url from "./url"
+import ingest from "./ingest"
+import inspector from "./inspector"
+import bundle from "./bundle"
+import generate from "./generate"
+import moduleGraph from "./categories/module-graph"
+import componentGraph from "./categories/component-graph"
+import path from "./categories/path"
+import treeIndex from "./categories/tree-index"
+import trie from "./categories/trie"
+import quotient from "./functors/quotient"
+import compiler from "./functors/compiler"
+import resolver from "./functors/resolver"
+import resolvers from "./resolvers"
+import baseline from "./functors/baseline"
+import compaction from "./functors/compaction"
+import compression from "./functors/compression"
+import resolution from "./functors/resolution"
+import serialization from "./functors/serialization"
 
 clean = ->
-  if !process.env.DEBUG
-    return
-  try
-    await FS.rm ( Path.join process.cwd(), ".atlas" ),
-      recursive: true
-      force: true
+  if process.env.DEBUG
+    try
+      await FS.rm ( Path.join process.cwd(), ".atlas-debug" ),
+        recursive: true
+        force: true
+  return
 
-suite = ([ name, path ]) ->
-  test name, await tests path
-
-load = ->
-  for entry in SUITES
-    await suite entry
-
-execute = ->
-  print await test "Atlas", await load()
-
+# [dust bunny] exemption from amen-declarative-suite:
+# @dashkite/amen 0.9.30 returns Promise without .and
 do ->
   await clean()
-  await execute()
+  print await test "Atlas", [
+    test "AtlasURL", url()
+    test "Ingest", ingest()
+    test "Inspector", inspector()
+    test "Bundle", bundle()
+    test "Generate", generate()
+    test "ModuleGraph", moduleGraph()
+    test "ComponentGraph", componentGraph()
+    test "Path", path()
+    test "TreeIndex", treeIndex()
+    test "Trie", trie()
+    test "Quotient Functor", quotient()
+    test "Compiler Functor", compiler()
+    test "Resolver Functor", resolver()
+    test "Resolvers", resolvers()
+    test "Baseline Functor", baseline()
+    test "Compaction Functor", compaction()
+    test "Compression Functor", compression()
+    test "Resolution Functor", resolution()
+    test "Serialization", serialization()
+  ]

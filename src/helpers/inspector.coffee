@@ -6,7 +6,7 @@ extractPrefix = ( file, marker ) ->
   if index != -1
     file.slice 0, index + marker.length
 
-extractZipFiles = ( zip ) ->
+extractFiles = ( zip ) ->
   ( Object.keys zip.files ).filter ( path ) -> !zip.files[ path ].dir
 
 class BundleInspector
@@ -14,26 +14,18 @@ class BundleInspector
     Object.assign ( new @ ),
       files: files
 
-  @fromZip: pipe [
-    ( buffer ) -> JSZip.loadAsync buffer
-    extractZipFiles
-    ( files ) -> @make files
+  @fromZip = pipe [
+    JSZip.loadAsync
+    extractFiles
+    ( files ) => @make files
   ]
 
-  @fromMap: pipe [
-    ( map ) -> Array.from map.keys()
-    ( files ) -> @make files
-  ]
+  @fromMap: ( map ) ->
+    @make Array.from map.keys()
 
   getFiles: ->
     @files
 
-  ###
-  Return all paths that look like they belong to packageName's root directory.
-  We look for "node_modules/packageName/..." and group them by the prefix.
-  For example, "node_modules/a/node_modules/pkg/index.js" ->
-  prefix is "node_modules/a/node_modules/pkg"
-  ###
   findInstancesOf: pipe [
     ( name ) -> "node_modules/#{name}"
     ( marker ) -> @files.map ( file ) -> extractPrefix file, marker

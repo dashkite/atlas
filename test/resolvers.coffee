@@ -1,13 +1,14 @@
 import assert from "@dashkite/assert"
 import { test } from "@dashkite/amen"
+import { isString, isArray } from "@dashkite/joy/type"
 import { Registry, Application, Node, CDN, Local } from "../src/resolvers/index"
 import presets from "../src/presets/index"
 
-UNPKG_TEMPLATE = "https://unpkg.com/{scope?}/{versioned}/{path*}"
+unpkgTemplate = "https://unpkg.com/{scope?}/{versioned}/{path*}"
 
 Factories =
   cdn: ->
-    CDN.make template: UNPKG_TEMPLATE
+    CDN.make template: unpkgTemplate
 
   local: ->
     Local.make root: "/root", patterns: [ "**/.tempo/repos/**/*" ]
@@ -32,56 +33,55 @@ Stub =
       decode: -> {}
       resolve: -> "http://#{name}"
 
-Tests =
-  registry:
-    retrieval: ->
+export default -> [
+  test "Registry & Meta Resolver", [
+    test "registers and retrieves resolvers", ->
       Registry.register "test@param", { foo: "bar" }
       resolver = Registry.get "test@param"
       assert.equal resolver.foo, "bar"
 
-  meta:
-    match: ->
+    test "Meta Resolver aggregates match", ->
       Registry.register "test1", match: -> false
       Registry.register "test2", match: -> true
       Registry.register "test3", match: -> false
       resolver = Registry.make [ "test1", "test2", "test3" ]
       assert.equal ( resolver.match { source: "foo", cwd: "/root" }), "test2"
 
-    encode: ->
+    test "Meta Resolver validates keys on encode", ->
       resolver = Factories.meta()
       resolver.encode { resolver: "test1", module: { name: "foo" }, path: "/" }
       invalid = { resolver: "test2", module: { name: "foo" }, path: "/" }
       assert.throws ( -> resolver.encode invalid ),
         "Resolver test2 not in configured keys"
 
-    decode: ->
+    test "Meta Resolver validates keys on decode", ->
       resolver = Factories.meta()
       resolver.decode "atlas://test1/foo"
       assert.throws ( -> resolver.decode "atlas://test2/foo" ),
         "Resolver test2 not in configured keys"
 
-    resolve: ->
+    test "Meta Resolver validates keys on resolve", ->
       resolver = Factories.meta()
       resolver.resolve "atlas://test1/foo"
       assert.throws ( -> resolver.resolve "atlas://test2/foo" ),
         "Resolver test2 not in configured keys"
+  ]
 
-  application:
-    match: ->
+  test "Application Resolver", [
+    test "matches intra-package paths unconditionally", ->
       resolver = Application.make()
       assert resolver.match { source: "src/index.coffee", cwd: "/root" }
 
-    reject:
-      modules: ->
-        resolver = Application.make()
-        source = "node_modules/foo/index.js"
-        assert !resolver.match { source, cwd: "/root" }
+    test "rejects paths containing node_modules", ->
+      resolver = Application.make()
+      source = "node_modules/foo/index.js"
+      assert !resolver.match { source, cwd: "/root" }
 
-      escaping: ->
-        resolver = Application.make()
-        assert !resolver.match { source: "../src/index.coffee", cwd: "/root" }
+    test "rejects paths escaping cwd (..)", ->
+      resolver = Application.make()
+      assert !resolver.match { source: "../src/index.coffee", cwd: "/root" }
 
-    encode: ->
+    test "encodes target to virtual root", ->
       resolver = Application.make()
       url = resolver.encode
         resolver: "application"
@@ -89,28 +89,29 @@ Tests =
         path: "/src/index.coffee"
       assert.equal "atlas://application/src/index.coffee", url
 
-    decode: ->
+    test "decodes atlas URL", ->
       resolver = Application.make()
       descriptor = resolver.decode "atlas://application/src/index.coffee"
       assert.equal descriptor.resolver, "application"
       assert.equal descriptor.path, "/src/index.coffee"
 
-    resolve: ->
+    test "resolves to physical path", ->
       resolver = Application.make()
       url = resolver.resolve "atlas://application/src/index.coffee"
-      assert typeof url == "string"
+      assert isString url
+  ]
 
-  node:
-    match: ->
+  test "Node Resolver", [
+    test "matches paths containing node_modules", ->
       resolver = Node.make()
       source = "node_modules/foo/index.js"
       assert resolver.match { source, cwd: "/root" }
 
-    reject: ->
+    test "rejects paths lacking node_modules", ->
       resolver = Node.make()
       assert !resolver.match { source: "src/index.coffee", cwd: "/root" }
 
-    encode: ->
+    test "encodes dependency object", ->
       resolver = Node.make()
       url = resolver.encode
         resolver: "node"
@@ -118,47 +119,45 @@ Tests =
         path: "/build/index.js"
       assert.equal "atlas://node/@dashkite/foo@1.0.0/build/index.js", url
 
-    decode:
-      scoped: ->
-        resolver = Node.make()
-        url = "atlas://node/@dashkite/foo@1.0.0/build/index.js"
-        Assertions.module ( resolver.decode url ),
-          resolver: "node", scope: "@dashkite"
-          name: "foo", version: "1.0.0", path: "/build/index.js"
+    test "decodes atlas URL", ->
+      resolver = Node.make()
+      url = "atlas://node/@dashkite/foo@1.0.0/build/index.js"
+      Assertions.module ( resolver.decode url ),
+        resolver: "node", scope: "@dashkite"
+        name: "foo", version: "1.0.0", path: "/build/index.js"
 
-      unscoped: ->
-        resolver = Node.make()
-        url = "atlas://node/foo@1.0.0/build/index.js"
-        Assertions.module ( resolver.decode url ),
-          resolver: "node", scope: undefined
-          name: "foo", version: "1.0.0", path: "/build/index.js"
+    test "decodes unscoped atlas URL", ->
+      resolver = Node.make()
+      url = "atlas://node/foo@1.0.0/build/index.js"
+      Assertions.module ( resolver.decode url ),
+        resolver: "node", scope: undefined
+        name: "foo", version: "1.0.0", path: "/build/index.js"
 
-    resolve:
-      scoped: ->
-        resolver = Node.make()
-        url = resolver.resolve "atlas://node/@dashkite/foo@1.0.0/build/index.js"
-        assert typeof url == "string"
+    test "resolves to physical path", ->
+      resolver = Node.make()
+      url = resolver.resolve "atlas://node/@dashkite/foo@1.0.0/build/index.js"
+      assert isString url
 
-      root:
-        scoped: ->
-          resolver = Node.make()
-          url = resolver.resolve "atlas://node/@dashkite/foo@1.0.0"
-          assert typeof url == "string"
-          assert url.endsWith "node_modules/@dashkite/foo"
+    test "resolves scoped package-root URL to physical path", ->
+      resolver = Node.make()
+      url = resolver.resolve "atlas://node/@dashkite/foo@1.0.0"
+      assert isString url
+      assert url.endsWith "node_modules/@dashkite/foo"
 
-        unscoped: ->
-          resolver = Node.make()
-          url = resolver.resolve "atlas://node/foo@1.0.0"
-          assert typeof url == "string"
-          assert url.endsWith "node_modules/foo"
+    test "resolves unscoped package-root URL to physical path", ->
+      resolver = Node.make()
+      url = resolver.resolve "atlas://node/foo@1.0.0"
+      assert isString url
+      assert url.endsWith "node_modules/foo"
+  ]
 
-  cdn:
-    match: ->
+  test "CDN Resolver", [
+    test "matches paths containing node_modules", ->
       resolver = Factories.cdn()
       source = "node_modules/foo/index.js"
       assert resolver.match { source, cwd: "/root" }
 
-    encode: ->
+    test "encodes dependency object", ->
       resolver = Factories.cdn()
       url = resolver.encode
         resolver: "cdn@unpkg"
@@ -166,53 +165,52 @@ Tests =
         path: "/build/index.js"
       assert.equal "atlas://cdn@unpkg/@dashkite/foo@1.0.0/build/index.js", url
 
-    decode:
-      scoped: ->
-        resolver = Factories.cdn()
-        url = "atlas://cdn@unpkg/@dashkite/foo@1.0.0/build/index.js"
-        descriptor = resolver.decode url
-        assert.equal descriptor.resolver, "cdn@unpkg"
-        assert.equal descriptor.module.scope, "@dashkite"
+    test "decodes atlas URL", ->
+      resolver = Factories.cdn()
+      url = "atlas://cdn@unpkg/@dashkite/foo@1.0.0/build/index.js"
+      descriptor = resolver.decode url
+      assert.equal descriptor.resolver, "cdn@unpkg"
+      assert.equal descriptor.module.scope, "@dashkite"
 
-      unscoped: ->
-        resolver = Factories.cdn()
-        url = "atlas://cdn@unpkg/foo@1.0.0/build/index.js"
-        Assertions.module ( resolver.decode url ),
-          resolver: "cdn@unpkg", scope: undefined
-          name: "foo", version: "1.0.0", path: "/build/index.js"
+    test "decodes unscoped atlas URL", ->
+      resolver = Factories.cdn()
+      url = "atlas://cdn@unpkg/foo@1.0.0/build/index.js"
+      Assertions.module ( resolver.decode url ),
+        resolver: "cdn@unpkg", scope: undefined
+        name: "foo", version: "1.0.0", path: "/build/index.js"
 
-    resolve:
-      scoped: ->
-        resolver = Factories.cdn()
-        target = "atlas://cdn@unpkg/@dashkite/foo@1.0.0/build/index.js"
-        url = resolver.resolve target
-        assert.equal "https://unpkg.com/@dashkite/foo@1.0.0/build/index.js", url
+    test "resolves using URL Codex template", ->
+      resolver = Factories.cdn()
+      target = "atlas://cdn@unpkg/@dashkite/foo@1.0.0/build/index.js"
+      url = resolver.resolve target
+      assert.equal "https://unpkg.com/@dashkite/foo@1.0.0/build/index.js", url
 
-      unscoped: ->
-        resolver = Factories.cdn()
-        url = resolver.resolve "atlas://cdn@unpkg/foo@1.0.0/build/index.js"
-        assert.equal "https://unpkg.com/foo@1.0.0/build/index.js", url
+    test "resolves unscoped using URL Codex template", ->
+      resolver = Factories.cdn()
+      url = resolver.resolve "atlas://cdn@unpkg/foo@1.0.0/build/index.js"
+      assert.equal "https://unpkg.com/foo@1.0.0/build/index.js", url
 
-      root:
-        scoped: ->
-          resolver = Factories.cdn()
-          url = resolver.resolve "atlas://cdn@unpkg/@dashkite/foo@1.0.0"
-          assert.equal "https://unpkg.com/@dashkite/foo@1.0.0", url
+    test "resolves scoped package-root URL using template", ->
+      resolver = Factories.cdn()
+      url = resolver.resolve "atlas://cdn@unpkg/@dashkite/foo@1.0.0"
+      assert.equal "https://unpkg.com/@dashkite/foo@1.0.0", url
 
-        unscoped: ->
-          resolver = Factories.cdn()
-          url = resolver.resolve "atlas://cdn@unpkg/foo@1.0.0"
-          assert.equal "https://unpkg.com/foo@1.0.0", url
+    test "resolves unscoped package-root URL using template", ->
+      resolver = Factories.cdn()
+      url = resolver.resolve "atlas://cdn@unpkg/foo@1.0.0"
+      assert.equal "https://unpkg.com/foo@1.0.0", url
+  ]
 
-  local:
-    match: ->
+  test "Local Resolver", [
+    test "matches configured deep glob patterns", ->
       resolver = Factories.local()
-      assert resolver.match
+      context =
         source: "/root/.tempo/repos/foo/build/node/src/index.js"
         cwd: "/root/app"
+      assert resolver.match context
       assert !resolver.match { source: "/other/foo/index.js", cwd: "/root/app" }
 
-    encode: ->
+    test "encodes dependency object", ->
       resolver = Factories.local()
       url = resolver.encode
         resolver: "local@central-park"
@@ -222,120 +220,50 @@ Tests =
         "atlas://local@central-park/@scope/foo@1.0.0/build/node/src/index.js"
       assert.equal expected, url
 
-    decode:
-      scoped: ->
-        resolver = Factories.local()
-        url =
-          "atlas://local@central-park/@scope/foo@1.0.0/build/node/src/index.js"
-        Assertions.module ( resolver.decode url ),
-          resolver: "local@central-park", scope: "@scope"
-          name: "foo", version: "1.0.0", path: "/build/node/src/index.js"
+    test "decodes scoped atlas URL", ->
+      resolver = Factories.local()
+      url =
+        "atlas://local@central-park/@scope/foo@1.0.0/build/node/src/index.js"
+      Assertions.module ( resolver.decode url ),
+        resolver: "local@central-park", scope: "@scope"
+        name: "foo", version: "1.0.0", path: "/build/node/src/index.js"
 
-      unscoped: ->
-        resolver = Factories.local()
-        url = "atlas://local@central-park/foo@1.0.0/build/node/src/index.js"
-        Assertions.module ( resolver.decode url ),
-          resolver: "local@central-park", scope: undefined
-          name: "foo", version: "1.0.0", path: "/build/node/src/index.js"
+    test "decodes unscoped atlas URL", ->
+      resolver = Factories.local()
+      url = "atlas://local@central-park/foo@1.0.0/build/node/src/index.js"
+      Assertions.module ( resolver.decode url ),
+        resolver: "local@central-park", scope: undefined
+        name: "foo", version: "1.0.0", path: "/build/node/src/index.js"
 
-    resolve:
-      scoped: ->
-        resolver = Factories.local()
-        target =
-          "atlas://local@central-park/@scope/foo@1.0.0/build/node/src/index.js"
-        url = resolver.resolve target
-        assert typeof url == "string"
+    test "resolves to physical path", ->
+      resolver = Factories.local()
+      target =
+        "atlas://local@central-park/@scope/foo@1.0.0/build/node/src/index.js"
+      url = resolver.resolve target
+      assert isString url
 
-      root:
-        scoped: ->
-          resolver = Factories.local()
-          url = resolver.resolve "atlas://local@central-park/@scope/foo@1.0.0"
-          assert.equal "file:///root", url
+    test "resolves scoped package-root URL to physical path", ->
+      resolver = Factories.local()
+      url = resolver.resolve "atlas://local@central-park/@scope/foo@1.0.0"
+      assert.equal "file:///root", url
 
-        unscoped: ->
-          resolver = Factories.local()
-          url = resolver.resolve "atlas://local@central-park/foo@1.0.0"
-          assert.equal "file:///root", url
+    test "resolves unscoped package-root URL to physical path", ->
+      resolver = Factories.local()
+      url = resolver.resolve "atlas://local@central-park/foo@1.0.0"
+      assert.equal "file:///root", url
+  ]
 
-  presets:
-    node: ->
+  test "Resolver Presets", [
+    test "Node preset exports keys", ->
       keys = presets.node
-      assert Array.isArray keys
+      assert isArray keys
       assert keys.includes "application"
       assert keys.includes "node"
 
-    browser: ->
+    test "Browser preset exports keys", ->
       keys = presets.browser
-      assert Array.isArray keys
+      assert isArray keys
       assert keys.includes "application"
       assert keys.some ( key ) -> key.startsWith "cdn"
-
-Suites =
-  registry:
-    "registers and retrieves resolvers": Tests.registry.retrieval
-    "Meta Resolver aggregates match": Tests.meta.match
-    "Meta Resolver validates keys on encode": Tests.meta.encode
-    "Meta Resolver validates keys on decode": Tests.meta.decode
-    "Meta Resolver validates keys on resolve": Tests.meta.resolve
-
-  application:
-    "matches intra-package paths unconditionally": Tests.application.match
-    "rejects paths containing node_modules": Tests.application.reject.modules
-    "rejects paths escaping cwd (..)": Tests.application.reject.escaping
-    "encodes target to virtual root": Tests.application.encode
-    "decodes atlas URL": Tests.application.decode
-    "resolves to physical path": Tests.application.resolve
-
-  node:
-    "matches paths containing node_modules": Tests.node.match
-    "rejects paths lacking node_modules": Tests.node.reject
-    "encodes dependency object": Tests.node.encode
-    "decodes atlas URL": Tests.node.decode.scoped
-    "decodes unscoped atlas URL": Tests.node.decode.unscoped
-    "resolves to physical path": Tests.node.resolve.scoped
-    "resolves scoped package-root URL to physical path":
-      Tests.node.resolve.root.scoped
-    "resolves unscoped package-root URL to physical path":
-      Tests.node.resolve.root.unscoped
-
-  cdn:
-    "matches paths containing node_modules": Tests.cdn.match
-    "encodes dependency object": Tests.cdn.encode
-    "decodes atlas URL": Tests.cdn.decode.scoped
-    "decodes unscoped atlas URL": Tests.cdn.decode.unscoped
-    "resolves using URL Codex template": Tests.cdn.resolve.scoped
-    "resolves unscoped using URL Codex template": Tests.cdn.resolve.unscoped
-    "resolves scoped package-root URL using template":
-      Tests.cdn.resolve.root.scoped
-    "resolves unscoped package-root URL using template":
-      Tests.cdn.resolve.root.unscoped
-
-  local:
-    "matches configured deep glob patterns": Tests.local.match
-    "encodes dependency object": Tests.local.encode
-    "decodes scoped atlas URL": Tests.local.decode.scoped
-    "decodes unscoped atlas URL": Tests.local.decode.unscoped
-    "resolves to physical path": Tests.local.resolve.scoped
-    "resolves scoped package-root URL to physical path":
-      Tests.local.resolve.root.scoped
-    "resolves unscoped package-root URL to physical path":
-      Tests.local.resolve.root.unscoped
-
-  presets:
-    "Node preset exports keys": Tests.presets.node
-    "Browser preset exports keys": Tests.presets.browser
-
-run = ( title, cases ) ->
-  checks =
-    for description, check of cases
-      test description, check
-  test title, checks
-
-export default -> [
-  run "Registry & Meta Resolver", Suites.registry
-  run "Application Resolver", Suites.application
-  run "Node Resolver", Suites.node
-  run "CDN Resolver", Suites.cdn
-  run "Local Resolver", Suites.local
-  run "Resolver Presets", Suites.presets
+  ]
 ]

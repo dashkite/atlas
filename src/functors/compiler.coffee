@@ -1,4 +1,3 @@
-import { pipe } from "@dashkite/joy"
 import TreeIndex from "../categories/tree-index"
 import Path from "../categories/path"
 
@@ -26,18 +25,8 @@ findConflictedLabels = ( edges ) ->
   conflicted
 
 hasCollision = ( vertex, incoming, conflicted ) ->
-  for edge in incoming.get vertex
-    if conflicted.has edge.label
-      return true
-  false
-
-canHoist = ( target, context ) ->
-  if context.cache.has target
-    context.cache.get target
-  else
-    hoistable = !hasCollision target, context.incoming, context.conflicted
-    context.cache.set target, hoistable
-    hoistable
+  ( incoming.get vertex ).some ( edge ) ->
+    conflicted.has edge.label
 
 findRoots = ( graph, incoming ) ->
   roots = []
@@ -46,74 +35,76 @@ findRoots = ( graph, incoming ) ->
       roots.push vertex
   roots
 
-createQueueItem = ( component, path ) ->
-  { component, path }
-
-initializeQueue = ( index, roots ) ->
-  queue = []
-  for root in roots
-    index.bind Path.root, root, root
-    index.addVertex root
-    queue.push createQueueItem root, Path.root
-  queue
-
 analyzeGraph = ( graph ) ->
   incoming: buildEdgeIndex graph, "target"
   outgoing: buildEdgeIndex graph, "source"
   conflicted: findConflictedLabels graph.getEdges()
 
-initializeState = ( graph, incoming ) ->
-  index = TreeIndex.make()
-  {
-    index: index
-    queue: initializeQueue index, ( findRoots graph, incoming )
-    visited: new Set()
-    cache: new Map()
-  }
-
-DEFAULTS =
+defaults =
   compact: true
 
-createContext = ( graph, options = {}) ->
-  options = { DEFAULTS..., options... }
-  analysis = analyzeGraph graph
-  {
-    analysis...
-    ( initializeState graph, analysis.incoming )...
-    compact: options.compact
-  }
+serializeItem = ( component, path ) ->
+  "#{ component }::#{ JSON.stringify path }"
 
-resolvePath = ( target, item, context ) ->
-  if context.compact && ( canHoist target, context )
-    Path.root
-  else
-    Path.concat item.path, item.component
+class TreeCompiler
+  @make: ( graph, options = {}) ->
+    options = { defaults..., options... }
+    { incoming, outgoing, conflicted } = analyzeGraph graph
+    Object.assign ( new @ ),
+      compact: options.compact
+      incoming: incoming
+      outgoing: outgoing
+      conflicted: conflicted
+      index: TreeIndex.make()
+      queue: []
+      visited: new Set()
+      cache: new Map()
 
-embedEdge = ( context, edge, item ) ->
-  target = edge.target
-  destination = resolvePath target, item, context
-  context.index.addVertex target
-  context.index.bind destination, edge.label, target
-  context.queue.push createQueueItem target, destination
-  return
+  canHoist: ( target ) ->
+    if @cache.has target
+      @cache.get target
+    else
+      hoistable = !hasCollision target, @incoming, @conflicted
+      @cache.set target, hoistable
+      hoistable
 
-processItem = ( item, context ) ->
-  key = "#{ item.component }::#{ JSON.stringify item.path }"
-  if !context.visited.has key
-    context.visited.add key
-    for edge in context.outgoing.get item.component
-      embedEdge context, edge, item
-  return
+  resolvePath: ( target, item ) ->
+    if @compact && ( @canHoist target )
+      Path.root
+    else
+      Path.concat item.path, item.component
 
-embedTree = ( context ) ->
-  while context.queue.length > 0
-    item = context.queue.shift()
-    processItem item, context
-  context.index
+  seedRoots: ( graph ) ->
+    for root in findRoots graph, @incoming
+      @index.bind Path.root, root, root
+      @index.addVertex root
+      @queue.push { component: root, path: Path.root }
+    return
 
-functor = pipe [
-  createContext
-  embedTree
-]
+  embedEdge: ( edge, item ) ->
+    target = edge.target
+    destination = @resolvePath target, item
+    @index.addVertex target
+    @index.bind destination, edge.label, target
+    @queue.push { component: target, path: destination }
+    return
+
+  processItem: ( item ) ->
+    key = serializeItem item.component, item.path
+    if !@visited.has key
+      @visited.add key
+      for edge in @outgoing.get item.component
+        @embedEdge edge, item
+    return
+
+  compile: ( graph ) ->
+    @seedRoots graph
+    while @queue.length > 0
+      item = @queue.shift()
+      @processItem item
+    @index
+
+functor = ( graph, options = {}) ->
+  ( TreeCompiler.make graph, options ).compile graph
 
 export default functor

@@ -13,7 +13,6 @@ promoteBindings = ( node, parent ) ->
   return
 
 compact = ( node, parent ) ->
-  # Post-order traversal: visit children first
   for child from node.children.values()
     compact child, node
 

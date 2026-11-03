@@ -1,9 +1,10 @@
 import { URL } from "node:url"
-import { pipe } from "@dashkite/joy"
+import { isString, isObject } from "@dashkite/joy/type"
 import * as Codex from "@dashkite/url-codex"
 
-SCOPED_TEMPLATE = "/{scope}/{versioned}/{path*}"
-UNSCOPED_TEMPLATE = "/{versioned}/{path*}"
+Template =
+  scoped: "/{scope}/{versioned}/{path*}"
+  unscoped: "/{versioned}/{path*}"
 
 extractResolver = ( parsed ) ->
   if parsed.username
@@ -27,13 +28,12 @@ formatSpecifier = ( module ) ->
 
 Module =
   format: ( module ) ->
-    if !( module? )
-      return
-    specifier = formatSpecifier module
-    if module.version?
-      "#{specifier}@#{module.version}"
-    else
-      specifier
+    if module?
+      specifier = formatSpecifier module
+      if module.version?
+        "#{specifier}@#{module.version}"
+      else
+        specifier
 
   parse: ({ scope, versioned }) ->
     [ name, version ] = versioned.split "@"
@@ -41,29 +41,32 @@ Module =
 
 Path =
   normalize: ( path ) ->
-    if !( path? )
-      return
-    if path.startsWith "/" then path.slice 1 else path
+    if path?
+      if path.startsWith "/"
+        path.slice 1
+      else
+        path
 
   format: ( path = []) ->
     if path.length > 0 then "/#{path.join "/"}" else ""
 
-extractSegments = ({ module, path }) ->
-  [
-    Module.format module
-    Path.normalize path
-  ].filter Boolean
-
 Pathname =
+  collect: ({ module, path }) ->
+    segments = [
+      Module.format module
+      Path.normalize path
+    ]
+    segments.filter Boolean
+
   format: ( descriptor ) ->
-    segments = extractSegments descriptor
+    segments = Pathname.collect descriptor
     if segments.length > 0 then "/#{segments.join "/"}" else ""
 
   decode: ( pathname ) ->
     if pathname.startsWith "/@"
-      Codex.decode SCOPED_TEMPLATE, pathname
+      Codex.decode Template.scoped, pathname
     else
-      Codex.decode UNSCOPED_TEMPLATE, pathname
+      Codex.decode Template.unscoped, pathname
 
 buildDescriptor = ( resolver, decoded ) ->
   {
@@ -78,21 +81,28 @@ decodePathname = ( resolver, pathname ) ->
   else
     { resolver, path: pathname }
 
-parseUrl = ( url ) ->
-  parsed = new URL url
-  {
-    resolver: extractResolver parsed
-    pathname: parsed.pathname
-  }
+isValidDescriptor = ( descriptor ) ->
+  ( isObject descriptor ) &&
+  ( isString descriptor.resolver ) &&
+  ( descriptor.resolver.length > 0 )
 
 encode = ( descriptor ) ->
-  "atlas://#{formatAuthority descriptor.resolver}#{Pathname.format descriptor}"
+  if isValidDescriptor descriptor
+    "atlas://#{formatAuthority descriptor.resolver}" +
+      Pathname.format descriptor
+  else
+    throw new Error "Invalid AtlasURL descriptor"
 
-decode = pipe [
-  parseUrl
-  ({ resolver, pathname }) ->
-    decodePathname resolver, pathname
-]
+decode = ( url ) ->
+  if ( isString url ) && ( url.startsWith "atlas://" )
+    parsed = new URL url
+    resolver = extractResolver parsed
+    if resolver.length > 0
+      decodePathname resolver, parsed.pathname
+    else
+      throw new Error "Invalid AtlasURL authority: #{ url }"
+  else
+    throw new Error "Invalid AtlasURL: #{ url }"
 
 export default { encode, decode }
 export { encode, decode }

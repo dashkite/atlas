@@ -30,28 +30,28 @@ registerResolvers = ->
     resolve: ( _url ) -> "/src/index.js"
 
 assertTopology = ( root ) ->
-  # Verify topology is intact
   assert ( root.children.has "app" ), "Topology should remain intact"
 
 findApplication = ( root ) ->
-  (( root.children.get "app" ).children.get "src" )
-    .children.get "index.js"
+  [ "app", "src", "index.js" ].reduce ( node, segment ) ->
+    node.children.get segment
+  , root
 
 assertBinding = ( application ) ->
   url = application.bindings.get "maeve"
   assert url?, "Binding should exist"
-  # Target was ["npm", "@dashkite", "maeve@1.0.0", "src", "index.js"]
-  # Which corresponds to atlas://node/@dashkite/maeve@1.0.0/src/index.js
   assert.equal url,
     "https://cdn.example.com/@dashkite/maeve@1.0.0/src/index.js"
 
 export default ->
   [
-    test "maps bindings to resolved HTTP/File URLs
-      without restructuring topology", ->
-        registerResolvers()
-        root = resolve createFixture(), [ "node", "app" ]
-        assertTopology root
-        application = findApplication root
-        assertBinding application
+    test (
+      "maps bindings to resolved HTTP/File URLs " +
+      "without restructuring topology"
+    ), ->
+      registerResolvers()
+      root = resolve createFixture(), [ "node", "app" ]
+      assertTopology root
+      application = findApplication root
+      assertBinding application
   ]

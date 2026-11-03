@@ -5,9 +5,9 @@ import Path from "node:path"
 import FS from "node:fs/promises"
 import preset from "./presets/node"
 
-ENTRY_POINT = Symbol "atlas:entry-point"
+entryPoint = Symbol "atlas:entry-point"
 
-resolveCwd = ( options ) ->
+resolveCWD = ( options ) ->
   options.cwd ? process.cwd()
 
 resolveRegistry = ( options ) ->
@@ -33,7 +33,7 @@ determineType = ( specifier ) ->
   else
     "inter"
 
-class ModuleUrlResolver
+class ModuleURLResolver
   @make: ( cwd, registry ) ->
     Object.assign ( new @ ),
       cwd: cwd
@@ -57,21 +57,15 @@ class ModuleUrlResolver
     descriptor
 
   matchKey: ( target ) ->
-    key = @registry.match { source: target.source.path, cwd: @cwd }
-    if !key?
-      target = JSON.stringify target
-      throw new Error "No resolver found to encode target: #{ target }"
-    key
+    key = @registry.match { source: target.source.path, @cwd }
+    if key?
+      key
+    else
+      throw new Error \
+        "No resolver found to encode target: #{ JSON.stringify target }"
 
-  encodeTarget: pipe [
-    ( target ) ->
-      target: target
-      key: @matchKey target
-    ({ target, key }) ->
-      @buildDescriptor target, key
-    ( descriptor ) ->
-      @registry.encode descriptor
-  ]
+  encodeTarget: ( target ) ->
+    @registry.encode @buildDescriptor target, @matchKey target
 
   resolveInode: ( path ) ->
     ( await FS.stat Path.resolve @cwd, path ).ino
@@ -81,19 +75,15 @@ class ModuleUrlResolver
       @inodes.set inode, @encodeTarget target
     @inodes.get inode
 
-  target: pipe [
-    ( target ) ->
-      inode: await @resolveInode target.source.path
-      target: target
-    ({ inode, target }) ->
-      @cacheTarget inode, target
-  ]
+  target: ( target ) ->
+    inode = await @resolveInode target.source.path
+    @cacheTarget inode, target
 
   source: ( item ) ->
     if item.import.scope?
       @target item.import.scope
     else
-      ENTRY_POINT
+      entryPoint
 
   dependency: ( item ) ->
     source: await @source item
@@ -106,7 +96,7 @@ class ModuleGraphBuilder
   @make: ( cwd, registry ) ->
     Object.assign ( new @ ),
       registry: registry
-      urls: ModuleUrlResolver.make cwd, registry
+      urls: ModuleURLResolver.make cwd, registry
       graph: ModuleGraph.make()
 
   encodePackage: pipe [
@@ -116,8 +106,8 @@ class ModuleGraphBuilder
   ]
 
   resolvePackage: ( url ) ->
-    if url == ENTRY_POINT
-      ENTRY_POINT
+    if url == entryPoint
+      entryPoint
     else
       @encodePackage url
 
@@ -154,51 +144,24 @@ class ModuleGraphBuilder
       type: determineType specifier
     return
 
-  addDependency: pipe [
-    ( item ) ->
-      item: item
-      urls: await @urls.dependency item
-    ( context ) ->
-      @registerVertices context.urls
-      context
-    ( context ) ->
-      @recordSources context.item, context.urls
-      context
-    ({ item, urls }) ->
-      @recordEdge urls, item.import.specifier
-  ]
+  addDependency: ( item ) ->
+    urls = await @urls.dependency item
+    @registerVertices urls
+    @recordSources item, urls
+    @recordEdge urls, item.import.specifier
 
   build: ->
     @graph
 
-createContext = ( dependencies, options = {}) ->
-  cwd = resolveCwd options
-  registry = resolveRegistry options
-  {
-    dependencies
-    builder: ModuleGraphBuilder.make cwd, registry
-  }
+createBuilder = ( options = {}) ->
+  ModuleGraphBuilder.make ( resolveCWD options ),
+    ( resolveRegistry options )
 
-collectDependencies = ( context ) ->
-  items = []
-  for await dependency from context.dependencies
-    items.push dependency
-  { context..., dependencies: items }
-
-processDependencies = ( context ) ->
-  for item in context.dependencies
-    await context.builder.addDependency item
-  context
-
-extractGraph = ({ builder }) ->
+ingest = ( dependencies, options = {}) ->
+  builder = createBuilder options
+  for await item from dependencies
+    await builder.addDependency item
   builder.build()
 
-ingest = pipe [
-  createContext
-  collectDependencies
-  processDependencies
-  extractGraph
-]
-
 export default ingest
-export { ingest, ENTRY_POINT, ModuleUrlResolver, ModuleGraphBuilder }
+export { ingest, entryPoint, ModuleURLResolver, ModuleGraphBuilder }

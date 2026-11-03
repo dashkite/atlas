@@ -1,45 +1,45 @@
 import Path from "node:path"
 import Zephyr from "@dashkite/zephyr"
 
-normalize = ({ name, version, path }) ->
-  specifier = name
-  if name.startsWith "@"
-    [ scope, name ] = name.split "/"
-    { scope, name, specifier, version, path }
-  else
-    { name, specifier, version, path }
+normalize = ({ name, version }, path ) ->
+  name: name
+  version: version
+  path: if path == "." then "" else path
 
-resolvePaths = ( current, directory ) ->
+resolvePath = ( current, directory ) ->
   path = Path.join current, "package.json"
-  disk = if directory != "."
+  if directory != "."
     Path.join directory, path
   else
     path
-  { path, disk }
 
 readPackage = ( path ) ->
   if await Zephyr.exists path
-    return Zephyr.read path
-  null
+    Zephyr.read path
+  else
+    null
 
 loadPackage = ( current, directory ) ->
-  { path, disk } = resolvePaths current, directory
+  disk = resolvePath current, directory
   data = await readPackage disk
   if data?
-    return normalize { data..., path: Path.dirname path }
-  null
+    normalize data, current
+  else
+    null
 
-_read = ( path, directory ) ->
+isTerminal = ( path ) ->
+  ( path == "." ) || ( path == "/" ) || ( path == "" )
+
+_read = ( path, directory = "." ) ->
   current = path
-
-  # Traverse up the directory tree to find the nearest package.json
-  until ((( current == "." ) || ( current == "/" )) || ( current == "" ))
+  manifest = null
+  until ( manifest? ) || ( isTerminal current )
     current = Path.dirname current
     manifest = await loadPackage current, directory
-    if manifest?
-      return manifest
-
-  throw new Error "No module path found for #{ path }"
+  if manifest?
+    manifest
+  else
+    throw new Error "No module path found for #{ path }"
 
 class ModuleCache
   @make: ( directory = "." ) ->

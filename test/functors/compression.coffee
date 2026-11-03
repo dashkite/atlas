@@ -13,22 +13,19 @@ setupMaeve = ( root ) ->
     "src"
   ]
 
-setupTargets = ( root ) ->
-  maeve = setupMaeve root
+setupBindings = ( root, maeve ) ->
   common = maeve.upsertPath [ "common.js" ]
   sublime = maeve.upsertPath [ "sublime", "index.js" ]
-  { maeve, common, sublime }
-
-setupBindings = ( root, { common, sublime }) ->
   app = root.upsertPath [ "app" ]
   app.bindings.set "@dashkite/maeve/common.js", common
   app.bindings.set "@dashkite/maeve/sublime/index.js", sublime
+  return
 
 createFixture = ->
   root = Trie.make()
-  targets = setupTargets root
-  setupBindings root, targets
-  { root, maeve: targets.maeve }
+  maeve = setupMaeve root
+  setupBindings root, maeve
+  { root, maeve }
 
 assertPrefix = ( app, expected ) ->
   assert ( app.bindings.has "@dashkite/maeve/" ),

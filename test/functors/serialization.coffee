@@ -4,15 +4,16 @@ import Trie from "../../src/categories/trie"
 import serialize from "../../src/functors/serialization"
 import { Registry } from "../../src/resolvers/index"
 
-SCOPE_KEYS =
-  parent: "https://cdn.example.com/@dashkite/maeve@1.0.0/"
-  child: "https://cdn.example.com/@dashkite/maeve@1.0.0/node/nested@0.1.0/"
-  sibling: "https://cdn.example.com/foo@2.0.0/"
+Scopes =
+  keys:
+    parent: "https://cdn.example.com/@dashkite/maeve@1.0.0/"
+    child: "https://cdn.example.com/@dashkite/maeve@1.0.0/node/nested@0.1.0/"
+    sibling: "https://cdn.example.com/foo@2.0.0/"
 
-SCOPE_TARGETS =
-  parent: "https://cdn.example.com/@dashkite/maeve@1.0.0/lib/index.js"
-  child: "https://cdn.example.com/nested@0.1.0/index.js"
-  sibling: "https://cdn.example.com/foo@2.0.0/index.js"
+  targets:
+    parent: "https://cdn.example.com/@dashkite/maeve@1.0.0/lib/index.js"
+    child: "https://cdn.example.com/nested@0.1.0/index.js"
+    sibling: "https://cdn.example.com/foo@2.0.0/index.js"
 
 bindScope = ( node, path, target ) ->
   scope = node.upsertPath path
@@ -24,14 +25,14 @@ fixtures =
     root = Trie.make()
     root.bindings.set "helper", "/src/helper.js"
     bindScope root, [ "node", "@dashkite", "maeve@1.0.0" ],
-      SCOPE_TARGETS.parent
+      Scopes.targets.parent
     root
 
   nested: ->
     root = fixtures.base()
     parent = root.upsertPath [ "node", "@dashkite", "maeve@1.0.0" ]
-    bindScope parent, [ "node", "nested@0.1.0" ], SCOPE_TARGETS.child
-    bindScope root, [ "node", "foo@2.0.0" ], SCOPE_TARGETS.sibling
+    bindScope parent, [ "node", "nested@0.1.0" ], Scopes.targets.child
+    bindScope root, [ "node", "foo@2.0.0" ], Scopes.targets.sibling
     root
 
 resolver =
@@ -56,13 +57,13 @@ verify =
 
   scopes: ( map ) ->
     assert map.scopes?, "Scopes block should exist"
-    verify.binding map.scopes, SCOPE_KEYS.parent, SCOPE_TARGETS.parent
+    verify.binding map.scopes, Scopes.keys.parent, Scopes.targets.parent
 
   nested: ( map ) ->
     assert map.scopes?, "Scopes block should exist"
-    verify.binding map.scopes, SCOPE_KEYS.parent, SCOPE_TARGETS.parent
-    verify.binding map.scopes, SCOPE_KEYS.child, SCOPE_TARGETS.child
-    verify.binding map.scopes, SCOPE_KEYS.sibling, SCOPE_TARGETS.sibling
+    verify.binding map.scopes, Scopes.keys.parent, Scopes.targets.parent
+    verify.binding map.scopes, Scopes.keys.child, Scopes.targets.child
+    verify.binding map.scopes, Scopes.keys.sibling, Scopes.targets.sibling
 
 cases =
   format: ->

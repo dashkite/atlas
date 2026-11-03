@@ -23,10 +23,12 @@ class PackageComponent
   ]
 
   isRoot: ( component ) ->
-    for [ label, target ] from @index.getBindings []
-      if target == component
-        return label == component
-    false
+    entry = ( Array.from @index.getBindings []).find ([ _, target ]) ->
+      target == component
+    if entry?
+      entry[ 0 ] == component
+    else
+      false
 
 class BundleDirectory
   @nest: ( directory, name ) ->
@@ -72,31 +74,22 @@ class BundleDirectory
   resolve: ( path, component ) ->
     key = "#{component}::#{JSON.stringify path}"
     if @cache.has key
-      return @cache.get key
-    directory = @compute path, component
-    @cache.set key, directory
-    directory
+      @cache.get key
+    else
+      directory = @compute path, component
+      @cache.set key, directory
+      directory
 
 class BundleResolver
-  @make: pipe [
-    ( graph, index, keys ) ->
+  @make: ( graph, index, keys ) ->
+    resolver = Resolvers.Registry.make keys
+    component = PackageComponent.make graph, index, resolver
+    Object.assign ( new @ ),
       graph: graph
       index: index
-      resolver: Resolvers.Registry.make keys
-    ( state ) ->
-      {
-        state...
-        component:
-          PackageComponent.make state.graph, state.index, state.resolver
-      }
-    ({ component, state... }) ->
-      {
-        state...
-        directory: BundleDirectory.make component
-        bundle: new Map()
-      }
-    ( state ) -> Object.assign ( new @ ), state
-  ]
+      resolver: resolver
+      directory: BundleDirectory.make component
+      bundle: new Map()
 
   add: ( directory, url ) ->
     { path } = @resolver.decode url

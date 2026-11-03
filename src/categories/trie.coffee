@@ -7,7 +7,6 @@ class Trie
       children: new Map()
       bindings: new Map()
 
-  # Helper to walk down or create a path of segments
   upsertPath: ( segments ) ->
     node = @
     for segment in segments

@@ -3,21 +3,33 @@ import assert from "@dashkite/assert"
 import ModuleGraph from "../../src/categories/module-graph"
 import quotient from "../../src/functors/quotient"
 
-APP_INDEX = "file:///app/index.js"
-APP_HELPER = "file:///app/helper.js"
-APP_UTILS = "file:///app/utils.js"
-MAEVE_INDEX = "file:///node_modules/maeve/index.js"
-MAEVE_LIB = "file:///node_modules/maeve/lib.js"
+maevePackage = "atlas://node/@dashkite/maeve@1.0.0"
+enchantPackage = "atlas://local/@dashkite/enchant@2.0.0"
 
-APP_MODULES = [ APP_INDEX, APP_HELPER, APP_UTILS ]
-MAEVE_MODULES = [ MAEVE_INDEX, MAEVE_LIB ]
-
-MAEVE_PACKAGE = "atlas://node/@dashkite/maeve@1.0.0"
-ENCHANT_PACKAGE = "atlas://local/@dashkite/enchant@2.0.0"
-
-MAEVE_COMMON = "#{ MAEVE_PACKAGE }/build/node/src/common.js"
-MAEVE_SUBLIME = "#{ MAEVE_PACKAGE }/build/node/src/sublime/index.js"
-ENCHANT_INDEX = "#{ ENCHANT_PACKAGE }/build/node/src/index.js"
+Fixtures =
+  app:
+    index: "file:///app/index.js"
+    helper: "file:///app/helper.js"
+    utils: "file:///app/utils.js"
+    package: "app"
+    modules: [
+      "file:///app/index.js"
+      "file:///app/helper.js"
+      "file:///app/utils.js"
+    ]
+  maeve:
+    index: "file:///node_modules/maeve/index.js"
+    lib: "file:///node_modules/maeve/lib.js"
+    package: maevePackage
+    common: "#{ maevePackage }/build/node/src/common.js"
+    sublime: "#{ maevePackage }/build/node/src/sublime/index.js"
+    modules: [
+      "file:///node_modules/maeve/index.js"
+      "file:///node_modules/maeve/lib.js"
+    ]
+  enchant:
+    package: enchantPackage
+    index: "#{ enchantPackage }/build/node/src/index.js"
 
 addPackageModules = ( graph, id, uris ) ->
   for uri in uris
@@ -34,25 +46,23 @@ addInterEdge = ( graph, { source, target, label }) ->
 
 buildContractsGraph = ->
   graph = ModuleGraph.make()
-  addPackageModules graph, "app", APP_MODULES
-  addPackageModules graph, "maeve", MAEVE_MODULES
+  addPackageModules graph, "app", Fixtures.app.modules
+  addPackageModules graph, "maeve", Fixtures.maeve.modules
   addInterEdge graph,
-    source: APP_INDEX
-    target: MAEVE_INDEX
+    source: Fixtures.app.index
+    target: Fixtures.maeve.index
     label: "maeve"
   graph
 
 findComponent = ( graph, uri ) ->
-  for id from graph.getVertices()
-    if ( graph.getModules id ).has uri
-      return id
-  null
+  ( Array.from graph.getVertices()).find ( id ) ->
+    ( graph.getModules id ).has uri
 
 verifyAppModules = ( graph, id ) ->
   modules = graph.getModules id
   assert.equal modules.size, 3
-  assert modules.has APP_HELPER
-  assert modules.has APP_UTILS
+  assert modules.has Fixtures.app.helper
+  assert modules.has Fixtures.app.utils
 
 verifyEdges = ( graph, source, target ) ->
   edges = graph.getEdges()
@@ -64,8 +74,8 @@ verifyEdges = ( graph, source, target ) ->
 verifyDiscreteComponents = ( graph ) ->
   vertices = graph.getVertices()
   assert.equal vertices.size, 2
-  app = findComponent graph, APP_INDEX
-  maeve = findComponent graph, MAEVE_INDEX
+  app = findComponent graph, Fixtures.app.index
+  maeve = findComponent graph, Fixtures.maeve.index
   assert app?
   assert maeve?
   verifyAppModules graph, app
@@ -73,26 +83,31 @@ verifyDiscreteComponents = ( graph ) ->
 
 addDisjointEdges = ( graph ) ->
   addInterEdge graph,
-    source: ENCHANT_INDEX
-    target: MAEVE_COMMON
+    source: Fixtures.enchant.index
+    target: Fixtures.maeve.common
     label: "@dashkite/maeve/common"
   addInterEdge graph,
-    source: ENCHANT_INDEX
-    target: MAEVE_SUBLIME
+    source: Fixtures.enchant.index
+    target: Fixtures.maeve.sublime
     label: "@dashkite/maeve/sublime"
 
 buildDisjointGraph = ->
   graph = ModuleGraph.make()
-  addPackageModules graph, MAEVE_PACKAGE, [ MAEVE_COMMON, MAEVE_SUBLIME ]
-  addPackageModules graph, ENCHANT_PACKAGE, [ ENCHANT_INDEX ]
+  addPackageModules graph, Fixtures.maeve.package, [
+    Fixtures.maeve.common
+    Fixtures.maeve.sublime
+  ]
+  addPackageModules graph, Fixtures.enchant.package, [
+    Fixtures.enchant.index
+  ]
   addDisjointEdges graph
   graph
 
 verifyDisjointComponents = ( graph ) ->
   vertices = graph.getVertices()
   assert.equal vertices.size, 2,
-    "Expected disjoint entry points to be collapsed
-    into a single package component vertex"
+    "Expected disjoint entry points to be collapsed " +
+    "into a single package component vertex"
 
 export default ->
   [
@@ -100,8 +115,10 @@ export default ->
       graph = buildContractsGraph()
       verifyDiscreteComponents quotient graph
 
-    test "contracts disjoint entry points of the same package
-    into a single component", ->
+    test (
+      "contracts disjoint entry points of the same package " +
+      "into a single component"
+    ), ->
       graph = buildDisjointGraph()
       verifyDisjointComponents quotient graph
   ]

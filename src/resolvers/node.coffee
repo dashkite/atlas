@@ -1,7 +1,17 @@
+import Ajv from "ajv"
 import { pipe } from "@dashkite/joy"
 import AtlasURL from "../url"
 import Path from "node:path"
 import { pathToFileURL } from "node:url"
+
+ajv = new Ajv()
+
+validateConfiguration = ajv.compile
+  type: "object"
+  properties:
+    root:
+      type: "string"
+      minLength: 1
 
 formatName = ({ scope, name }) ->
   if scope then "#{scope}/#{name}" else name
@@ -21,9 +31,12 @@ toFileURL = ( path ) ->
   ( pathToFileURL path ).href
 
 class NodeResolver
-  @make: ( config = {}) ->
-    Object.assign ( new @ ),
-      root: config.root ? process.cwd()
+  @make: ( configuration = {}) ->
+    if validateConfiguration configuration
+      Object.assign ( new @ ),
+        root: configuration.root ? process.cwd()
+    else
+      throw new Error "Invalid Node resolver configuration"
 
   match: ( context ) ->
     context.source.includes "node_modules"

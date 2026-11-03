@@ -27,7 +27,6 @@ buildMetafile = ( entry, options ) ->
   { metafile } = await esbuild.build buildOptions entry, options
   metafile
 
-# Skip external dependencies explicitly marked by esbuild, or disabled ones
 isIncluded = ( dependency ) ->
   ( dependency.external != true ) &&
     ( !( dependency.path.startsWith "(disabled):" ))
@@ -51,7 +50,6 @@ generateDependencies = ( entries, options ) ->
           yield await createDependency dependency, path, modules
   return
 
-# Returns an async generator yielding dependency objects
 analyze = ( entries, options = {}) ->
   generateDependencies entries, resolveOptions options
 

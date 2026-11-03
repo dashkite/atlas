@@ -1,7 +1,9 @@
 import Path from "node:path"
 import FS from "node:fs/promises"
 import JSZip from "jszip"
+import Ajv from "ajv"
 import { pipe } from "@dashkite/joy"
+import { isSet, isMap, isString, isArray } from "@dashkite/joy/type"
 import analyze from "./helpers/analyze"
 import ingest from "./ingest"
 import quotient from "./functors/quotient"
@@ -9,7 +11,7 @@ import compile from "./functors/compiler"
 import resolve from "./functors/resolver"
 import preset from "./presets/node"
 
-ZIP_OPTIONS =
+zipOptions =
   type: "nodebuffer"
   compression: "DEFLATE"
   compressionOptions:
@@ -22,18 +24,19 @@ Manifest =
       await FS.access path
       path
     catch error
-      if error.code != "ENOENT"
+      if error.code == "ENOENT"
+        null
+      else
         throw error
-      null
 
   scan: ( directory ) ->
     current = directory
-    while current && ( current != Path.dirname current )
+    manifest = null
+    while current && ( current != Path.dirname current ) && ( !manifest? )
       manifest = await Manifest.check current
-      if manifest?
-        return manifest
-      current = Path.dirname current
-    null
+      if !manifest?
+        current = Path.dirname current
+    manifest
 
   find: ( path ) ->
     path = await FS.realpath path
@@ -44,9 +47,10 @@ Manifest =
     try
       await FS.readFile path
     catch error
-      if error.code != "ENOENT"
+      if error.code == "ENOENT"
+        null
+      else
         throw error
-      null
 
 Package =
   name: ( remainder ) ->
@@ -78,20 +82,54 @@ Entry =
     { relative, absolute }
 
   normalize: ( entries ) ->
-    if !entries?
+    if isValidEntries entries
+      [ entries ].flat()
+    else
       throw new Error "Entries argument is required"
-    [ entries ].flat()
+
+ajv = new Ajv()
+
+validateOptions = ajv.compile
+  type: "object"
+  properties:
+    cwd:
+      type: "string"
+      minLength: 1
+    source:
+      type: "string"
+      minLength: 1
+    resolvers:
+      type: "array"
+      minItems: 1
+      items:
+        type: "string"
+        minLength: 1
+    external:
+      type: "array"
+      items:
+        type: "string"
+
+isValidEntries = ( entries ) ->
+  if isString entries
+    entries.length > 0
+  else if isArray entries
+    ( entries.length > 0 ) && ( entries.every ( entry ) ->
+      ( isString entry ) && ( entry.length > 0 )
+    )
+  else
+    false
 
 Diagnostics =
+  replacer: ( key, item ) ->
+    if isSet item
+      Array.from item
+    else if isMap item
+      Object.fromEntries item
+    else
+      item
+
   serialize: ( value ) ->
-    replacer = ( key, item ) ->
-      if item instanceof Set
-        Array.from item
-      else if item instanceof Map
-        Object.fromEntries item
-      else
-        item
-    JSON.stringify value, replacer, 2
+    JSON.stringify value, Diagnostics.replacer, 2
 
   write: ( directory, filename, data ) ->
     path = Path.join directory, filename
@@ -134,27 +172,16 @@ class BundleArchive
       destinations: new Set()
       packages: new Set()
 
-  @construct: pipe [
-    ( context ) ->
-      context: context
-      archive: BundleArchive.make context.options, context.pipeline.graph
-    ({ context, archive }) ->
-      await archive.populate context
-      archive
-    ( archive ) ->
-      archive.generate()
-  ]
+  @construct: ( context ) ->
+    archive = BundleArchive.make context.options, context.pipeline.graph
+    await archive.populate context
+    archive.generate()
 
-  populate: pipe [
-    ( context ) ->
-      await @addEntries context.entries
-      context
-    ( context ) ->
-      await @addManifest()
-      context
-    ( context ) ->
-      @addMap context.pipeline.map
-  ]
+  populate: ( context ) ->
+    await @addEntries context.entries
+    await @addManifest()
+    await @addMap context.pipeline.map
+    return
 
   addFile: ( destination, path ) ->
     if !@destinations.has destination
@@ -182,10 +209,11 @@ class BundleArchive
 
   addPackage: ( directory, path ) ->
     manifest = await Manifest.find path
-    if !manifest?
+    if manifest?
+      destination = Path.join directory, "package.json"
+      await @addFile destination, manifest
+    else
       throw new Error "Package manifest not found for #{ path }"
-    destination = Path.join directory, "package.json"
-    await @addFile destination, manifest
     return
 
   ensurePackage: ( destination, path ) ->
@@ -208,25 +236,22 @@ class BundleArchive
     return
 
   generate: ->
-    @zip.generateAsync ZIP_OPTIONS
+    @zip.generateAsync zipOptions
 
 Options =
-  normalize: ( options ) ->
-    cwd = options.cwd ? process.cwd()
-    source = Path.resolve cwd, ( options.source ? "." )
-    external = [ "@aws-sdk/*", ( options.external ? [])... ]
-    resolvers = options.resolvers ? preset
-    { options..., cwd, source, external, resolvers }
-
-Context =
-  create: ( entries, options = {}) ->
-    entries: Entry.normalize entries
-    options: Options.normalize options
-
-  prepare: pipe [
-    ( entries, options ) -> Context.create entries, options
-    ( context ) -> Dependencies.analyze context
-  ]
+  normalize: ( options = {}) ->
+    if validateOptions options
+      cwd = Path.resolve ( options.cwd ? process.cwd() )
+      resolvers = options.resolvers ? preset
+      external = [ "@aws-sdk/*", ( options.external ? [])... ]
+      source =
+        if options.source?
+          Path.resolve cwd, options.source
+        else
+          cwd
+      { options..., cwd, source, resolvers, external }
+    else
+      throw new Error "Invalid bundle options"
 
 Dependencies =
   analyze: ( context ) ->
@@ -237,34 +262,27 @@ Dependencies =
     }
     { context..., dependencies }
 
-  ingest: ( dependencies, options ) ->
-    ingest dependencies, options
+Context =
+  create: ( entries, options = {}) ->
+    entries: Entry.normalize entries
+    options: Options.normalize options
+
+Context.prepare = pipe [
+  Context.create
+  Dependencies.analyze
+]
 
 Functors =
-  apply: pipe [
-    ( graph, options ) ->
-      { graph, options, components: quotient graph }
-    ( state ) ->
-      { state..., index: compile state.components, state.options }
-    ({ graph, options, components, index }) ->
-      graph: graph
-      components: components
-      index: index
-      map: resolve components, index, options.resolvers
-  ]
+  apply: ( graph, options ) ->
+    components = quotient graph
+    index = compile components, options
+    map = resolve components, index, options.resolvers
+    { graph, components, index, map }
 
-  execute: pipe [
-    ( context ) ->
-      {
-        context...
-        graph: await Dependencies.ingest context.dependencies, context.options
-      }
-    ({ graph, context... }) ->
-      {
-        context...
-        pipeline: Functors.apply graph, context.options
-      }
-  ]
+  execute: ( context ) ->
+    graph = await ingest context.dependencies, context.options
+    pipeline = Functors.apply graph, context.options
+    { context..., pipeline }
 
 bundle = pipe [
   Context.prepare

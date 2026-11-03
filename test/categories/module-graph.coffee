@@ -2,25 +2,26 @@ import { test } from "@dashkite/amen"
 import assert from "@dashkite/assert"
 import ModuleGraph from "../../src/categories/module-graph"
 
-INTRA_EDGE =
-  source: "file:///app/index.js"
-  target: "file:///app/helper.js"
-  label: "./helper.js"
-  type: "intra"
+Edges =
+  intra:
+    source: "file:///app/index.js"
+    target: "file:///app/helper.js"
+    label: "./helper.js"
+    type: "intra"
 
-INTER_EDGE =
-  source: "file:///app/index.js"
-  target: "file:///node_modules/maeve/index.js"
-  label: "maeve"
-  type: "inter"
+  inter:
+    source: "file:///app/index.js"
+    target: "file:///node_modules/maeve/index.js"
+    label: "maeve"
+    type: "inter"
 
 buildGraph = ->
   graph = ModuleGraph.make()
   graph.addVertex "file:///app/index.js"
   graph.addVertex "file:///app/helper.js"
   graph.addVertex "file:///node_modules/maeve/index.js"
-  graph.addEdge INTRA_EDGE
-  graph.addEdge INTER_EDGE
+  graph.addEdge Edges.intra
+  graph.addEdge Edges.inter
   graph
 
 export default ->

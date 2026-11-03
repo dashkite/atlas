@@ -62,14 +62,8 @@ nested =
 export default ->
   [
     test "projects flat tree index into physical node_modules", ->
-      graph = flat.graph()
-      index = flat.index()
-      bundle = resolve graph, index, preset
-      flat.assert bundle
+      flat.assert resolve flat.graph(), flat.index(), preset
 
     test "projects deeply nested hierarchical tree index", ->
-      graph = nested.graph()
-      index = nested.index()
-      bundle = resolve graph, index, preset
-      nested.assert bundle
+      nested.assert resolve nested.graph(), nested.index(), preset
   ]

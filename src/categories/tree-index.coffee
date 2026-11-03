@@ -5,7 +5,7 @@ class TreeIndex
   @make: ->
     Object.assign ( new @ ),
       vertices: new Set()
-      bindings: new Map() # Map<SerializedPath, Map<Label, TargetComponent>>
+      bindings: new Map()
 
   addVertex: ( vertex ) ->
     @vertices.add vertex

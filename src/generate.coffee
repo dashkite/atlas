@@ -1,6 +1,10 @@
 import Path from "node:path"
 import FS from "node:fs/promises"
+import Ajv from "ajv"
 import { pipe } from "@dashkite/joy"
+import {
+  isSet, isMap, isSymbol, isString, isArray
+} from "@dashkite/joy/type"
 import analyze from "./helpers/analyze"
 import ingest from "./ingest"
 import baseline from "./functors/baseline"
@@ -8,7 +12,12 @@ import compact from "./functors/compaction"
 import compress from "./functors/compression"
 import resolve from "./functors/resolution"
 import serialize from "./functors/serialization"
-import preset from "./presets/node"
+import browserPreset from "./presets/browser"
+import nodePreset from "./presets/node"
+
+Presets =
+  Browser: browserPreset
+  Node: nodePreset
 
 Diagnostics =
   files: ( pipeline ) -> [
@@ -21,11 +30,16 @@ Diagnostics =
   ]
 
   replacer: ( key, value ) ->
-    if key == "parent" then return undefined
-    if value instanceof Set then return Array.from value
-    if value instanceof Map then return Object.fromEntries value
-    if typeof value == "symbol" then return value.toString()
-    value
+    if key == "parent"
+      undefined
+    else if isSet value
+      Array.from value
+    else if isMap value
+      Object.fromEntries value
+    else if isSymbol value
+      value.toString()
+    else
+      value
 
   serialize: ( value ) ->
     JSON.stringify value, Diagnostics.replacer, 2
@@ -38,30 +52,83 @@ Diagnostics =
     basename = Path.basename entries[ 0 ], Path.extname entries[ 0 ]
     Path.join process.cwd(), ".atlas", "generate", basename
 
-  write: ( directory, pipeline ) ->
-    try
-      await FS.mkdir directory, recursive: true
-      for [ filename, data ] from Diagnostics.files pipeline
-        await Diagnostics.writeFile directory, filename, data
-    catch error
-      console.warn "Failed to write pipeline diagnostics: #{ error.message }"
+  tasks: ( directory, state ) ->
+    pipeline = state.pipeline ? state
+    ( Diagnostics.files pipeline ).map ([ filename, data ]) ->
+      Diagnostics.writeFile directory, filename, data
+
+  write: ( directory, state ) ->
+    if process.env.DEBUG
+      try
+        await FS.mkdir directory, recursive: true
+        await Promise.all ( Diagnostics.tasks directory, state )
+      catch error
+        console.warn "Atlas DEBUG: Failed to write debug files:", error
     return
 
-dumpDiagnostics = ( context ) ->
+dumpDiagnostics = ( state ) ->
   if process.env.DEBUG
-    directory = Diagnostics.deriveDirectory context.entries
-    await Diagnostics.write directory, context.pipeline
-  context
+    directory =
+      if ( state.entries? ) && ( state.entries.length > 0 )
+        Diagnostics.deriveDirectory state.entries
+      else
+        Path.join ( state.options?.cwd ? process.cwd() ), ".atlas-debug"
+    await Diagnostics.write directory, state
+  state
+
+ajv = new Ajv()
+
+validateOptions = ajv.compile
+  type: "object"
+  properties:
+    cwd:
+      type: "string"
+      minLength: 1
+    source:
+      type: "string"
+      minLength: 1
+    resolvers:
+      type: "array"
+      minItems: 1
+      items:
+        type: "string"
+        minLength: 1
+    external:
+      type: "array"
+      items:
+        type: "string"
+
+isValidEntries = ( entries ) ->
+  if isString entries
+    entries.length > 0
+  else if isArray entries
+    ( entries.length > 0 ) && ( entries.every ( entry ) ->
+      ( isString entry ) && ( entry.length > 0 )
+    )
+  else
+    false
 
 normalizeEntries = ( entries ) ->
-  [ entries ].flat()
+  if isValidEntries entries
+    [ entries ].flat()
+  else
+    throw new Error (
+      "Entries must be a non-empty string or array of non-empty strings"
+    )
 
-normalizeOptions = ( options ) ->
-  cwd = options.cwd ? process.cwd()
-  source = Path.resolve cwd, ( options.source ? "." )
-  external = [ "@aws-sdk/*", ( options.external ? [])... ]
-  resolvers = options.resolvers ? preset
-  { options..., cwd, source, external, resolvers }
+normalizeOptions = ( options = {}) ->
+  if validateOptions options
+    cwd = Path.resolve ( options.cwd ? process.cwd() )
+    resolvers = options.resolvers ? Presets.Browser
+    external = options.external ? []
+    source =
+      if options.source?
+        Path.resolve cwd, options.source
+      else
+        cwd
+    { options..., cwd, source, resolvers, external }
+  else
+    throw new Error "Invalid generate options"
 
 createContext = ( entries, options = {}) ->
   entries: normalizeEntries entries

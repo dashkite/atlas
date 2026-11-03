@@ -37,7 +37,10 @@ These functions and classes operate on contract trust and MUST NOT duplicate def
 - **Dependency Analysis & Ingestion Subsystem (`src/helpers/analyze.coffee`, `src/helpers/module.coffee`, `src/ingest.coffee`)**:
   - `analyze` (`src/helpers/analyze.coffee`): Runs `esbuild` dependency discovery and yields dependency descriptors (`{ source, module, import }`).
   - `ModuleCache` (`src/helpers/module.coffee`): Instance-scoped upward directory scanner and cache for locating and normalizing nearest `package.json` manifests during `analyze`.
-  - `ingest`, `ENTRY_POINT`, `ModuleUrlResolver`, `ModuleGraphBuilder` (`src/ingest.coffee`): Consumes the dependency stream from `analyze`, deduplicates physical files by inode (`FS.stat`), matches dependencies against the configured `MetaResolver`, and constructs a `ModuleGraph`.
+  - `ingest`, `entryPoint`, `ModuleURLResolver`, `ModuleGraphBuilder`
+    (`src/ingest.coffee`): Consumes the dependency stream from `analyze`,
+    deduplicates physical files by inode (`FS.stat`), matches dependencies
+    against the configured `MetaResolver`, and constructs a `ModuleGraph`.
 - **Category Data Structures (`src/categories/*`)**:
   - `ModuleGraph` (`src/categories/module-graph.coffee`): Directed multigraph storing canonical `atlas://` module vertices, `intra`/`inter` dependency edges, vertex attributes (`packageId`), and physical `file://` source URL mappings (`sources`).
   - `ComponentGraph` (`src/categories/component-graph.coffee`): Quotient graph grouping module vertices by `packageId` into package-level components with deduplicated inter-component edges.

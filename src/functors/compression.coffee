@@ -4,13 +4,16 @@ extractSuffix = ( label, prefix ) ->
   suffix = label.substring prefix.length
   ( suffix.split "/" ).filter isNotEmpty
 
-findAncestor = ( target, segments ) ->
-  current = target
-  for segment in segments by -1
-    if current.segment != segment
-      return null
-    current = current.parent
-  current
+stepAncestor = ( current, segment ) ->
+  if ( current? ) && ( current.segment == segment )
+    current.parent
+  else
+    null
+
+findAncestor = ( node, segments ) ->
+  [ segments... ]
+    .reverse()
+    .reduce stepAncestor, node
 
 matchBinding = ( label, target, prefix ) ->
   if label.startsWith prefix
@@ -31,13 +34,12 @@ findMatches = ( bindings, prefix ) ->
   matches
 
 resolveGroup = ( matches ) ->
-  group = []
   candidate = matches[ 0 ].ancestor
-  for match in matches
-    if match.ancestor != candidate
-      return null
-    group.push match.label
-  { group, candidate }
+  if matches.every ( match ) -> match.ancestor == candidate
+    group: matches.map ( match ) -> match.label
+    candidate: candidate
+  else
+    null
 
 evaluatePrefix = ( node, prefix ) ->
   matches = findMatches node.bindings, prefix
@@ -60,7 +62,8 @@ collectPrefixes = ( bindings ) ->
   for [ label ] from bindings
     for prefix in generatePrefixes label
       prefixes.add prefix
-  ( Array.from prefixes ).sort ( first, second ) -> second.length - first.length
+  ( Array.from prefixes ).sort ( first, second ) ->
+    second.length - first.length
 
 replaceBindings = ( node, prefix, result ) ->
   for label in result.group
