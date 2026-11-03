@@ -48,7 +48,7 @@ registerResolver = ->
 
 verify =
   imports: ( map ) ->
-    assert.equal map.imports["helper"], "/src/helper.js"
+    assert.equal map.imports[ "helper" ], "/src/helper.js"
 
   binding: ( scopes, key, target ) ->
     assert scopes[ key ]?, "Scope key #{ key } should exist"
