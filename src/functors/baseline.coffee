@@ -19,7 +19,7 @@ Package =
 
 Segments =
   fromPath: ( url ) ->
-    if url.pathname.length > 1 then url.pathname[1..].split "/" else []
+    if url.pathname.length > 1 then url.pathname[ 1.. ].split "/" else []
 
   fromUrl: ( url ) ->
     [( getAuthority url ), ( Segments.fromPath url )... ]
