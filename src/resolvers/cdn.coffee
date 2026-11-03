@@ -58,9 +58,6 @@ class CDNResolver
   decode: ( url ) ->
     AtlasURL.decode url
 
-  parse: ( url ) ->
-    @decode url
-
   resolve: ( url ) ->
     Template.resolve @template, @decode url
 

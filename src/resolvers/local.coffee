@@ -40,9 +40,6 @@ class LocalResolver
   decode: ( url ) ->
     AtlasURL.decode url
 
-  parse: ( url ) ->
-    @decode url
-
   resolve: pipe [
     ( url ) -> @decode url
     ({ path }) -> Path.resolve @root, path.slice 1

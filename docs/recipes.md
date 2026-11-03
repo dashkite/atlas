@@ -62,25 +62,3 @@ map = await generate "index.js",
 
 1. Resolver instances are configured once via `.make({ root, patterns })` (or `.make({ template })` for `CDN`) and registered under a named key in `Resolvers.Registry`.
 2. Pipeline functions (`generate` and `bundle`) receive an ordered array of registered resolver keys in `options.resolvers`, keeping static resolver configuration (`root`) cleanly separated from pipeline execution options (`cwd` and `source`).
-
-## Inspecting the dependency graph with `analyze` and `ingest`
-
-This task involves running the discovery and ingestion stages directly to inspect the deduplicated `ModuleGraph`.
-
-```coffeescript
-import { analyze, ingest } from "@dashkite/atlas"
-import nodePreset from "@dashkite/atlas/presets/node"
-
-options =
-  cwd: "/path/to/app"
-  source: "build/node/src"
-  resolvers: nodePreset
-
-dependencies = analyze [ "index.js" ], options
-graph = await ingest dependencies, options
-
-console.log Array.from graph.sources.entries()
-```
-
-1. `analyze` runs `esbuild` on `"index.js"` (resolved against `options.source`) with `absWorkingDir` set to `options.cwd`, returning an async generator of dependency edges.
-2. `ingest` consumes the async generator, deduplicates physical files by inode (`fs.stat(path).ino`), encodes each module into a canonical `atlas://` URL using the configured `resolvers`, and returns the `ModuleGraph`.

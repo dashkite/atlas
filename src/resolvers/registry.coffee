@@ -11,7 +11,7 @@ lookup = ( key ) ->
   resolver
 
 extract = ( url ) ->
-  parsed = AtlasURL.parse url
+  parsed = AtlasURL.decode url
   parsed.resolver
 
 class ResolverRegistry
@@ -47,9 +47,6 @@ class ResolverRegistry
   decode: ( url ) ->
     resolver = @locate url
     resolver.decode url
-
-  parse: ( url ) ->
-    @decode url
 
   resolve: ( url ) ->
     resolver = @locate url

@@ -27,15 +27,8 @@ class ApplicationResolver
   encode: ( descriptor ) ->
     AtlasURL.encode { descriptor..., module: undefined }
 
-  decode: pipe [
-    AtlasURL.parse
-    ( parsed ) ->
-      resolver: parsed.resolver
-      path: parsed.pathname
-  ]
-
-  parse: ( url ) ->
-    @decode url
+  decode: ( url ) ->
+    AtlasURL.decode url
 
   resolve: pipe [
     ( url ) -> @decode url

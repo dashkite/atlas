@@ -34,9 +34,6 @@ class NodeResolver
   decode: ( url ) ->
     AtlasURL.decode url
 
-  parse: ( url ) ->
-    @decode url
-
   resolve: pipe [
     ( url ) -> @decode url
     ( descriptor ) -> resolvePath @root, descriptor

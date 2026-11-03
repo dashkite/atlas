@@ -72,24 +72,27 @@ buildDescriptor = ( resolver, decoded ) ->
     path: Path.format decoded.path
   }
 
-parse = ( url ) ->
+decodePathname = ( resolver, pathname ) ->
+  if resolver != "application"
+    buildDescriptor resolver, Pathname.decode pathname
+  else
+    { resolver, path: pathname }
+
+parseUrl = ( url ) ->
   parsed = new URL url
   {
     resolver: extractResolver parsed
     pathname: parsed.pathname
   }
 
-format = ( descriptor ) ->
+encode = ( descriptor ) ->
   "atlas://#{formatAuthority descriptor.resolver}#{Pathname.format descriptor}"
 
-encode = ( descriptor ) ->
-  format descriptor
-
 decode = pipe [
-  parse
+  parseUrl
   ({ resolver, pathname }) ->
-    buildDescriptor resolver, Pathname.decode pathname
+    decodePathname resolver, pathname
 ]
 
-export default { parse, format, encode, decode }
-export { parse, format, encode, decode }
+export default { encode, decode }
+export { encode, decode }

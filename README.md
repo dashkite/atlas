@@ -57,6 +57,7 @@ do ->
 
 ## Other Resources
 
+- [Interfaces](docs/interfaces.md)
 - [Recipes](docs/recipes.md)
 - [Reference](docs/reference.md)
 - [Technical Notes](docs/technical-notes.md)

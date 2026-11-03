@@ -53,35 +53,20 @@ OMITTED_PATH_DESCRIPTOR =
     version: "1.0.0"
 
 check =
-  parsed: ( url, resolver, pathname ) ->
-    parsed = AtlasURL.parse url
-    assert.equal parsed.resolver, resolver
-    assert.equal parsed.pathname, pathname
-
   roundTrip: ( descriptor, expected, decoded = descriptor ) ->
     url = AtlasURL.encode descriptor
     assert.equal url, expected
     assert.deepEqual ( AtlasURL.decode url ), decoded
 
-parse = ->
-  [
-    test "parses basic resolver key", ->
-      check.parsed APPLICATION_URL, "application", "/src/index.js"
-    test "parses parameterized resolver key", ->
-      check.parsed SCOPED_URL, "cdn@unpkg", "/@dashkite/joy@0.7.0/src/index.js"
-    test "fails fast on malformed URLs", ->
-      assert.throws -> AtlasURL.parse "not a url"
-  ]
-
-format = ->
-  [
-    test "formats descriptor with module", ->
-      assert.equal ( AtlasURL.format SCOPED_DESCRIPTOR ), SCOPED_URL
-    test "formats descriptor without module", ->
-      assert.equal ( AtlasURL.format APPLICATION_DESCRIPTOR ), APPLICATION_URL
-  ]
-
 Codec =
+  application: ->
+    [
+      test "encodes and decodes descriptor without module", ->
+        check.roundTrip APPLICATION_DESCRIPTOR, APPLICATION_URL
+      test "fails fast on malformed URLs", ->
+        assert.throws -> AtlasURL.decode "not a url"
+    ]
+
   module: ->
     [
       test "encodes and decodes scoped module descriptor", ->
@@ -108,8 +93,7 @@ Codec =
 
 export default ->
   [
-    ...parse()
-    ...format()
+    ...Codec.application()
     ...Codec.module()
     ...Codec.root()
     ...Codec.omitted()

@@ -2,7 +2,7 @@
 
 ## Pipeline Functions
 
-All pipeline functions operate relative to a target package working directory (`options.cwd`), and entry-point pipelines (`analyze`, `generate`, `bundle`) additionally accept an optional entry-point base directory (`options.source`).
+All pipeline functions operate relative to a target package working directory (`options.cwd`) and accept an optional entry-point base directory (`options.source`).
 
 ### generate
 
@@ -49,42 +49,28 @@ zipBuffer = await bundle "storage.js",
   source: "build/node/src/shell"
 ```
 
-### analyze
-
-$analyze: [entries, options] \dashrightarrow reactor$
-
-Analyzes the module dependencies for the given entry points using `esbuild` (via a mock build targeting `/dev/null` with `metafile: true`). Returns an asynchronous generator (reactor) yielding dependency objects `{ source, module, import }`.
-
-- **`entries`** *(Array\<String\>)*: Array of entry point file paths, each resolved via `Path.resolve(source, entry)`.
-- **`options`** *(Object, optional)*:
-  - **`cwd`** *(String, default: `process.cwd()`)*: Working directory passed to `esbuild` (`absWorkingDir`) and `ModuleCache.make(cwd)`. All emitted `metafile.inputs` paths are relative to `cwd`.
-  - **`source`** *(String, default: `options.cwd`)*: Base directory used to resolve input `entries` (`Path.resolve(cwd, options.source ? ".")`).
-  - **`platform`** *(String, default: `"node"`)*: Target platform for `esbuild`.
-  - **`conditions`** *(Array\<String\>, default: `[ platform ]`)*: Export conditions for package resolution.
-  - **`external`** *(Array\<String\>, default: `[]`)*: External module specifiers (`"esbuild"` is always included).
-
-### ingest
-
-$ingest: [dependencies, options] \dashrightarrow ModuleGraph$
-
-Consumes the asynchronous dependency stream from `analyze`, deduplicates physical files by inode (`fs.stat(path).ino`), matches each dependency against the configured resolvers, and returns a populated `ModuleGraph` (including `graph.sources` mapping canonical `atlas://` URLs to physical `file://` URLs).
-
-- **`dependencies`** *(AsyncIterable\<Object\> | Array\<Object\>)*: Dependency items yielded by `analyze`.
-- **`options`** *(Object, optional)*:
-  - **`cwd`** *(String, default: `process.cwd()`)*: Base directory used to resolve relative dependency paths on disk and passed in `context = { source, cwd }` to `resolver.match(context)`.
-  - **`resolvers`** *(Array\<String\>, default: `presets/node`)*: Registered resolver keys used to construct the composite Meta Resolver.
-
 ---
 
 ## Resolvers
 
 Resolvers translate between dependency descriptors, canonical `atlas://` URLs, and target runtime URLs (`file://` or `https://`). Unlike pipeline functions (which take `cwd` and `source`), filesystem-backed resolvers accept **`root`** in their `.make(config)` factory configuration.
 
+### Resolver Protocol
+
+Custom and built-in resolvers implement the following four-method protocol:
+
+- $resolver.match: [context] \to boolean$ — Returns `true` if the resolver claims the dependency described by `context` (`{ source, cwd }`), or `false` otherwise.
+- $resolver.encode: [descriptor] \to url$ — Encodes a dependency descriptor (`{ resolver, module, path }` or `{ resolver, path }`) into a canonical `atlas://` URL string.
+- $resolver.decode: [url] \to descriptor$ — Inverse of `encode`; decodes a canonical `atlas://` URL string into a dependency descriptor (`{ resolver, module: { scope, name, version }, path }` or `{ resolver, path }`).
+- $resolver.resolve: [url] \to targetUrl$ — Resolves a canonical `atlas://` URL string into a target runtime URL (`file://...` or `https://...`).
+
+Because custom resolvers are external implementations, the composite `MetaResolver` created by `Registry.make(keys)` acts as a contract-enforcing proxy around registered resolvers, validating configured resolver keys and the values returned by `match`, `encode`, `decode`, and `resolve`.
+
 ### Registry
 
-- $Registry.register: [key, resolver] \to resolver$ — Registers a configured resolver instance under `key` (e.g., `"local@workspace"` or `"cdn@jsdelivr"`).
+- $Registry.register: [key, resolver] \to resolver$ — Registers a configured or custom resolver instance under `key` (e.g., `"local@workspace"` or `"cdn@jsdelivr"`).
 - $Registry.get: [key] \to resolver$ — Retrieves a registered resolver instance by `key`.
-- $Registry.make: [keys] \to metaResolver$ — Creates a composite Meta Resolver dispatching across the ordered array of `keys`.
+- $Registry.make: [keys] \to metaResolver$ — Creates a composite `MetaResolver` proxy dispatching across the ordered array of `keys` and enforcing the resolver protocol contract.
 
 ### Application
 
@@ -123,6 +109,7 @@ Matches dependencies residing within `node_modules` and resolves canonical `atla
 
 ## Presets
 
+- **`@dashkite/atlas/presets`**: Exports `{ node, browser }`.
 - **`@dashkite/atlas/presets/node`**: Registers default `application`, `local@default` (`root: process.cwd()`), and `node` resolvers, and exports `["application", "local@default", "node"]`.
 - **`@dashkite/atlas/presets/browser`**: Registers default `application`, `local@default`, `cdn@unpkg`, `cdn@jsdelivr`, and `cdn@esm` resolvers, and exports `["application", "local@default", "cdn@unpkg"]`.
 
@@ -130,10 +117,7 @@ Matches dependencies residing within `node_modules` and resolves canonical `atla
 
 ## AtlasURL
 
-`AtlasURL` provides inverse encoding and decoding functions for canonical `atlas://` URLs:
+`AtlasURL` provides symmetrical encoding and decoding functions for canonical `atlas://` URLs:
 
-- $AtlasURL.encode: [descriptor] \to url$ — Formats a dependency descriptor (`{ resolver, module, path }`) into a canonical `atlas://` URL string.
-- $AtlasURL.decode: [url] \to descriptor$ — Decodes a canonical `atlas://` module URL string into `{ resolver, module: { scope, name, version }, path }`, matching the scoped URL Codex pathname template (`"/{scope}/{versioned}/{path*}"`) when `pathname` begins with `"/@"` and the unscoped template (`"/{versioned}/{path*}"`) otherwise.
-- $AtlasURL.parse: [url] \to \{ resolver, pathname \}$ — Parses the resolver key (`username@hostname` or `hostname`) and raw `pathname` from an `atlas://` URL string.
-- $AtlasURL.format: [descriptor] \to url$ — Alias for `AtlasURL.encode`.
-
+- $AtlasURL.encode: [descriptor] \to url$ — Encodes a dependency descriptor (`{ resolver, module, path }` or `{ resolver, path }`) into a canonical `atlas://` URL string.
+- $AtlasURL.decode: [url] \to descriptor$ — Decodes a canonical `atlas://` URL string into `{ resolver, module: { scope, name, version }, path }` for module-qualified resolvers (selecting the scoped URL Codex pathname template `"/{scope}/{versioned}/{path*}"` when `pathname` begins with `"/@"` and the unscoped template `"/{versioned}/{path*}"` otherwise), or `{ resolver, path }` when `resolver` is `"application"`.
