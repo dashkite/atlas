@@ -40,9 +40,9 @@ Segments =
       Segments.resolve ( new URL endpoint ), id
 
 resolve = ( root, graph, endpoint ) ->
-  id = graph.getAttribute endpoint, "packageId"
-  segments = Segments.parse endpoint, id
-  root.upsertPath segments
+  root.upsertPath do ->
+    Segments.parse endpoint,
+      graph.getAttribute endpoint, "packageId"
 
 bindEdge = ( root, graph, { source, target, label }) ->
   ( resolve root, graph, source )

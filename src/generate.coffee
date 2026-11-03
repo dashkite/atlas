@@ -12,12 +12,7 @@ import compact from "./functors/compaction"
 import compress from "./functors/compression"
 import resolve from "./functors/resolution"
 import serialize from "./functors/serialization"
-import browserPreset from "./presets/browser"
-import nodePreset from "./presets/node"
-
-Presets =
-  Browser: browserPreset
-  Node: nodePreset
+import presets from "./presets"
 
 Diagnostics =
   files: ( pipeline ) -> [
@@ -53,8 +48,7 @@ Diagnostics =
     Path.join process.cwd(), ".atlas", "generate", basename
 
   tasks: ( directory, state ) ->
-    pipeline = state.pipeline ? state
-    ( Diagnostics.files pipeline ).map ([ filename, data ]) ->
+    ( Diagnostics.files state.pipeline ).map ([ filename, data ]) ->
       Diagnostics.writeFile directory, filename, data
 
   write: ( directory, state ) ->
@@ -68,12 +62,8 @@ Diagnostics =
 
 dumpDiagnostics = ( state ) ->
   if process.env.DEBUG
-    directory =
-      if ( state.entries? ) && ( state.entries.length > 0 )
-        Diagnostics.deriveDirectory state.entries
-      else
-        Path.join ( state.options?.cwd ? process.cwd() ), ".atlas-debug"
-    await Diagnostics.write directory, state
+    await Diagnostics.write ( Diagnostics.deriveDirectory state.entries ),
+      state
   state
 
 ajv = new Ajv()
@@ -98,7 +88,7 @@ validateOptions = ajv.compile
       items:
         type: "string"
 
-isValidEntries = ( entries ) ->
+validateEntries = ( entries ) ->
   if isString entries
     entries.length > 0
   else if isArray entries
@@ -109,17 +99,17 @@ isValidEntries = ( entries ) ->
     false
 
 normalizeEntries = ( entries ) ->
-  if isValidEntries entries
+  if validateEntries entries
     [ entries ].flat()
   else
     throw new Error (
       "Entries must be a non-empty string or array of non-empty strings"
     )
 
-normalizeOptions = ( options = {}) ->
+normalizeOptions = ( options ) ->
   if validateOptions options
     cwd = Path.resolve ( options.cwd ? process.cwd() )
-    resolvers = options.resolvers ? Presets.Browser
+    resolvers = options.resolvers ? presets.browser
     external = options.external ? []
     source =
       if options.source?

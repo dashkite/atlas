@@ -47,7 +47,7 @@ serializeItem = ( component, path ) ->
   "#{ component }::#{ JSON.stringify path }"
 
 class TreeCompiler
-  @make: ( graph, options = {}) ->
+  @make: ( graph, options ) ->
     options = { defaults..., options... }
     { incoming, outgoing, conflicted } = analyzeGraph graph
     Object.assign ( new @ ),
@@ -104,7 +104,7 @@ class TreeCompiler
       @processItem item
     @index
 
-functor = ( graph, options = {}) ->
+functor = ( graph, options ) ->
   ( TreeCompiler.make graph, options ).compile graph
 
 export default functor

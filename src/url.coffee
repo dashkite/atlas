@@ -68,26 +68,27 @@ Pathname =
     else
       Codex.decode Template.unscoped, pathname
 
-buildDescriptor = ( resolver, decoded ) ->
-  {
-    resolver
-    module: Module.parse decoded
-    path: Path.format decoded.path
-  }
+Descriptor =
+  build: ( resolver, decoded ) ->
+    {
+      resolver
+      module: Module.parse decoded
+      path: Path.format decoded.path
+    }
+
+  isValid: ( descriptor ) ->
+    ( isObject descriptor ) &&
+    ( isString descriptor.resolver ) &&
+    ( descriptor.resolver.length > 0 )
 
 decodePathname = ( resolver, pathname ) ->
   if resolver != "application"
-    buildDescriptor resolver, Pathname.decode pathname
+    Descriptor.build resolver, Pathname.decode pathname
   else
     { resolver, path: pathname }
 
-isValidDescriptor = ( descriptor ) ->
-  ( isObject descriptor ) &&
-  ( isString descriptor.resolver ) &&
-  ( descriptor.resolver.length > 0 )
-
 encode = ( descriptor ) ->
-  if isValidDescriptor descriptor
+  if Descriptor.isValid descriptor
     "atlas://#{formatAuthority descriptor.resolver}" +
       Pathname.format descriptor
   else

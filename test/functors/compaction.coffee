@@ -13,10 +13,10 @@ setupLibrary = ( root, target ) ->
   node = root.upsertPath [ "app", "lib", "index.js" ]
   node.bindings.set "a", target
 
-setupTrie = ( targets ) ->
+setupTrie = ( source, library ) ->
   root = Trie.make()
-  setupSource root, targets.source
-  setupLibrary root, targets.library
+  setupSource root, source
+  setupLibrary root, library
   root
 
 verifyApplication = ( root ) ->
@@ -32,18 +32,15 @@ verifyLibrary = ( root, target ) ->
   assert.equal ( library.bindings.get "a" ), target
   assert.equal ( index.bindings.has "a" ), false
 
-verifyCompacted = ( root, targets ) ->
-  assert.equal ( root.bindings.get "a" ), targets.source
+verifyCompacted = ( root, source, library ) ->
+  assert.equal ( root.bindings.get "a" ), source
   verifyApplication root
-  verifyLibrary root, targets.library
+  verifyLibrary root, library
 
 testCompaction = ->
-  targets =
-    source: Trie.make "targetA"
-    library: Trie.make "targetB"
-  root = setupTrie targets
-  compacted = compact root
-  verifyCompacted compacted, targets
+  source = Trie.make "targetA"
+  library = Trie.make "targetB"
+  verifyCompacted ( compact setupTrie source, library ), source, library
 
 export default ->
   [

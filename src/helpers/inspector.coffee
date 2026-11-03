@@ -9,6 +9,18 @@ extractPrefix = ( file, marker ) ->
 extractFiles = ( zip ) ->
   ( Object.keys zip.files ).filter ( path ) -> !zip.files[ path ].dir
 
+formatMarker = ( name ) ->
+  "node_modules/#{name}"
+
+matchPrefixes = ( marker ) ->
+  @files.map ( file ) -> extractPrefix file, marker
+
+filterPrefixes = ( prefixes ) ->
+  prefixes.filter Boolean
+
+deduplicate = ( items ) ->
+  Array.from new Set items
+
 class BundleInspector
   @make: ( files ) ->
     Object.assign ( new @ ),
@@ -27,10 +39,10 @@ class BundleInspector
     @files
 
   findInstancesOf: pipe [
-    ( name ) -> "node_modules/#{name}"
-    ( marker ) -> @files.map ( file ) -> extractPrefix file, marker
-    ( prefixes ) -> prefixes.filter Boolean
-    ( prefixes ) -> Array.from new Set prefixes
+    formatMarker
+    matchPrefixes
+    filterPrefixes
+    deduplicate
   ]
 
   countInstancesOf: ( name ) ->

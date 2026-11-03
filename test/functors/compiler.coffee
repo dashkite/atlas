@@ -39,58 +39,60 @@ buildGraph = ( components, edges ) ->
     graph.addEdge edge
   graph
 
-createLinearGraph = ->
-  buildGraph Fixtures.linear.components, Fixtures.linear.edges
+Graphs =
+  linear: ->
+    buildGraph Fixtures.linear.components, Fixtures.linear.edges
 
-createIsolationGraph = ->
-  buildGraph Fixtures.isolation.components, Fixtures.isolation.edges
+  isolation: ->
+    buildGraph Fixtures.isolation.components, Fixtures.isolation.edges
 
 verifyBinding = ( index, { path, key, expected }) ->
   bindings = index.getBindings path
   assert.equal ( bindings.get key ), expected
 
-assertBaselineIndex = ( index ) ->
-  verifyBinding index, path: [], key: "pkg-root", expected: "pkg-root"
-  verifyBinding index, path: [ "pkg-root" ], key: "a", expected: "pkg-A"
-  verifyBinding index,
-    path: [ "pkg-root", "pkg-A" ]
-    key: "b"
-    expected: "pkg-B"
+Assertions =
+  baseline: ( index ) ->
+    verifyBinding index, path: [], key: "pkg-root", expected: "pkg-root"
+    verifyBinding index, path: [ "pkg-root" ], key: "a", expected: "pkg-A"
+    verifyBinding index,
+      path: [ "pkg-root", "pkg-A" ]
+      key: "b"
+      expected: "pkg-B"
 
-assertCompactedIndex = ( index ) ->
-  verifyBinding index, path: [], key: "pkg-root", expected: "pkg-root"
-  verifyBinding index, path: [], key: "a", expected: "pkg-A"
-  verifyBinding index, path: [], key: "b", expected: "pkg-B"
+  compacted: ( index ) ->
+    verifyBinding index, path: [], key: "pkg-root", expected: "pkg-root"
+    verifyBinding index, path: [], key: "a", expected: "pkg-A"
+    verifyBinding index, path: [], key: "b", expected: "pkg-B"
 
-###
-Collision on label "b": pkg-B-v1 and pkg-B-v2 cannot hoist.
-However, pkg-A and pkg-C have no collisions, so they MUST hoist to root.
-The conflicting dependencies (pkg-B-v1, pkg-B-v2) will be hierarchically
-embedded.
-###
-assertIsolationIndex = ( index ) ->
-  verifyBinding index, path: [], key: "pkg-root", expected: "pkg-root"
-  verifyBinding index, path: [], key: "a", expected: "pkg-A"
-  verifyBinding index, path: [], key: "c", expected: "pkg-C"
-  verifyBinding index, path: [ "pkg-A" ], key: "b", expected: "pkg-B-v1"
-  verifyBinding index, path: [ "pkg-C" ], key: "b", expected: "pkg-B-v2"
+  ###
+  Collision on label "b": pkg-B-v1 and pkg-B-v2 cannot hoist.
+  However, pkg-A and pkg-C have no collisions, so they MUST hoist to root.
+  The conflicting dependencies (pkg-B-v1, pkg-B-v2) will be hierarchically
+  embedded.
+  ###
+  isolation: ( index ) ->
+    verifyBinding index, path: [], key: "pkg-root", expected: "pkg-root"
+    verifyBinding index, path: [], key: "a", expected: "pkg-A"
+    verifyBinding index, path: [], key: "c", expected: "pkg-C"
+    verifyBinding index, path: [ "pkg-A" ], key: "b", expected: "pkg-B-v1"
+    verifyBinding index, path: [ "pkg-C" ], key: "b", expected: "pkg-B-v2"
 
 testBaseline = pipe [
-  createLinearGraph
+  Graphs.linear
   ( graph ) -> compile graph, compact: false
-  assertBaselineIndex
+  Assertions.baseline
 ]
 
 testCompaction = pipe [
-  createLinearGraph
+  Graphs.linear
   ( graph ) -> compile graph, compact: true
-  assertCompactedIndex
+  Assertions.compacted
 ]
 
 testIsolation = pipe [
-  createIsolationGraph
+  Graphs.isolation
   ( graph ) -> compile graph, compact: true
-  assertIsolationIndex
+  Assertions.isolation
 ]
 
 export default ->

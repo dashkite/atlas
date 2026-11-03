@@ -5,25 +5,6 @@ import { isFunction, isString } from "@dashkite/joy/type"
 
 ajv = new Ajv()
 
-validateConfiguration = ajv.compile
-  type: "object"
-  required: [ "template" ]
-
-isValidTemplate = ( template ) ->
-  ( isFunction template ) || (( isString template ) && ( template.length > 0 ))
-
-isValidConfiguration = ( configuration ) ->
-  ( validateConfiguration configuration ) &&
-  ( isValidTemplate configuration.template )
-
-normalize = ( configuration ) ->
-  if isValidConfiguration configuration
-    { template } = configuration
-    template: if isFunction template then template else -> template
-  else
-    throw new Error "CDN resolver requires a URL Codex template string or " +
-      "function in configuration"
-
 segment = ( path ) ->
   ( path.split "/" ).filter Boolean
 
@@ -46,6 +27,10 @@ Format =
     }
 
 Template =
+  isValid: ( template ) ->
+    ( isFunction template ) ||
+      (( isString template ) && ( template.length > 0 ))
+
   context: ( descriptor ) ->
     {
       ( Format.module descriptor.module )...
@@ -56,9 +41,28 @@ Template =
     Codex.encode ( template descriptor ),
       Template.context descriptor
 
+Configuration =
+  validate: ajv.compile
+    type: "object"
+    required: [ "template" ]
+
+  isValid: ( configuration ) ->
+    ( Configuration.validate configuration ) &&
+      ( Template.isValid configuration.template )
+
+  normalize: ( configuration ) ->
+    if Configuration.isValid configuration
+      { template } = configuration
+      template: if isFunction template then template else -> template
+    else
+      throw new Error (
+        "CDN resolver requires a URL Codex template string or " +
+        "function in configuration"
+      )
+
 class CDNResolver
   @make: ( configuration ) ->
-    Object.assign ( new @ ), normalize configuration
+    Object.assign ( new @ ), Configuration.normalize configuration
 
   match: ( context ) ->
     context.source.includes "node_modules"

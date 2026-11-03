@@ -4,11 +4,11 @@ import { isString, isArray } from "@dashkite/joy/type"
 import { Registry, Application, Node, CDN, Local } from "../src/resolvers/index"
 import presets from "../src/presets/index"
 
-unpkgTemplate = "https://unpkg.com/{scope?}/{versioned}/{path*}"
+template = "https://unpkg.com/{scope?}/{versioned}/{path*}"
 
 Factories =
   cdn: ->
-    CDN.make template: unpkgTemplate
+    CDN.make { template }
 
   local: ->
     Local.make root: "/root", patterns: [ "**/.tempo/repos/**/*" ]

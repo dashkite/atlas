@@ -153,7 +153,7 @@ class ModuleGraphBuilder
   build: ->
     @graph
 
-createBuilder = ( options = {}) ->
+createBuilder = ( options ) ->
   ModuleGraphBuilder.make ( resolveCWD options ),
     ( resolveRegistry options )
 

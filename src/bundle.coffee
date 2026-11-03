@@ -11,12 +11,6 @@ import compile from "./functors/compiler"
 import resolve from "./functors/resolver"
 import preset from "./presets/node"
 
-zipOptions =
-  type: "nodebuffer"
-  compression: "DEFLATE"
-  compressionOptions:
-    level: 9
-
 Manifest =
   check: ( directory ) ->
     path = Path.join directory, "package.json"
@@ -76,13 +70,23 @@ Source =
     ( new URL url ).pathname
 
 Entry =
+  isValid: ( entries ) ->
+    if isString entries
+      entries.length > 0
+    else if isArray entries
+      ( entries.length > 0 ) && ( entries.every ( entry ) ->
+        ( isString entry ) && ( entry.length > 0 )
+      )
+    else
+      false
+
   resolve: ( cwd, source, entry ) ->
     absolute = Path.resolve source, entry
     relative = Path.relative cwd, absolute
     { relative, absolute }
 
   normalize: ( entries ) ->
-    if isValidEntries entries
+    if Entry.isValid entries
       [ entries ].flat()
     else
       throw new Error "Entries argument is required"
@@ -108,16 +112,6 @@ validateOptions = ajv.compile
       type: "array"
       items:
         type: "string"
-
-isValidEntries = ( entries ) ->
-  if isString entries
-    entries.length > 0
-  else if isArray entries
-    ( entries.length > 0 ) && ( entries.every ( entry ) ->
-      ( isString entry ) && ( entry.length > 0 )
-    )
-  else
-    false
 
 Diagnostics =
   replacer: ( key, item ) ->
@@ -236,7 +230,11 @@ class BundleArchive
     return
 
   generate: ->
-    @zip.generateAsync zipOptions
+    @zip.generateAsync
+      type: "nodebuffer"
+      compression: "DEFLATE"
+      compressionOptions:
+        level: 9
 
 Options =
   normalize: ( options = {}) ->
