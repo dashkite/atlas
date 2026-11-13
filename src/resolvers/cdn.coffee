@@ -1,30 +1,19 @@
-import Ajv from "ajv"
+import AJV from "ajv"
 import AtlasURL from "../url"
 import * as Codex from "@dashkite/url-codex"
 import { isFunction, isString } from "@dashkite/joy/type"
 
-ajv = new Ajv()
+ajv = new AJV()
 
 segment = ( path ) ->
   ( path.split "/" ).filter Boolean
 
-Format =
-  tag: ( name, version ) ->
-    if version then "#{name}@#{version}" else name
-
-  specifier: ({ scope, name }) ->
-    if scope then "#{scope}/#{name}" else name
-
-  release: ( module ) ->
-    Format.tag ( Format.specifier module ), module.version
-
-  module: ( module ) ->
-    {
-      module...
-      specifier: Format.specifier module
-      release: Format.release module
-      versioned: Format.tag module.name, module.version
-    }
+formatModule = ( module ) ->
+  { scope, name, version } = module
+  specifier = if scope then "#{scope}/#{name}" else name
+  release = if version then "#{specifier}@#{version}" else specifier
+  versioned = if version then "#{name}@#{version}" else name
+  { module..., specifier, release, versioned }
 
 Template =
   isValid: ( template ) ->
@@ -33,7 +22,7 @@ Template =
 
   context: ( descriptor ) ->
     {
-      ( Format.module descriptor.module )...
+      ( formatModule descriptor.module )...
       path: segment descriptor.path
     }
 

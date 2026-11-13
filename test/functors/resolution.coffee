@@ -4,18 +4,11 @@ import Trie from "../../src/categories/trie"
 import resolve from "../../src/functors/resolution"
 import { Registry } from "../../src/resolvers/index"
 
-upsertMaeve = ( root ) ->
-  root.upsertPath [
-    "node"
-    "@dashkite"
-    "maeve@1.0.0"
-    "src"
-    "index.js"
-  ]
-
 createFixture = ->
   root = Trie.make()
-  maeve = upsertMaeve root
+  maeve = root.upsertPath [
+    "node", "@dashkite", "maeve@1.0.0", "src", "index.js"
+  ]
   application = root.upsertPath [ "app", "src", "index.js" ]
   application.bindings.set "maeve", maeve
   root
@@ -28,9 +21,6 @@ registerResolvers = ->
   Registry.register "app",
     decode: ( _url ) -> { resolver: "app" }
     resolve: ( _url ) -> "/src/index.js"
-
-assertTopology = ( root ) ->
-  assert ( root.children.has "app" ), "Topology should remain intact"
 
 findApplication = ( root ) ->
   [ "app", "src", "index.js" ].reduce ( node, segment ) ->
@@ -51,7 +41,7 @@ export default ->
     ), ->
       registerResolvers()
       root = resolve createFixture(), [ "node", "app" ]
-      assertTopology root
+      assert ( root.children.has "app" )
       application = findApplication root
       assertBinding application
   ]

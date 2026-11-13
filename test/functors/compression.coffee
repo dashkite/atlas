@@ -16,9 +16,9 @@ setupMaeve = ( root ) ->
 setupBindings = ( root, maeve ) ->
   common = maeve.upsertPath [ "common.js" ]
   sublime = maeve.upsertPath [ "sublime", "index.js" ]
-  app = root.upsertPath [ "app" ]
-  app.bindings.set "@dashkite/maeve/common.js", common
-  app.bindings.set "@dashkite/maeve/sublime/index.js", sublime
+  application = root.upsertPath [ "app" ]
+  application.bindings.set "@dashkite/maeve/common.js", common
+  application.bindings.set "@dashkite/maeve/sublime/index.js", sublime
   return
 
 createFixture = ->
@@ -27,27 +27,24 @@ createFixture = ->
   setupBindings root, maeve
   { root, maeve }
 
-assertPrefix = ( app, expected ) ->
-  assert ( app.bindings.has "@dashkite/maeve/" ),
+assertPrefix = ( application, expected ) ->
+  assert ( application.bindings.has "@dashkite/maeve/" ),
     "Should have created trailing-slash prefix binding"
-  target = app.bindings.get "@dashkite/maeve/"
-  assert.equal target, expected,
-    "Prefix binding should point to common ancestor node"
+  target = application.bindings.get "@dashkite/maeve/"
+  assert.equal target, expected
 
-assertPruned = ( app ) ->
-  assert.equal ( app.bindings.has "@dashkite/maeve/common.js" ),
-    false,
-    "Should have pruned specific file binding"
-  assert.equal ( app.bindings.has "@dashkite/maeve/sublime/index.js" ),
-    false,
-    "Should have pruned specific file binding"
+assertPruned = ( application ) ->
+  assert.equal ( application.bindings.has "@dashkite/maeve/common.js" ), false
+  assert.equal (
+    application.bindings.has "@dashkite/maeve/sublime/index.js"
+  ), false
 
 export default ->
   [
     test "collapses exact file mappings into directory prefix mappings", ->
       { root, maeve } = createFixture()
       root = compress root
-      app = root.children.get "app"
-      assertPrefix app, maeve
-      assertPruned app
+      application = root.children.get "app"
+      assertPrefix application, maeve
+      assertPruned application
   ]

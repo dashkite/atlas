@@ -11,12 +11,6 @@ Package =
       ( id != entryPoint ) &&
       ( !( id.startsWith "atlas://application" ))
 
-  segment: ( url ) ->
-    ( Segments.fromURL url ).join "/"
-
-  segments: ( segments, url ) ->
-    [( Package.segment url ), ( Segments.remaining segments, url )... ]
-
 Segments =
   fromPath: ( url ) ->
     if url.pathname.length > 1 then url.pathname[ 1.. ].split "/" else []
@@ -24,20 +18,19 @@ Segments =
   fromURL: ( url ) ->
     [( getAuthority url ), ( Segments.fromPath url )... ]
 
-  remaining: ( segments, url ) ->
-    segments.slice ( Segments.fromPath url ).length
-
-  resolve: ( url, id ) ->
-    if Package.isExternal id
-      Package.segments ( Segments.fromPath url ), new URL id
-    else
-      Segments.fromURL url
+  fromExternal: ( url, id ) ->
+    base = new URL id
+    prefix = ( Segments.fromURL base ).join "/"
+    offset = ( Segments.fromPath base ).length
+    [ prefix, (( Segments.fromPath url ).slice offset )... ]
 
   parse: ( endpoint, id ) ->
     if endpoint == entryPoint
       []
+    else if Package.isExternal id
+      Segments.fromExternal ( new URL endpoint ), id
     else
-      Segments.resolve ( new URL endpoint ), id
+      Segments.fromURL new URL endpoint
 
 resolve = ( root, graph, endpoint ) ->
   root.upsertPath do ->

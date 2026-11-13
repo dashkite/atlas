@@ -1,4 +1,3 @@
-import { pipe } from "@dashkite/joy"
 import ModuleGraph from "./categories/module-graph"
 import Resolvers from "./resolvers"
 import Path from "node:path"
@@ -21,17 +20,18 @@ deriveMetadata = ( module ) ->
     version: module.version
   }
 
-isRelative = ( specifier ) ->
-  ( specifier.startsWith "./" ) || ( specifier.startsWith "../" )
+Specifier =
+  isRelative: ( specifier ) ->
+    ( specifier.startsWith "./" ) || ( specifier.startsWith "../" )
 
-isAlias = ( specifier ) ->
-  specifier.startsWith "#"
+  isAlias: ( specifier ) ->
+    specifier.startsWith "#"
 
-determineType = ( specifier ) ->
-  if ( isRelative specifier ) || ( isAlias specifier )
-    "intra"
-  else
-    "inter"
+  determineType: ( specifier ) ->
+    if ( Specifier.isRelative specifier ) || ( Specifier.isAlias specifier )
+      "intra"
+    else
+      "inter"
 
 class ModuleURLResolver
   @make: ( cwd, registry ) ->
@@ -61,8 +61,9 @@ class ModuleURLResolver
     if key?
       key
     else
-      throw new Error \
+      throw new Error (
         "No resolver found to encode target: #{ JSON.stringify target }"
+      )
 
   encodeTarget: ( target ) ->
     @registry.encode @buildDescriptor target, @matchKey target
@@ -99,11 +100,9 @@ class ModuleGraphBuilder
       urls: ModuleURLResolver.make cwd, registry
       graph: ModuleGraph.make()
 
-  encodePackage: pipe [
-    ( url ) -> @registry.decode url
-    ( parsed ) -> { parsed..., path: "" }
-    ( parsed ) -> @registry.encode parsed
-  ]
+  encodePackage: ( url ) ->
+    parsed = @registry.decode url
+    @registry.encode { parsed..., path: "" }
 
   resolvePackage: ( url ) ->
     if url == entryPoint
@@ -141,7 +140,7 @@ class ModuleGraphBuilder
       source: urls.source
       target: urls.target
       label: specifier
-      type: determineType specifier
+      type: Specifier.determineType specifier
     return
 
   addDependency: ( item ) ->

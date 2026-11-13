@@ -8,10 +8,10 @@ Packages =
   enchant: "atlas://local/@dashkite/enchant@2.0.0"
 
 Fixtures =
-  app:
+  application:
     index: "file:///app/index.js"
     helper: "file:///app/helper.js"
-    utils: "file:///app/utils.js"
+    utilities: "file:///app/utils.js"
     package: "app"
     modules: [
       "file:///app/index.js"
@@ -20,7 +20,7 @@ Fixtures =
     ]
   maeve:
     index: "file:///node_modules/maeve/index.js"
-    lib: "file:///node_modules/maeve/lib.js"
+    library: "file:///node_modules/maeve/lib.js"
     package: Packages.maeve
     common: "#{ Packages.maeve }/build/node/src/common.js"
     sublime: "#{ Packages.maeve }/build/node/src/sublime/index.js"
@@ -58,23 +58,19 @@ addEdges = ( graph ) ->
 Graphs =
   contracts: ->
     graph = ModuleGraph.make()
-    addModules graph, "app", Fixtures.app.modules
+    addModules graph, "app", Fixtures.application.modules
     addModules graph, "maeve", Fixtures.maeve.modules
     addEdge graph,
-      source: Fixtures.app.index
+      source: Fixtures.application.index
       target: Fixtures.maeve.index
       label: "maeve"
     graph
 
   disjoint: ->
     graph = ModuleGraph.make()
-    addModules graph, Fixtures.maeve.package, [
-      Fixtures.maeve.common
-      Fixtures.maeve.sublime
-    ]
-    addModules graph, Fixtures.enchant.package, [
-      Fixtures.enchant.index
-    ]
+    addModules graph, Fixtures.maeve.package,
+      [ Fixtures.maeve.common, Fixtures.maeve.sublime ]
+    addModules graph, Fixtures.enchant.package, [ Fixtures.enchant.index ]
     addEdges graph
     graph
 
@@ -86,8 +82,8 @@ Assertions =
   modules: ( graph, id ) ->
     modules = graph.getModules id
     assert.equal modules.size, 3
-    assert modules.has Fixtures.app.helper
-    assert modules.has Fixtures.app.utils
+    assert modules.has Fixtures.application.helper
+    assert modules.has Fixtures.application.utilities
 
   edges: ( graph, source, target ) ->
     edges = graph.getEdges()
@@ -99,18 +95,16 @@ Assertions =
   discrete: ( graph ) ->
     vertices = graph.getVertices()
     assert.equal vertices.size, 2
-    app = findComponent graph, Fixtures.app.index
+    application = findComponent graph, Fixtures.application.index
     maeve = findComponent graph, Fixtures.maeve.index
-    assert app?
+    assert application?
     assert maeve?
-    Assertions.modules graph, app
-    Assertions.edges graph, app, maeve
+    Assertions.modules graph, application
+    Assertions.edges graph, application, maeve
 
   disjoint: ( graph ) ->
     vertices = graph.getVertices()
-    assert.equal vertices.size, 2,
-      "Expected disjoint entry points to be collapsed " +
-      "into a single package component vertex"
+    assert.equal vertices.size, 2
 
 export default ->
   [

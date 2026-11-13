@@ -44,9 +44,6 @@ resolver =
   resolve: ( url ) ->
     "https://cdn.example.com/#{ url.replace "atlas://node/", "" }/"
 
-registerResolver = ->
-  Registry.register "node", resolver
-
 verify =
   imports: ( map ) ->
     assert.equal map.imports[ "helper" ], "/src/helper.js"
@@ -68,21 +65,21 @@ verify =
 cases =
   format: ->
     root = fixtures.base()
-    registerResolver()
+    Registry.register "node", resolver
     map = serialize root, [ "node" ]
     verify.imports map
     verify.scopes map
 
   scopes: ->
     root = fixtures.nested()
-    registerResolver()
+    Registry.register "node", resolver
     map = serialize root, [ "node" ]
     verify.imports map
     verify.nested map
 
   immutability: ->
     root = fixtures.nested()
-    registerResolver()
+    Registry.register "node", resolver
     bindings = new Map root.bindings
     children = new Map root.children
     serialize root, [ "node" ]

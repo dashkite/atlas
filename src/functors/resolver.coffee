@@ -1,103 +1,72 @@
-import { pipe } from "@dashkite/joy"
 import Resolvers from "../resolvers"
 
-Package =
-  format: ( descriptor ) ->
-    if descriptor.module.scope
-      "#{descriptor.module.scope}/#{descriptor.module.name}"
-    else
-      descriptor.module.name
+formatPackage = ({ module }) ->
+  if module.scope
+    "#{module.scope}/#{module.name}"
+  else
+    module.name
 
-class PackageComponent
-  @make: ( graph, index, resolver ) ->
+Directory =
+  nest: ( directory, name ) ->
+    if directory == ""
+      "node_modules/#{name}"
+    else
+      "#{directory}/node_modules/#{name}"
+
+  join: ( directory, path ) ->
+    normalized = if path.startsWith "/" then path[ 1.. ] else path
+    if directory == ""
+      normalized
+    else
+      "#{directory}/#{normalized}"
+
+class BundleResolver
+  @make: ( graph, index, keys ) ->
     Object.assign ( new @ ),
       graph: graph
       index: index
-      resolver: resolver
-
-  name: pipe [
-    ( component ) -> @graph.getModules component
-    ( modules ) -> ( Array.from modules )[ 0 ]
-    ( module ) -> @resolver.decode module
-    Package.format
-  ]
+      resolver: Resolvers.Registry.make keys
+      directories: new Map()
+      bundle: new Map()
 
   isRoot: ( component ) ->
-    entry = ( Array.from @index.getBindings []).find ([ _, target ]) ->
+    entry = ( Array.from @index.getBindings []).find ([ label, target ]) ->
       target == component
     if entry?
       entry[ 0 ] == component
     else
       false
 
-class BundleDirectory
-  @nest: ( directory, name ) ->
-    if directory == ""
-      "node_modules/#{name}"
-    else
-      "#{directory}/node_modules/#{name}"
+  resolveName: ( component ) ->
+    [ first ] = @graph.getModules component
+    formatPackage @resolver.decode first
 
-  @join: ( directory, path ) ->
-    path =
-      if path.startsWith "/"
-        path.slice 1
-      else
-        path
-    if directory == ""
-      path
-    else
-      "#{directory}/#{path}"
-
-  @make: ( component ) ->
-    Object.assign ( new @ ),
-      component: component
-      cache: new Map()
-
-  root: ( component ) ->
-    if @component.isRoot component
-      ""
-    else
-      "node_modules/#{@component.name component}"
-
-  parent: ( path ) ->
-    @resolve ( path.slice 0, -1 ), path[ path.length - 1 ]
-
-  nested: ( path, name ) ->
-    BundleDirectory.nest ( @parent path ), name
-
-  compute: ( path, component ) ->
+  computeDirectory: ( path, component ) ->
     if path.length == 0
-      @root component
+      if @isRoot component
+        ""
+      else
+        Directory.nest "", @resolveName component
     else
-      @nested path, @component.name component
+      parent = @resolveDirectory ( path.slice 0, -1 ), path.at -1
+      Directory.nest parent, @resolveName component
 
-  resolve: ( path, component ) ->
+  resolveDirectory: ( path, component ) ->
     key = "#{component}::#{JSON.stringify path}"
-    if @cache.has key
-      @cache.get key
+    if @directories.has key
+      @directories.get key
     else
-      directory = @compute path, component
-      @cache.set key, directory
+      directory = @computeDirectory path, component
+      @directories.set key, directory
       directory
-
-class BundleResolver
-  @make: ( graph, index, keys ) ->
-    resolver = Resolvers.Registry.make keys
-    component = PackageComponent.make graph, index, resolver
-    Object.assign ( new @ ),
-      graph: graph
-      index: index
-      resolver: resolver
-      directory: BundleDirectory.make component
-      bundle: new Map()
 
   add: ( directory, url ) ->
     { path } = @resolver.decode url
-    @bundle.set ( BundleDirectory.join directory, path ), url
+    @bundle.set ( Directory.join directory, path ), url
     return
 
   collect: ( path, component ) ->
-    directory = @directory.resolve path, component
+    directory = @resolveDirectory path, component
     for url from @graph.getModules component
       @add directory, url
     return

@@ -53,12 +53,15 @@ These functions and classes operate on contract trust and MUST NOT duplicate def
   - `compress` (`src/functors/compression.coffee`): Collapses file-level bindings sharing common directory prefixes into trailing-slash prefix mappings.
   - `resolve` (`src/functors/resolution.coffee`): Translates canonical `atlas://` target bindings in the `Trie` into runtime URLs via the composite `MetaResolver`.
   - `serialize` (`src/functors/serialization.coffee`): Formats a resolved `Trie` into a WHATWG `{ imports, scopes }` import map object.
-  - Pipeline orchestration and diagnostic helpers in `src/generate.coffee` (`Diagnostics`, `prepareContext`, `executePipeline`, `applyFunctors`, `buildTries`, `resolveAndSerialize`).
-- **Application Bundling Functor Pipeline (`src/functors/*`, `src/bundle.coffee`)**:
+  - Pipeline orchestration helpers in `src/generate.coffee` (`prepareContext`, `executePipeline`, `applyFunctors`) and shared `Diagnostics` (`dump`) in `src/helpers/diagnostics.coffee`.
+- **Application Bundling Functor Pipeline (`src/functors/*`, `src/bundle.coffee`, `src/helpers/*`)**:
   - `quotient` (`src/functors/quotient.coffee`): Contracts intra-package edges in a `ModuleGraph` to produce a `ComponentGraph`.
   - `compile` (`src/functors/compiler.coffee`): Embeds a `ComponentGraph` into a `TreeIndex`, hoisting non-conflicting components to `Path.root` when `compact` is enabled and isolating version collisions in nested scopes.
-  - `resolve` / `BundleResolver` (`src/functors/resolver.coffee`): Projects a `ComponentGraph` and `TreeIndex` into a `Map<destinationPath, atlasUrl>` using `PackageComponent` and `BundleDirectory`.
-  - `BundleArchive` and internal pipeline helpers (`Manifest`, `Package`, `Source`, `Entry`, `Diagnostics`, `Options`, `Context`, `Dependencies`, `Functors`) in `src/bundle.coffee`: Populates entry points, root and dependency `package.json` manifests, and module files into a DEFLATE-compressed ZIP `Buffer`. Note that `Manifest.check` and `Manifest.read` recover conditionally from `error.code == "ENOENT"` by returning `null` when a `package.json` file is absent at a candidate directory.
+  - `resolve` / `BundleResolver` (`src/functors/resolver.coffee`): Projects a `ComponentGraph` and `TreeIndex` into a `Map<destinationPath, atlasUrl>` using `Directory` and memoized directory resolution on `BundleResolver`.
+  - `Manifest` (`src/helpers/manifest.coffee`): Locates package manifests via Node's `Module.findPackageJSON` (`find`) and reads root manifests with `ENOENT` recovery returning `null` when absent (`read`).
+  - `BundleArchive` and `Package` (`src/helpers/archive.coffee`): Assembles the DEFLATE-compressed ZIP `Buffer` with entry files, package manifests, and dependencies.
+  - `Diagnostics` (`src/helpers/diagnostics.coffee`): Provides shared `DEBUG` pipeline artifact serialization and disk persistence (`dump`).
+  - Pipeline coordination helpers in `src/bundle.coffee` (`Entry`, `normalizeOptions`, `prepareContext`, `applyFunctors`, `executePipeline`).
 - **Built-In Resolver Implementations & Inspection Helpers (`src/resolvers/*`, `src/url.coffee`, `src/helpers/inspector.coffee`)**:
   - `ApplicationResolver`, `LocalResolver`, `NodeResolver`, `CDNResolver` protocol implementations (`match`, `encode`, `decode`, `resolve`) and internal formatting/template helpers: Operate on trusted pipeline inputs and rely on the `ResolverRegistry` (`MetaResolver`) proxy to enforce protocol postconditions.
   - `BundleInspector` (`src/helpers/inspector.coffee`): Diagnostic and testing utility (`make`, `fromZip`, `fromMap`, `getFiles`, `findInstancesOf`, `countInstancesOf`, `hasFile`) for inspecting package instances and file paths in bundle maps and ZIP buffers.

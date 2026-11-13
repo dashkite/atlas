@@ -4,33 +4,34 @@ import { pipe } from "@dashkite/joy/function"
 import ModuleGraph from "../../src/categories/module-graph"
 import baseline from "../../src/functors/baseline"
 
-addVertices = ( graph ) ->
-  graph.addVertex "atlas://app/src/index.js"
-  graph.addVertex "atlas://app/node_modules/maeve/index.js"
-  graph.addVertex "atlas://app/src/helper.js"
-  graph
+Graph =
+  addVertices: ( graph ) ->
+    graph.addVertex "atlas://app/src/index.js"
+    graph.addVertex "atlas://app/node_modules/maeve/index.js"
+    graph.addVertex "atlas://app/src/helper.js"
+    graph
 
-addInterEdge = ( graph ) ->
-  graph.addEdge
-    source: "atlas://app/src/index.js"
-    target: "atlas://app/node_modules/maeve/index.js"
-    label: "maeve"
-    type: "inter"
-  graph
+  addInter: ( graph ) ->
+    graph.addEdge
+      source: "atlas://app/src/index.js"
+      target: "atlas://app/node_modules/maeve/index.js"
+      label: "maeve"
+      type: "inter"
+    graph
 
-addIntraEdge = ( graph ) ->
-  graph.addEdge
-    source: "atlas://app/src/index.js"
-    target: "atlas://app/src/helper.js"
-    label: "./helper.js"
-    type: "intra"
-  graph
+  addIntra: ( graph ) ->
+    graph.addEdge
+      source: "atlas://app/src/index.js"
+      target: "atlas://app/src/helper.js"
+      label: "./helper.js"
+      type: "intra"
+    graph
 
-buildFixtureGraph = pipe [
+Graph.build = pipe [
   ( -> ModuleGraph.make() )
-  addVertices
-  addInterEdge
-  addIntraEdge
+  Graph.addVertices
+  Graph.addInter
+  Graph.addIntra
 ]
 
 advanceSegment = ( node, segment ) ->
@@ -38,7 +39,7 @@ advanceSegment = ( node, segment ) ->
   assert next?
   next
 
-getIndexNode = ( root ) ->
+getNode = ( root ) ->
   [ "app", "src", "index.js" ].reduce advanceSegment, root
 
 verifyBindings = ( node ) ->
@@ -49,12 +50,12 @@ verifyBindings = ( node ) ->
   assert !node.bindings.has "./helper.js"
 
 verifyTrie = pipe [
-  getIndexNode
+  getNode
   verifyBindings
 ]
 
 testBaseline = pipe [
-  buildFixtureGraph
+  Graph.build
   baseline
   verifyTrie
 ]

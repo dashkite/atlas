@@ -51,16 +51,9 @@ Path =
     if path.length > 0 then "/#{path.join "/"}" else ""
 
 Pathname =
-  collect: ({ module, path }) ->
-    segments = [
-      Module.format module
-      Path.normalize path
-    ]
-    segments.filter Boolean
-
-  format: ( descriptor ) ->
-    segments = Pathname.collect descriptor
-    if segments.length > 0 then "/#{segments.join "/"}" else ""
+  format: ({ module, path }) ->
+    segments = [( Module.format module ), ( Path.normalize path )]
+    Path.format segments.filter Boolean
 
   decode: ( pathname ) ->
     if pathname.startsWith "/@"
@@ -69,13 +62,6 @@ Pathname =
       Codex.decode Template.unscoped, pathname
 
 Descriptor =
-  build: ( resolver, decoded ) ->
-    {
-      resolver
-      module: Module.parse decoded
-      path: Path.format decoded.path
-    }
-
   isValid: ( descriptor ) ->
     ( isObject descriptor ) &&
     ( isString descriptor.resolver ) &&
@@ -83,7 +69,12 @@ Descriptor =
 
 decodePathname = ( resolver, pathname ) ->
   if resolver != "application"
-    Descriptor.build resolver, Pathname.decode pathname
+    decoded = Pathname.decode pathname
+    {
+      resolver
+      module: Module.parse decoded
+      path: Path.format decoded.path
+    }
   else
     { resolver, path: pathname }
 

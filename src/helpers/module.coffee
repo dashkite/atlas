@@ -13,14 +13,12 @@ resolvePath = ( current, directory ) ->
   else
     path
 
-readPackage = ( path, current ) ->
+readPackage = ( current, directory ) ->
+  path = resolvePath current, directory
   if await Zephyr.exists path
     normalize ( await Zephyr.read path ), current
   else
     null
-
-loadPackage = ( current, directory ) ->
-  readPackage ( resolvePath current, directory ), current
 
 isTerminal = ( path ) ->
   ( path == "." ) || ( path == "/" ) || ( path == "" )
@@ -30,7 +28,7 @@ _read = ( path, directory ) ->
   manifest = null
   until ( manifest? ) || ( isTerminal current )
     current = Path.dirname current
-    manifest = await loadPackage current, directory
+    manifest = await readPackage current, directory
   if manifest?
     manifest
   else

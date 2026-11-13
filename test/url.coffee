@@ -55,39 +55,38 @@ Fixtures =
         name: "foo"
         version: "1.0.0"
 
-check =
-  roundTrip: ( descriptor, expected, decoded = descriptor ) ->
-    url = AtlasURL.encode descriptor
-    assert.equal url, expected
-    assert.deepEqual ( AtlasURL.decode url ), decoded
+roundTrip = ( descriptor, expected, decoded = descriptor ) ->
+  url = AtlasURL.encode descriptor
+  assert.equal url, expected
+  assert.deepEqual ( AtlasURL.decode url ), decoded
 
 export default ->
   [
     test "encodes and decodes descriptor without module", ->
-      check.roundTrip Fixtures.descriptors.application,
+      roundTrip Fixtures.descriptors.application,
         Fixtures.urls.application
 
     test "fails fast on malformed URLs", ->
       assert.throws -> AtlasURL.decode "not a url"
 
     test "encodes and decodes scoped module descriptor", ->
-      check.roundTrip Fixtures.descriptors.scoped,
+      roundTrip Fixtures.descriptors.scoped,
         Fixtures.urls.scoped
 
     test "encodes and decodes unscoped module descriptor", ->
-      check.roundTrip Fixtures.descriptors.unscoped,
+      roundTrip Fixtures.descriptors.unscoped,
         Fixtures.urls.unscoped
 
     test "encodes and decodes scoped package-root descriptor", ->
-      check.roundTrip Fixtures.descriptors.root.scoped,
+      roundTrip Fixtures.descriptors.root.scoped,
         Fixtures.urls.root.scoped
 
     test "encodes and decodes unscoped package-root descriptor", ->
-      check.roundTrip Fixtures.descriptors.root.unscoped,
+      roundTrip Fixtures.descriptors.root.unscoped,
         Fixtures.urls.root.unscoped
 
     test "encodes and decodes package-root descriptor with omitted path", ->
-      check.roundTrip Fixtures.descriptors.bare,
+      roundTrip Fixtures.descriptors.bare,
         Fixtures.urls.root.unscoped,
         Fixtures.descriptors.root.unscoped
   ]
