@@ -9,7 +9,7 @@ Targets =
   child: "https://cdn.example.com/nested@0.1.0/index.js"
   sibling: "https://cdn.example.com/foo@2.0.0/index.js"
 
-Expected =
+Expectations =
   base:
     imports:
       helper: "/src/helper.js"
@@ -61,12 +61,12 @@ export default ->
     test "serializes Trie to WHATWG importmap JSON format", ->
       Registry.register "node", resolver
       map = serialize Fixtures.base(), [ "node" ]
-      assert.deepEqual map, Expected.base
+      assert.deepEqual map, Expectations.base
 
     test "serializes nested and sibling scopes correctly", ->
       Registry.register "node", resolver
       map = serialize Fixtures.nested(), [ "node" ]
-      assert.deepEqual map, Expected.nested
+      assert.deepEqual map, Expectations.nested
 
     test "preserves immutability of input Trie", ->
       root = Fixtures.nested()
