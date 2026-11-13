@@ -4,35 +4,47 @@ import Trie from "../../src/categories/trie"
 import serialize from "../../src/functors/serialization"
 import { Registry } from "../../src/resolvers/index"
 
-Scopes =
-  keys:
-    parent: "https://cdn.example.com/@dashkite/maeve@1.0.0/"
-    child: "https://cdn.example.com/@dashkite/maeve@1.0.0/node/nested@0.1.0/"
-    sibling: "https://cdn.example.com/foo@2.0.0/"
+Targets =
+  parent: "https://cdn.example.com/@dashkite/maeve@1.0.0/lib/index.js"
+  child: "https://cdn.example.com/nested@0.1.0/index.js"
+  sibling: "https://cdn.example.com/foo@2.0.0/index.js"
 
-  targets:
-    parent: "https://cdn.example.com/@dashkite/maeve@1.0.0/lib/index.js"
-    child: "https://cdn.example.com/nested@0.1.0/index.js"
-    sibling: "https://cdn.example.com/foo@2.0.0/index.js"
+Expected =
+  base:
+    imports:
+      helper: "/src/helper.js"
+    scopes:
+      "https://cdn.example.com/@dashkite/maeve@1.0.0/":
+        "./": Targets.parent
+
+  nested:
+    imports:
+      helper: "/src/helper.js"
+    scopes:
+      "https://cdn.example.com/@dashkite/maeve@1.0.0/":
+        "./": Targets.parent
+      "https://cdn.example.com/@dashkite/maeve@1.0.0/node/nested@0.1.0/":
+        "./": Targets.child
+      "https://cdn.example.com/foo@2.0.0/":
+        "./": Targets.sibling
 
 bindScope = ( node, path, target ) ->
   scope = node.upsertPath path
   scope.bindings.set "./", target
   scope
 
-fixtures =
+Fixtures =
   base: ->
     root = Trie.make()
     root.bindings.set "helper", "/src/helper.js"
-    bindScope root, [ "node", "@dashkite", "maeve@1.0.0" ],
-      Scopes.targets.parent
+    bindScope root, [ "node", "@dashkite", "maeve@1.0.0" ], Targets.parent
     root
 
   nested: ->
-    root = fixtures.base()
+    root = Fixtures.base()
     parent = root.upsertPath [ "node", "@dashkite", "maeve@1.0.0" ]
-    bindScope parent, [ "node", "nested@0.1.0" ], Scopes.targets.child
-    bindScope root, [ "node", "foo@2.0.0" ], Scopes.targets.sibling
+    bindScope parent, [ "node", "nested@0.1.0" ], Targets.child
+    bindScope root, [ "node", "foo@2.0.0" ], Targets.sibling
     root
 
 resolver =
@@ -44,56 +56,24 @@ resolver =
   resolve: ( url ) ->
     "https://cdn.example.com/#{ url.replace "atlas://node/", "" }/"
 
-Assertions =
-  imports: ( map ) ->
-    assert.equal map.imports[ "helper" ], "/src/helper.js"
-
-  binding: ( scopes, key, target ) ->
-    assert scopes[ key ]?
-    assert.equal scopes[ key ][ "./" ], target
-
-  scopes: ( map ) ->
-    assert map.scopes?
-    Assertions.binding map.scopes, Scopes.keys.parent, Scopes.targets.parent
-
-  nested: ( map ) ->
-    assert map.scopes?
-    Assertions.binding map.scopes, Scopes.keys.parent, Scopes.targets.parent
-    Assertions.binding map.scopes, Scopes.keys.child, Scopes.targets.child
-    Assertions.binding map.scopes, Scopes.keys.sibling, Scopes.targets.sibling
-
-cases =
-  format: ->
-    root = fixtures.base()
-    Registry.register "node", resolver
-    map = serialize root, [ "node" ]
-    Assertions.imports map
-    Assertions.scopes map
-
-  scopes: ->
-    root = fixtures.nested()
-    Registry.register "node", resolver
-    map = serialize root, [ "node" ]
-    Assertions.imports map
-    Assertions.nested map
-
-  immutability: ->
-    root = fixtures.nested()
-    Registry.register "node", resolver
-    bindings = new Map root.bindings
-    children = new Map root.children
-    serialize root, [ "node" ]
-    assert.deepEqual ( Array.from root.bindings.entries()),
-      Array.from bindings.entries()
-    assert.deepEqual ( Array.from root.children.entries()),
-      Array.from children.entries()
-
 export default ->
   [
-    test "serializes Trie to WHATWG importmap JSON format",
-      cases.format
-    test "serializes nested and sibling scopes correctly",
-      cases.scopes
-    test "preserves immutability of input Trie",
-      cases.immutability
+    test "serializes Trie to WHATWG importmap JSON format", ->
+      Registry.register "node", resolver
+      map = serialize Fixtures.base(), [ "node" ]
+      assert.deepEqual map, Expected.base
+
+    test "serializes nested and sibling scopes correctly", ->
+      Registry.register "node", resolver
+      map = serialize Fixtures.nested(), [ "node" ]
+      assert.deepEqual map, Expected.nested
+
+    test "preserves immutability of input Trie", ->
+      root = Fixtures.nested()
+      Registry.register "node", resolver
+      bindings = new Map root.bindings
+      children = new Map root.children
+      serialize root, [ "node" ]
+      assert.deepEqual ( Array.from root.bindings ), Array.from bindings
+      assert.deepEqual ( Array.from root.children ), Array.from children
   ]

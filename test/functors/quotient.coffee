@@ -7,30 +7,57 @@ Packages =
   maeve: "atlas://node/@dashkite/maeve@1.0.0"
   enchant: "atlas://local/@dashkite/enchant@2.0.0"
 
-Fixtures =
+Modules =
   application:
     index: "file:///app/index.js"
     helper: "file:///app/helper.js"
     utilities: "file:///app/utils.js"
-    package: "app"
-    modules: [
-      "file:///app/index.js"
-      "file:///app/helper.js"
-      "file:///app/utils.js"
-    ]
   maeve:
     index: "file:///node_modules/maeve/index.js"
     library: "file:///node_modules/maeve/lib.js"
-    package: Packages.maeve
     common: "#{ Packages.maeve }/build/node/src/common.js"
     sublime: "#{ Packages.maeve }/build/node/src/sublime/index.js"
-    modules: [
-      "file:///node_modules/maeve/index.js"
-      "file:///node_modules/maeve/lib.js"
-    ]
   enchant:
-    package: Packages.enchant
     index: "#{ Packages.enchant }/build/node/src/index.js"
+
+Fixtures =
+  contracts:
+    modules: [
+      [
+        "app"
+        [
+          Modules.application.index
+          Modules.application.helper
+          Modules.application.utilities
+        ]
+      ]
+      [ "maeve", [ Modules.maeve.index, Modules.maeve.library ]]
+    ]
+    edges: [
+      {
+        source: Modules.application.index
+        target: Modules.maeve.index
+        label: "maeve"
+      }
+    ]
+
+  disjoint:
+    modules: [
+      [ Packages.maeve, [ Modules.maeve.common, Modules.maeve.sublime ]]
+      [ Packages.enchant, [ Modules.enchant.index ]]
+    ]
+    edges: [
+      {
+        source: Modules.enchant.index
+        target: Modules.maeve.common
+        label: "@dashkite/maeve/common"
+      }
+      {
+        source: Modules.enchant.index
+        target: Modules.maeve.sublime
+        label: "@dashkite/maeve/sublime"
+      }
+    ]
 
 addModules = ( graph, id, uris ) ->
   for uri in uris
@@ -38,41 +65,17 @@ addModules = ( graph, id, uris ) ->
     graph.setAttribute uri, "packageId", id
   return
 
-addEdge = ( graph, { source, target, label }) ->
-  graph.addEdge
-    source: source
-    target: target
-    label: label
-    type: "inter"
+addEdges = ( graph, edges ) ->
+  for edge in edges
+    graph.addEdge { edge..., type: "inter" }
+  return
 
-addEdges = ( graph ) ->
-  addEdge graph,
-    source: Fixtures.enchant.index
-    target: Fixtures.maeve.common
-    label: "@dashkite/maeve/common"
-  addEdge graph,
-    source: Fixtures.enchant.index
-    target: Fixtures.maeve.sublime
-    label: "@dashkite/maeve/sublime"
-
-Graphs =
-  contracts: ->
-    graph = ModuleGraph.make()
-    addModules graph, "app", Fixtures.application.modules
-    addModules graph, "maeve", Fixtures.maeve.modules
-    addEdge graph,
-      source: Fixtures.application.index
-      target: Fixtures.maeve.index
-      label: "maeve"
-    graph
-
-  disjoint: ->
-    graph = ModuleGraph.make()
-    addModules graph, Fixtures.maeve.package,
-      [ Fixtures.maeve.common, Fixtures.maeve.sublime ]
-    addModules graph, Fixtures.enchant.package, [ Fixtures.enchant.index ]
-    addEdges graph
-    graph
+buildGraph = ({ modules, edges }) ->
+  graph = ModuleGraph.make()
+  for [ id, uris ] in modules
+    addModules graph, id, uris
+  addEdges graph, edges
+  graph
 
 findComponent = ( graph, uri ) ->
   ( Array.from graph.getVertices()).find ( id ) ->
@@ -82,8 +85,8 @@ Assertions =
   modules: ( graph, id ) ->
     modules = graph.getModules id
     assert.equal modules.size, 3
-    assert modules.has Fixtures.application.helper
-    assert modules.has Fixtures.application.utilities
+    assert modules.has Modules.application.helper
+    assert modules.has Modules.application.utilities
 
   edges: ( graph, source, target ) ->
     edges = graph.getEdges()
@@ -95,8 +98,8 @@ Assertions =
   discrete: ( graph ) ->
     vertices = graph.getVertices()
     assert.equal vertices.size, 2
-    application = findComponent graph, Fixtures.application.index
-    maeve = findComponent graph, Fixtures.maeve.index
+    application = findComponent graph, Modules.application.index
+    maeve = findComponent graph, Modules.maeve.index
     assert application?
     assert maeve?
     Assertions.modules graph, application
@@ -105,12 +108,12 @@ Assertions =
 export default ->
   [
     test "contracts intra-component edges into discrete components", ->
-      Assertions.discrete quotient Graphs.contracts()
+      Assertions.discrete quotient buildGraph Fixtures.contracts
 
     test (
       "contracts disjoint entry points of the same package " +
       "into a single component"
     ), ->
-      graph = quotient Graphs.disjoint()
+      graph = quotient buildGraph Fixtures.disjoint
       assert.equal graph.getVertices().size, 2
   ]
