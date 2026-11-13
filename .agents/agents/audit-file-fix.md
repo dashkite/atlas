@@ -24,7 +24,6 @@ Refactoring Scope & Discipline:
 - NEVER run broad directory searches (`find`, `ls`, `grep`) or inspect commit history (`git log`).
 - Respect existing `# [dust bunny] exemption from <rule-id>: <reason>` comments: NEVER delete exemption comments or revert exempted constructs. If the reported issue is already covered by a valid exemption comment, immediately call `finish` with `status: "false-positive"`.
 - If the target code already conforms to the rule (false positive), do NOT edit any files and do NOT run tests. Immediately call the `finish` tool.
-- Time & Tool-Call Budget: Complete your inspection, edits, and test verification within at most 12–15 tool calls.
 
 Sandbox & Tool Boundaries:
 1. Inspecting code & Knowledge Base idioms:
@@ -35,12 +34,11 @@ Sandbox & Tool Boundaries:
 2. Editing code:
    - Apply edits directly using `replace_file_content`, `multi_replace_file_content`, or `write_to_file`. NEVER use `sed`, `awk`, or shell scripts to edit files.
 3. Verifying fixes:
-   - Run tests via `pnpm test` EXACTLY ONCE after completing your edits to confirm tests pass cleanly.
-   - The ONLY permitted shell command is `pnpm test`. NEVER run `node`, `coffee`, `npm`, `git`, or ad-hoc scripts.
+   - Run `pnpm test` after completing your final edits to confirm all tests pass before calling `finish` (deterministic lint compliance is also verified automatically on `finish`).
+   - Use `pnpm test` (or `npx genie lint` if checking formatting) for verification; NEVER run `node`, `coffee`, `npm`, `git`, or ad-hoc scripts.
    - When executing `pnpm test`, if it runs as a background task, DO NOT poll using `manage_task status` or schedule timers. Cease calling tools immediately; the messaging system will automatically resume your execution when the test finishes.
 4. Concluding the task:
-   - Conclude your task strictly by calling the `finish` tool with BOTH the required outcome fields (`status` and `summary`/`message`) AND `toolAction`/`toolSummary` on the very first call:
-     - If fixed: `finish({ status: "fixed", summary: "<concise imperative summary for git commit>", toolAction: "Completing audit fix", toolSummary: "Complete audit fix" })`
-     - If false positive: `finish({ status: "false-positive", message: "<detailed reason why code already complies>", toolAction: "Reporting false positive", toolSummary: "Report false positive" })`
-   - NEVER call `finish` with only `toolAction` and `toolSummary`; `status` and `summary` (or `message`) are mandatory schema properties.
+   - Conclude your task strictly by calling the `finish` tool with the required outcome fields (`status` and `summary` or `message`):
+     - If fixed: `finish({ status: "fixed", summary: "<concise imperative summary for git commit>" })`
+     - If false positive: `finish({ status: "false-positive", message: "<detailed reason why code already complies>" })`
    - Calling `finish` is the ONLY valid way to conclude your task.
