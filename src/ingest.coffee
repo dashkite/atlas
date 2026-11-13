@@ -2,16 +2,8 @@ import ModuleGraph from "./categories/module-graph"
 import Resolvers from "./resolvers"
 import Path from "node:path"
 import FS from "node:fs/promises"
-import preset from "./presets/node"
 
 entryPoint = Symbol "atlas:entry-point"
-
-resolveCWD = ( options ) ->
-  options.cwd ? process.cwd()
-
-resolveRegistry = ( options ) ->
-  resolvers = options.resolvers ? preset
-  Resolvers.Registry.make resolvers
 
 deriveMetadata = ( module ) ->
   {
@@ -68,17 +60,11 @@ class ModuleURLResolver
   encodeTarget: ( target ) ->
     @registry.encode @buildDescriptor target, @matchKey target
 
-  resolveInode: ( path ) ->
-    ( await FS.stat Path.resolve @cwd, path ).ino
-
-  cacheTarget: ( inode, target ) ->
+  target: ( target ) ->
+    inode = ( await FS.stat Path.resolve @cwd, target.source.path ).ino
     if !@inodes.has inode
       @inodes.set inode, @encodeTarget target
     @inodes.get inode
-
-  target: ( target ) ->
-    inode = await @resolveInode target.source.path
-    @cacheTarget inode, target
 
   source: ( item ) ->
     if item.import.scope?
@@ -100,29 +86,16 @@ class ModuleGraphBuilder
       urls: ModuleURLResolver.make cwd, registry
       graph: ModuleGraph.make()
 
-  encodePackage: ( url ) ->
-    parsed = @registry.decode url
-    @registry.encode { parsed..., path: "" }
-
   resolvePackage: ( url ) ->
     if url == entryPoint
       entryPoint
     else
-      @encodePackage url
-
-  assignPackage: ( url ) ->
-    @graph.setAttribute url, "packageId",
-      @resolvePackage url
-    return
+      parsed = @registry.decode url
+      @registry.encode { parsed..., path: "" }
 
   registerVertex: ( url ) ->
     @graph.addVertex url
-    @assignPackage url
-    return
-
-  registerVertices: ( urls ) ->
-    @registerVertex urls.source
-    @registerVertex urls.target
+    @graph.setAttribute url, "packageId", @resolvePackage url
     return
 
   recordSource: ( url, target ) ->
@@ -145,19 +118,17 @@ class ModuleGraphBuilder
 
   addDependency: ( item ) ->
     urls = await @urls.dependency item
-    @registerVertices urls
+    @registerVertex urls.source
+    @registerVertex urls.target
     @recordSources item, urls
     @recordEdge urls, item.import.specifier
 
   build: ->
     @graph
 
-createBuilder = ( options ) ->
-  ModuleGraphBuilder.make ( resolveCWD options ),
-    ( resolveRegistry options )
-
-ingest = ( dependencies, options = {}) ->
-  builder = createBuilder options
+ingest = ( dependencies, { cwd, resolvers }) ->
+  registry = Resolvers.Registry.make resolvers
+  builder = ModuleGraphBuilder.make cwd, registry
   for await item from dependencies
     await builder.addDependency item
   builder.build()

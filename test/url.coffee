@@ -89,4 +89,40 @@ export default ->
       roundTrip Fixtures.descriptors.bare,
         Fixtures.urls.root.unscoped,
         Fixtures.descriptors.root.unscoped
+
+    test "encodes application descriptor with explicit undefined module", ->
+      url = AtlasURL.encode
+        resolver: "application"
+        module: undefined
+        path: "/src/index.js"
+      assert.equal url, Fixtures.urls.application
+
+    test "rejects non-object or missing resolver descriptors", ->
+      assert.throws -> AtlasURL.encode null
+      assert.throws -> AtlasURL.encode {}
+      assert.throws -> AtlasURL.encode resolver: ""
+
+    test "rejects non-string path descriptors", ->
+      assert.throws ->
+        AtlasURL.encode resolver: "application", path: 123
+
+    test "rejects non-application descriptors omitting module", ->
+      assert.throws ->
+        AtlasURL.encode resolver: "node", path: "/index.js"
+
+    test "rejects malformed module payloads", ->
+      assert.throws ->
+        AtlasURL.encode resolver: "node", module: "invalid"
+      assert.throws ->
+        AtlasURL.encode resolver: "node", module: {}
+      assert.throws ->
+        AtlasURL.encode resolver: "node", module: name: ""
+      assert.throws ->
+        AtlasURL.encode
+          resolver: "node"
+          module: name: "foo", scope: 123
+      assert.throws ->
+        AtlasURL.encode
+          resolver: "node"
+          module: name: "foo", version: 123
   ]

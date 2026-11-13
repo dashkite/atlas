@@ -102,10 +102,6 @@ Assertions =
     Assertions.modules graph, application
     Assertions.edges graph, application, maeve
 
-  disjoint: ( graph ) ->
-    vertices = graph.getVertices()
-    assert.equal vertices.size, 2
-
 export default ->
   [
     test "contracts intra-component edges into discrete components", ->
@@ -115,5 +111,6 @@ export default ->
       "contracts disjoint entry points of the same package " +
       "into a single component"
     ), ->
-      Assertions.disjoint quotient Graphs.disjoint()
+      graph = quotient Graphs.disjoint()
+      assert.equal graph.getVertices().size, 2
   ]

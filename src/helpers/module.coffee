@@ -35,17 +35,13 @@ _read = ( path, directory ) ->
     throw new Error "No module path found for #{ path }"
 
 class ModuleCache
-  @make: ( directory = "." ) ->
+  @make: ( directory ) ->
     Object.assign ( new @ ),
       directory: directory
       cache: {}
 
-  read: ( path, directory = @directory ) ->
-    key = if directory != "."
-      "#{ directory }:#{ path }"
-    else
-      path
-    @cache[ key ] ?= _read path, directory
+  read: ( path ) ->
+    @cache[ path ] ?= _read path, @directory
 
 export { ModuleCache }
 export default ModuleCache

@@ -44,38 +44,38 @@ resolver =
   resolve: ( url ) ->
     "https://cdn.example.com/#{ url.replace "atlas://node/", "" }/"
 
-verify =
+Assertions =
   imports: ( map ) ->
     assert.equal map.imports[ "helper" ], "/src/helper.js"
 
   binding: ( scopes, key, target ) ->
-    assert scopes[ key ]?, "Scope key #{ key } should exist"
+    assert scopes[ key ]?
     assert.equal scopes[ key ][ "./" ], target
 
   scopes: ( map ) ->
-    assert map.scopes?, "Scopes block should exist"
-    verify.binding map.scopes, Scopes.keys.parent, Scopes.targets.parent
+    assert map.scopes?
+    Assertions.binding map.scopes, Scopes.keys.parent, Scopes.targets.parent
 
   nested: ( map ) ->
-    assert map.scopes?, "Scopes block should exist"
-    verify.binding map.scopes, Scopes.keys.parent, Scopes.targets.parent
-    verify.binding map.scopes, Scopes.keys.child, Scopes.targets.child
-    verify.binding map.scopes, Scopes.keys.sibling, Scopes.targets.sibling
+    assert map.scopes?
+    Assertions.binding map.scopes, Scopes.keys.parent, Scopes.targets.parent
+    Assertions.binding map.scopes, Scopes.keys.child, Scopes.targets.child
+    Assertions.binding map.scopes, Scopes.keys.sibling, Scopes.targets.sibling
 
 cases =
   format: ->
     root = fixtures.base()
     Registry.register "node", resolver
     map = serialize root, [ "node" ]
-    verify.imports map
-    verify.scopes map
+    Assertions.imports map
+    Assertions.scopes map
 
   scopes: ->
     root = fixtures.nested()
     Registry.register "node", resolver
     map = serialize root, [ "node" ]
-    verify.imports map
-    verify.nested map
+    Assertions.imports map
+    Assertions.nested map
 
   immutability: ->
     root = fixtures.nested()

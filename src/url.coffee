@@ -1,5 +1,6 @@
+import AJV from "ajv"
 import { URL } from "node:url"
-import { isString, isObject } from "@dashkite/joy/type"
+import { isString } from "@dashkite/joy/type"
 import * as Codex from "@dashkite/url-codex"
 
 Template =
@@ -61,11 +62,35 @@ Pathname =
     else
       Codex.decode Template.unscoped, pathname
 
+ajv = new AJV()
+
 Descriptor =
+  validate: ajv.compile
+    type: "object"
+    required: [ "resolver" ]
+    properties:
+      resolver:
+        type: "string"
+        minLength: 1
+      path:
+        type: "string"
+      module:
+        type: "object"
+        required: [ "name" ]
+        properties:
+          name:
+            type: "string"
+            minLength: 1
+          scope:
+            type: "string"
+            minLength: 1
+          version:
+            type: "string"
+            minLength: 1
+
   isValid: ( descriptor ) ->
-    ( isObject descriptor ) &&
-    ( isString descriptor.resolver ) &&
-    ( descriptor.resolver.length > 0 )
+    ( Descriptor.validate descriptor ) &&
+      (( descriptor.resolver == "application" ) || ( descriptor.module? ))
 
 decodePathname = ( resolver, pathname ) ->
   if resolver != "application"

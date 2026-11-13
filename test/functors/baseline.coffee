@@ -4,25 +4,38 @@ import { pipe } from "@dashkite/joy/function"
 import ModuleGraph from "../../src/categories/module-graph"
 import baseline from "../../src/functors/baseline"
 
+Vertices =
+  index: "atlas://application/src/index.js"
+  helper: "atlas://application/src/helper.js"
+  maeve: "atlas://node/maeve@1.0.0/index.js"
+
+Packages =
+  application: "atlas://application"
+  maeve: "atlas://node/maeve@1.0.0"
+
+addModule = ( graph, vertex, id ) ->
+  graph.addVertex vertex
+  graph.setAttribute vertex, "packageId", id
+
 Graph =
   addVertices: ( graph ) ->
-    graph.addVertex "atlas://app/src/index.js"
-    graph.addVertex "atlas://app/node_modules/maeve/index.js"
-    graph.addVertex "atlas://app/src/helper.js"
+    addModule graph, Vertices.index, Packages.application
+    addModule graph, Vertices.maeve, Packages.maeve
+    addModule graph, Vertices.helper, Packages.application
     graph
 
   addInter: ( graph ) ->
     graph.addEdge
-      source: "atlas://app/src/index.js"
-      target: "atlas://app/node_modules/maeve/index.js"
+      source: Vertices.index
+      target: Vertices.maeve
       label: "maeve"
       type: "inter"
     graph
 
   addIntra: ( graph ) ->
     graph.addEdge
-      source: "atlas://app/src/index.js"
-      target: "atlas://app/src/helper.js"
+      source: Vertices.index
+      target: Vertices.helper
       label: "./helper.js"
       type: "intra"
     graph
@@ -40,12 +53,12 @@ advanceSegment = ( node, segment ) ->
   next
 
 getNode = ( root ) ->
-  [ "app", "src", "index.js" ].reduce advanceSegment, root
+  [ "application", "src", "index.js" ].reduce advanceSegment, root
 
 verifyBindings = ( node ) ->
   assert.equal node.bindings.size, 1
   target = node.bindings.get "maeve"
-  assert target?, "expected maeve binding"
+  assert target?
   assert.equal target.segment, "index.js"
   assert !node.bindings.has "./helper.js"
 

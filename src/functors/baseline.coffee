@@ -7,9 +7,7 @@ getAuthority = ( url ) ->
 
 Package =
   isExternal: ( id ) ->
-    ( id? ) &&
-      ( id != entryPoint ) &&
-      ( !( id.startsWith "atlas://application" ))
+    ( id != entryPoint ) && !( id.startsWith "atlas://application" )
 
 Segments =
   fromPath: ( url ) ->
