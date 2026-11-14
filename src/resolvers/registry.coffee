@@ -1,8 +1,8 @@
-import Ajv from "ajv"
+import AJV from "ajv"
 import { isString, isObject, isBoolean, isKind } from "@dashkite/joy/type"
 import AtlasURL from "../url"
 
-ajv = new Ajv()
+ajv = new AJV()
 
 validateKeys = ajv.compile
   type: "array"
@@ -47,7 +47,12 @@ class ResolverRegistry
 
   @register: ( key, resolver ) ->
     if ( checkKey key ) && ( checkResolver resolver )
-      @resolvers[ key ] = resolver
+      existing = @resolvers[ key ]
+      @resolvers[ key ] =
+        if existing?
+          Object.assign ( Object.create existing ), resolver
+        else
+          resolver
     else
       throw new Error "Resolver registration requires a non-empty key and " +
         "resolver object"
@@ -92,10 +97,10 @@ class ResolverRegistry
   decode: ( url ) ->
     if checkURL url
       descriptor = ( @locate url ).decode url
-      if isObject descriptor
+      if ( isObject descriptor ) && ( checkKey descriptor.resolver )
         descriptor
       else
-        throw new Error "Resolver decode must return a descriptor object"
+        AtlasURL.decode url
     else
       throw new Error "Expected an atlas:// URL to decode"
 

@@ -35,4 +35,19 @@ Archive =
     assert.equal ( await Archive.readText zip, "index.js" ),
       Fixtures.sources.bare
 
+  external: ( buffer ) ->
+    zip = await Archive.load buffer
+    assert Archive.hasFile zip, "index.js"
+    assert Archive.hasFile zip, "package.json"
+    assert Archive.hasFile zip, "node_modules/@scope/dep/index.js"
+    assert Archive.hasFile zip, "node_modules/@scope/dep/package.json"
+    assert.equal ( await Archive.readText zip, "index.js" ),
+      Fixtures.sources.externalEntry
+    assert.equal (
+      await Archive.readText zip, "node_modules/@scope/dep/index.js"
+    ), Fixtures.sources.externalDependency
+    assert.equal (
+      await Archive.readText zip, "node_modules/@scope/dep/package.json"
+    ), Fixtures.sources.externalManifest
+
 export default Archive

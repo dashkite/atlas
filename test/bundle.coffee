@@ -30,7 +30,11 @@ export default ->
         buffer = await bundle "index.js", cwd: directory
         await Archive.bare buffer
 
+    test "creates a bundle zip with external scoped package dependency", ->
+      await Fixtures.run Fixtures.external, ( directory ) ->
+        buffer = await bundle "index.js", cwd: directory
+        await Archive.external buffer
+
     test "rejects non-boolean compact option at boundary", ->
-      await assert.rejects ->
-        Promise.resolve().then -> bundle "index.js", compact: "invalid"
+      await assert.rejects -> await bundle "index.js", compact: "invalid"
   ]

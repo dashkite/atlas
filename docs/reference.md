@@ -14,7 +14,7 @@ Generates an optimized WHATWG JavaScript import map object (`{ imports, scopes }
 - **`options`** *(Object, optional)*:
   - **`cwd`** *(String, default: `process.cwd()`)*: The target package root directory (where `package.json` and `node_modules` reside). Passed to `esbuild` as `absWorkingDir` and used as the base directory for intra-application module paths.
   - **`source`** *(String, default: `options.cwd`)*: Base directory used to resolve input `entries` (`Path.resolve(cwd, options.source ? ".")`). Entry points are resolved via `Path.resolve(source, entry)` while all module graph paths remain relative to `cwd`.
-  - **`resolvers`** *(Array\<String\>, default: `presets/node`)*: Ordered array of registered resolver keys to query during ingestion and URL resolution.
+  - **`resolvers`** *(Array\<String\>, default: `presets/browser`)*: Ordered array of registered resolver keys to query during ingestion and URL resolution.
   - **`external`** *(Array\<String\>, default: `[]`)*: Additional module specifiers to mark as external during `esbuild` analysis (`@aws-sdk/*` and `esbuild` are always externalized).
 
 ```coffeescript

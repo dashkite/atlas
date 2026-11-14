@@ -9,10 +9,26 @@ Sources =
   dependency: "export const foo = 'hello';"
   bare: "export const main = () => { console.log('hello'); };"
   manifest: JSON.stringify name: "test-pkg", version: "1.0.0"
+  externalEntry:
+    "import { dep } from '@scope/dep';\n" +
+    "export const main = () => { console.log(dep); };"
+  externalDependency: "export const dep = 'hello';"
+  externalManifest: JSON.stringify
+    name: "@scope/dep"
+    version: "1.0.0"
+    main: "index.js"
 
 writeModule = ( directory ) ->
   await FS.writeFile ( Path.join directory, "index.js" ), Sources.entry
   await FS.writeFile ( Path.join directory, "foo.js" ), Sources.dependency
+
+writePackage = ( directory ) ->
+  pkg = Path.join directory, "node_modules", "@scope", "dep"
+  await FS.mkdir pkg, recursive: true
+  await FS.writeFile ( Path.join pkg, "index.js" ),
+    Sources.externalDependency
+  await FS.writeFile ( Path.join pkg, "package.json" ),
+    Sources.externalManifest
 
 Fixtures =
   sources: Sources
@@ -31,6 +47,13 @@ Fixtures =
 
   bare: ( directory ) ->
     await FS.writeFile ( Path.join directory, "index.js" ), Sources.bare
+
+  external: ( directory ) ->
+    await FS.writeFile ( Path.join directory, "index.js" ),
+      Sources.externalEntry
+    manifest = Path.join directory, "package.json"
+    await FS.writeFile manifest, Sources.manifest
+    await writePackage directory
 
   run: ( setup, action ) ->
     directory = await FS.mkdtemp Path.join OS.tmpdir(), "atlas-bundle-"

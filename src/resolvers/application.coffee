@@ -1,10 +1,10 @@
-import Ajv from "ajv"
+import AJV from "ajv"
 import { pipe } from "@dashkite/joy"
 import AtlasURL from "../url"
 import Path from "node:path"
 import { pathToFileURL } from "node:url"
 
-ajv = new Ajv()
+ajv = new AJV()
 
 validateConfiguration = ajv.compile
   type: "object"
