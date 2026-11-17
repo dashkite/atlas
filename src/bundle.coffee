@@ -1,8 +1,8 @@
 import Path from "node:path"
 import AJV from "ajv"
 import { pipe } from "@dashkite/joy"
-import { isString, isArray } from "@dashkite/joy/type"
 import analyze from "./helpers/analyze"
+import normalizeEntries from "./helpers/entries"
 import ingest from "./ingest"
 import quotient from "./functors/quotient"
 import compile from "./functors/compiler"
@@ -10,23 +10,6 @@ import resolve from "./functors/resolver"
 import preset from "./presets/node"
 import Diagnostics from "./helpers/diagnostics"
 import BundleArchive from "./helpers/archive"
-
-Entry =
-  isValid: ( entries ) ->
-    if isString entries
-      entries.length > 0
-    else if isArray entries
-      ( entries.length > 0 ) && ( entries.every ( entry ) ->
-        ( isString entry ) && ( entry.length > 0 )
-      )
-    else
-      false
-
-  normalize: ( entries ) ->
-    if Entry.isValid entries
-      [ entries ].flat()
-    else
-      throw new Error "Entries argument is required"
 
 ajv = new AJV()
 
@@ -63,7 +46,7 @@ normalizeOptions = ( options ) ->
     throw new Error "Invalid bundle options"
 
 createContext = ( entries, options = {}) ->
-  entries: Entry.normalize entries
+  entries: normalizeEntries entries
   options: normalizeOptions options
 
 analyzeDependencies = ( context ) ->

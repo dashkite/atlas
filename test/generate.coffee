@@ -42,4 +42,10 @@ export default ->
         resolvers
       assertStructure map
       assertURLs map
+
+    test "rejects invalid entries at boundary", ->
+      await assert.rejects -> await generate ""
+      await assert.rejects -> await generate []
+      await assert.rejects -> await generate [ "" ]
+      await assert.rejects -> await generate null
   ]

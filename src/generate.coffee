@@ -1,8 +1,8 @@
 import Path from "node:path"
 import AJV from "ajv"
 import { pipe } from "@dashkite/joy"
-import { isString, isArray } from "@dashkite/joy/type"
 import analyze from "./helpers/analyze"
+import normalizeEntries from "./helpers/entries"
 import ingest from "./ingest"
 import baseline from "./functors/baseline"
 import compact from "./functors/compaction"
@@ -33,24 +33,6 @@ validateOptions = ajv.compile
       type: "array"
       items:
         type: "string"
-
-validateEntries = ( entries ) ->
-  if isString entries
-    entries.length > 0
-  else if isArray entries
-    ( entries.length > 0 ) && ( entries.every ( entry ) ->
-      ( isString entry ) && ( entry.length > 0 )
-    )
-  else
-    false
-
-normalizeEntries = ( entries ) ->
-  if validateEntries entries
-    [ entries ].flat()
-  else
-    throw new Error (
-      "Entries must be a non-empty string or array of non-empty strings"
-    )
 
 normalizeOptions = ( options ) ->
   if validateOptions options

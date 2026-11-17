@@ -37,4 +37,10 @@ export default ->
 
     test "rejects non-boolean compact option at boundary", ->
       await assert.rejects -> await bundle "index.js", compact: "invalid"
+
+    test "rejects invalid entries at boundary", ->
+      await assert.rejects -> await bundle ""
+      await assert.rejects -> await bundle []
+      await assert.rejects -> await bundle [ "" ]
+      await assert.rejects -> await bundle null
   ]
